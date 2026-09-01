@@ -16,7 +16,7 @@ class _AppShellState extends State<AppShell> {
   void book(Book value) => Navigator.push(context, MaterialPageRoute(builder: (_) => BookDetailScreen(book: value, state: widget.state)));
   void assistant() => Navigator.push(context, MaterialPageRoute(builder: (_) => AssistantScreen(api: widget.state.api)));
   @override Widget build(BuildContext context) {
-    final pages = [HomeScreen(state: widget.state, onExplore: () => setState(() => index = 2), onBook: book), PremiumScreen(state: widget.state, onBook: book), ExploreScreen(state: widget.state, onBook: book, onAssistant: assistant), LibraryScreen(state: widget.state, onBook: book), ProfileScreen(state: widget.state, onAssistant: assistant)];
+    final pages = [HomeScreen(state: widget.state, onExplore: () => setState(() => index = 2), onBook: book), PremiumScreen(state: widget.state, onBook: book), ExploreScreen(state: widget.state, onBook: book, onAssistant: assistant), LibraryScreen(state: widget.state, onBook: book), ProfileScreen(state: widget.state, onAssistant: assistant, onLibrary: () => setState(() => index = 3))];
     return Scaffold(
       body: SafeArea(child: Column(children: [
         if (widget.state.offline) const _OfflineBanner(),

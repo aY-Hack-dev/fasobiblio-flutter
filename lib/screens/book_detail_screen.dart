@@ -5,6 +5,7 @@ import '../models/book.dart';
 import '../services/app_state.dart';
 import '../services/document_service.dart';
 import 'pdf_reader_screen.dart';
+import 'payment_flow.dart';
 
 class BookDetailScreen extends StatefulWidget {
   const BookDetailScreen({super.key, required this.book, required this.state});
@@ -14,7 +15,11 @@ class BookDetailScreen extends StatefulWidget {
 class _BookDetailScreenState extends State<BookDetailScreen> {
   final documents = DocumentService(); bool busy = false; double? progress;
   Future<void> open(String mode) async {
-    if (widget.book.isPremium) { if (mounted) showDialog(context: context, builder: (_) => AlertDialog(icon: const Icon(Icons.workspace_premium_rounded, color: AppColors.gold, size: 38), title: const Text('Document Premium'), content: Text('Cet ouvrage est proposé à ${widget.book.price.toInt()} FCFA. Activez une offre Premium depuis l’onglet dédié.'), actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Compris'))])); return; }
+    if (widget.book.isPremium && !widget.state.hasAccess(widget.book)) {
+      final unlocked = await purchaseDocument(context, widget.state, widget.book);
+      if (unlocked && mounted) await open(mode);
+      return;
+    }
     setState(() { busy = true; progress = 0; });
     try {
       final cacheKey = '${widget.book.id}-${widget.book.title}';

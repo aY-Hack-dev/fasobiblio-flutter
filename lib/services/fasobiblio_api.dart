@@ -120,6 +120,40 @@ class FasobiblioApi {
     return data is Map && data['plans'] is List ? data['plans'] : [];
   }
 
+  Future<Map<String, String>> startDocumentPayment({required String docId, required String phone, required String pseudo}) async {
+    final data = await authenticated('/api/pay', method: 'POST', body: {
+      'docId': docId,
+      'numeroSend': phone.replaceAll(RegExp(r'\D'), ''),
+      'nomclient': pseudo,
+      'pseudo': pseudo,
+    });
+    return {'token': '${data['token'] ?? ''}', 'url': '${data['url'] ?? ''}'};
+  }
+
+  Future<Map<String, String>> startSubscriptionPayment({required String planId, required String phone, required String pseudo}) async {
+    final data = await authenticated('/api/pay-subscription', method: 'POST', body: {
+      'planId': planId,
+      'numeroSend': phone.replaceAll(RegExp(r'\D'), ''),
+      'pseudo': pseudo,
+    });
+    return {'token': '${data['token'] ?? ''}', 'url': '${data['url'] ?? ''}'};
+  }
+
+  Future<bool> checkAccess(String docId) async {
+    final data = await authenticated('/api/check-access?docId=${Uri.encodeQueryComponent(docId)}');
+    return data is Map && data['access'] == true;
+  }
+
+  Future<List<dynamic>> myDocuments() async {
+    final data = await authenticated('/api/my-documents');
+    return data is Map && data['documents'] is List ? data['documents'] : [];
+  }
+
+  Future<Map<String, dynamic>?> mySubscription() async {
+    final data = await authenticated('/api/my-subscription');
+    return data is Map && data['subscription'] is Map ? Map<String, dynamic>.from(data['subscription']) : null;
+  }
+
   Future<String> assistant(String question) async {
     final data = await _request(Uri.parse('$api/api/chat'), method: 'POST', headers: {'Content-Type': 'application/json'}, body: jsonEncode({'systemPrompt': 'Tu es l’assistant pédagogique de Fasobiblio. Réponds clairement en français.', 'userPrompt': question, 'max_completion_tokens': 700, 'temperature': .3}), timeout: const Duration(seconds: 50));
     return '${data['text'] ?? data['answer'] ?? data['response'] ?? 'Réponse indisponible.'}';

@@ -13,6 +13,8 @@ class AppState extends ChangeNotifier {
   Set<String> favorites = {};
   Set<String> later = {};
   UserSession? session;
+  Map<String, dynamic>? subscription;
+  Set<String> purchased = {};
   bool loading = true;
   bool refreshing = false;
   bool offline = false;
@@ -38,6 +40,7 @@ class AppState extends ChangeNotifier {
       session = values[0] as UserSession;
       books = values[1] as List<Book>;
       offers = values[2] as List<dynamic>;
+      await _refreshAccount(notify: false);
       await store.saveCatalog(books);
       lastSync = DateTime.now();
       offline = false;
@@ -59,7 +62,33 @@ class AppState extends ChangeNotifier {
     notifyListeners();
     await store.save(LocalStore.laterKey, later);
   }
-  Future<void> login(String pseudo, String password) async { session = await api.login(pseudo, password); notifyListeners(); }
-  Future<void> signup(String pseudo, String password, String phone) async { session = await api.signup(pseudo, password, phone); notifyListeners(); }
-  Future<void> logout() async { session = await api.logout(); notifyListeners(); }
+  bool hasAccess(Book book) => !book.isPremium || purchased.contains(book.id) || subscription != null;
+
+  Future<void> _refreshAccount({bool notify = true}) async {
+    if (session == null || session!.anonymous) {
+      subscription = null;
+      purchased = {};
+      if (notify) notifyListeners();
+      return;
+    }
+    try {
+      final values = await Future.wait([api.mySubscription(), api.myDocuments()]);
+      subscription = values[0] as Map<String, dynamic>?;
+      purchased = (values[1] as List<dynamic>)
+          .whereType<Map>()
+          .map((item) => '${item['docId'] ?? ''}')
+          .where((id) => id.isNotEmpty)
+          .toSet();
+    } catch (_) {
+      // Le catalogue et le mode hors ligne restent utilisables si le compte
+      // ne peut pas être synchronisé momentanément.
+    } finally {
+      if (notify) notifyListeners();
+    }
+  }
+
+  Future<void> refreshAccount() => _refreshAccount();
+  Future<void> login(String pseudo, String password) async { session = await api.login(pseudo, password); await _refreshAccount(); }
+  Future<void> signup(String pseudo, String password, String phone) async { session = await api.signup(pseudo, password, phone); await _refreshAccount(); }
+  Future<void> logout() async { session = await api.logout(); subscription = null; purchased = {}; notifyListeners(); }
 }
