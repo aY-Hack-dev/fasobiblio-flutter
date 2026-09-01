@@ -21,9 +21,9 @@ class ProfileScreen extends StatelessWidget {
       ])),
       const SectionTitle('Services'),
       _Menu(icon: Icons.auto_awesome_rounded, title: 'Assistant d’étude', subtitle: 'Questions, explications et orientation', onTap: onAssistant),
-      _Menu(icon: Icons.info_outline_rounded, title: 'À propos de Fasobiblio', subtitle: 'La bibliothèque numérique des apprenants', onTap: () => showAboutDialog(context: context, applicationName: 'Fasobiblio', applicationVersion: '2.0.0', applicationIcon: Image.asset('assets/branding/icon.png', width: 52), children: [const Text('Une application mobile native pensée pour apprendre, lire et réussir.')])),
+      _Menu(icon: Icons.info_outline_rounded, title: 'À propos de Fasobiblio', subtitle: 'La bibliothèque numérique des apprenants', onTap: () => showAboutDialog(context: context, applicationName: 'Fasobiblio', applicationVersion: '2.1.0', applicationIcon: Image.asset('assets/branding/logo-full.jpg', width: 110, height: 110, fit: BoxFit.contain), children: [const Text('Une application mobile native pensée pour apprendre, lire et réussir.')])),
       _Menu(icon: Icons.policy_outlined, title: 'Confidentialité et conditions', subtitle: 'Consulter les textes officiels', onTap: () => launchUrl(Uri.parse('https://fasobiblio.com'), mode: LaunchMode.externalApplication)),
-      const Padding(padding: EdgeInsets.all(27), child: Text('Fasobiblio Mobile • version 2.0.0', textAlign: TextAlign.center, style: TextStyle(fontSize: 10, color: AppColors.muted))),
+      const Padding(padding: EdgeInsets.all(27), child: Text('Fasobiblio Mobile • version 2.1.0', textAlign: TextAlign.center, style: TextStyle(fontSize: 10, color: AppColors.muted))),
     ]);
   }
 }
