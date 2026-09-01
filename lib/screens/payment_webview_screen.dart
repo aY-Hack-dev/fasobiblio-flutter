@@ -58,7 +58,10 @@ class _PaymentWebViewScreenState extends State<PaymentWebViewScreen> {
   @override
   Widget build(BuildContext context) => PopScope(
     canPop: false,
-    onPopInvokedWithResult: (didPop, _) async { if (!didPop && await _leave() && mounted) Navigator.of(context).pop(false); },
+    onPopInvokedWithResult: (didPop, _) async {
+      if (didPop || !await _leave() || !context.mounted) return;
+      Navigator.of(context).pop(false);
+    },
     child: Scaffold(
       appBar: AppBar(
         title: const Text('Paiement sécurisé'),
