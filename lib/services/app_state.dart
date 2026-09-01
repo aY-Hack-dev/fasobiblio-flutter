@@ -15,21 +15,36 @@ class AppState extends ChangeNotifier {
   UserSession? session;
   bool loading = true;
   bool refreshing = false;
+  bool offline = false;
+  DateTime? lastSync;
   String? error;
 
   Future<void> load({bool refresh = false}) async {
     refresh ? refreshing = true : loading = true;
     error = null;
     notifyListeners();
+    final local = await Future.wait([store.loadCatalog(), store.load(LocalStore.favoritesKey), store.load(LocalStore.laterKey), store.lastSync()]);
+    books = local[0] as List<Book>;
+    favorites = local[1] as Set<String>;
+    later = local[2] as Set<String>;
+    lastSync = local[3] as DateTime?;
+    session ??= UserSession.offlineGuest();
+    loading = false;
+    refreshing = true;
+    notifyListeners();
+
     try {
-      final values = await Future.wait([api.ensureSession(), api.catalog(), store.load(LocalStore.favoritesKey), store.load(LocalStore.laterKey), api.plans().catchError((_) => <dynamic>[])]);
+      final values = await Future.wait([api.ensureSession(), api.catalog(), api.plans().catchError((_) => <dynamic>[])]);
       session = values[0] as UserSession;
       books = values[1] as List<Book>;
-      favorites = values[2] as Set<String>;
-      later = values[3] as Set<String>;
-      offers = values[4] as List<dynamic>;
-    } catch (e) { error = e.toString().replaceFirst('Exception: ', ''); }
-    loading = false;
+      offers = values[2] as List<dynamic>;
+      await store.saveCatalog(books);
+      lastSync = DateTime.now();
+      offline = false;
+    } catch (e) {
+      offline = true;
+      error = books.isEmpty ? 'Mode hors connexion : le catalogue sera disponible après une première synchronisation.' : null;
+    }
     refreshing = false;
     notifyListeners();
   }

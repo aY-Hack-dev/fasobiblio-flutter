@@ -42,7 +42,9 @@ class FasobiblioApi {
         try { _session = UserSession.fromJson(jsonDecode(raw)); } catch (_) { _session = null; }
       }
     }
-    if (_session == null) return _guest();
+    if (_session == null) {
+      try { return await _guest(); } catch (_) { return UserSession.offlineGuest(); }
+    }
     if (_session!.expiresAt <= DateTime.now().millisecondsSinceEpoch) {
       try { return await _refresh(_session!); } catch (_) { return _guest(); }
     }
@@ -95,11 +97,12 @@ class FasobiblioApi {
 
   Future<dynamic> authenticated(String path, {String method = 'GET', Map<String, dynamic>? body}) async {
     final auth = await ensureSession();
+    if (auth.idToken.isEmpty) throw Exception('Connexion Internet requise pour cette action.');
     return _request(Uri.parse('$api$path'), method: method, headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ${auth.idToken}'}, body: body == null ? null : jsonEncode(body));
   }
 
   Future<List<Book>> catalog() async {
-    final data = await _request(Uri.parse('$database/documents.json'), timeout: const Duration(seconds: 40));
+    final data = await _request(Uri.parse('$database/documents.json'), timeout: const Duration(seconds: 12));
     if (data is! Map) return [];
     return data.entries.where((entry) {
       final value = entry.value;

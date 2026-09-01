@@ -7,6 +7,12 @@ class UserSession {
   final String pseudo;
   final bool anonymous;
 
+  static UserSession offlineGuest() => UserSession(
+    idToken: '', refreshToken: '', uid: 'offline-guest',
+    expiresAt: DateTime.now().millisecondsSinceEpoch + const Duration(days: 365).inMilliseconds,
+    pseudo: '', anonymous: true,
+  );
+
   factory UserSession.fromJson(Map<String, dynamic> json) => UserSession(
     idToken: '${json['idToken'] ?? ''}', refreshToken: '${json['refreshToken'] ?? ''}', uid: '${json['uid'] ?? ''}',
     expiresAt: (json['expiresAt'] as num?)?.toInt() ?? 0, pseudo: '${json['pseudo'] ?? ''}', anonymous: json['anonymous'] != false,

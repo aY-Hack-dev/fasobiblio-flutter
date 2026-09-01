@@ -48,6 +48,23 @@ class Book {
     year: '${value['year'] ?? ''}',
   );
 
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'title': title,
+    'author': author,
+    'category': category,
+    'description': description,
+    'image': image,
+    'isPremium': isPremium,
+    'price': price,
+    'views': views,
+    'downloads': downloads,
+    'createdAt': createdAt,
+    'language': language,
+    'level': level,
+    'year': year,
+  };
+
   static num _number(dynamic value) => value is num ? value : num.tryParse('$value') ?? 0;
 }
 

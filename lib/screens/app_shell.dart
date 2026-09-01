@@ -18,7 +18,10 @@ class _AppShellState extends State<AppShell> {
   @override Widget build(BuildContext context) {
     final pages = [HomeScreen(state: widget.state, onExplore: () => setState(() => index = 2), onBook: book), PremiumScreen(state: widget.state, onBook: book), ExploreScreen(state: widget.state, onBook: book, onAssistant: assistant), LibraryScreen(state: widget.state, onBook: book), ProfileScreen(state: widget.state, onAssistant: assistant)];
     return Scaffold(
-      body: SafeArea(child: IndexedStack(index: index, children: pages)),
+      body: SafeArea(child: Column(children: [
+        if (widget.state.offline) const _OfflineBanner(),
+        Expanded(child: IndexedStack(index: index, children: pages)),
+      ])),
       bottomNavigationBar: _ResponsiveBottomNav(
         selectedIndex: index,
         libraryCount: widget.state.favorites.length + widget.state.later.length,
@@ -26,6 +29,20 @@ class _AppShellState extends State<AppShell> {
       ),
     );
   }
+}
+
+class _OfflineBanner extends StatelessWidget {
+  const _OfflineBanner();
+  @override Widget build(BuildContext context) => Container(
+    width: double.infinity,
+    color: const Color(0xFFFFF3D6),
+    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+    child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+      Icon(Icons.cloud_off_rounded, size: 16, color: AppColors.gold),
+      SizedBox(width: 7),
+      Flexible(child: Text('Mode hors connexion', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.gold))),
+    ]),
+  );
 }
 
 class _ResponsiveBottomNav extends StatelessWidget {
@@ -140,7 +157,6 @@ class StartupScreen extends StatelessWidget {
   const StartupScreen({super.key, required this.state}); final AppState state;
   @override Widget build(BuildContext context) {
     if (state.loading && state.books.isEmpty) return const Scaffold(body: Center(child: Column(mainAxisSize: MainAxisSize.min, children: [Image(image: AssetImage('assets/branding/icon.png'), width: 105, height: 105), SizedBox(height: 18), Text.rich(TextSpan(children: [TextSpan(text: 'FASO', style: TextStyle(color: AppColors.ink)), TextSpan(text: 'BIBLIO', style: TextStyle(color: AppColors.blue))]), style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900)), SizedBox(height: 25), CircularProgressIndicator(), SizedBox(height: 11), Text('Chargement de votre bibliothèque…', style: TextStyle(fontSize: 11, color: AppColors.muted))])));
-    if (state.error != null && state.books.isEmpty) return Scaffold(body: SafeArea(child: Center(child: Padding(padding: const EdgeInsets.all(28), child: Column(mainAxisSize: MainAxisSize.min, children: [const Icon(Icons.cloud_off_rounded, size: 58, color: AppColors.muted), const SizedBox(height: 15), Text('Connexion impossible', style: Theme.of(context).textTheme.titleLarge), const SizedBox(height: 8), Text(state.error!, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.muted)), const SizedBox(height: 18), FilledButton.icon(onPressed: () => state.load(), icon: const Icon(Icons.refresh_rounded), label: const Text('Réessayer'))])))));
     return AppShell(state: state);
   }
 }
