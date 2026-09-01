@@ -20,15 +20,39 @@ class HomeScreen extends StatelessWidget {
       child: CustomScrollView(slivers: [
         const SliverToBoxAdapter(child: BrandHeader()),
         SliverToBoxAdapter(child: _Hero(count: state.books.length, categories: categories.length, reads: state.books.fold(0, (sum, book) => sum + book.views), onExplore: onExplore)),
-        const SliverToBoxAdapter(child: SectionTitle('Rayons populaires')),
-        SliverToBoxAdapter(child: SizedBox(height: 48, child: ListView.separated(padding: const EdgeInsets.symmetric(horizontal: 20), scrollDirection: Axis.horizontal, itemCount: categories.length, separatorBuilder: (_, __) => const SizedBox(width: 9), itemBuilder: (_, i) => Container(padding: const EdgeInsets.symmetric(horizontal: 15), alignment: Alignment.center, decoration: BoxDecoration(color: Colors.white, border: Border.all(color: AppColors.line), borderRadius: BorderRadius.circular(14)), child: Text(categoryLabel(categories[i]), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.navy)))))),
-        SliverToBoxAdapter(child: _Shelf(title: 'Les plus lus', books: popular.take(10).toList(), state: state, onBook: onBook)),
-        SliverToBoxAdapter(child: _StudyCard(onTap: onExplore)),
-        SliverToBoxAdapter(child: _Shelf(title: 'Nouveautés', books: recent.take(10).toList(), state: state, onBook: onBook)),
+        if (state.books.isEmpty) SliverToBoxAdapter(child: _OfflineWelcome(onRetry: () => state.load(refresh: true))),
+        if (state.books.isNotEmpty) ...[
+          const SliverToBoxAdapter(child: SectionTitle('Rayons populaires')),
+          SliverToBoxAdapter(child: SizedBox(height: 48, child: ListView.separated(padding: const EdgeInsets.symmetric(horizontal: 20), scrollDirection: Axis.horizontal, itemCount: categories.length, separatorBuilder: (_, __) => const SizedBox(width: 9), itemBuilder: (_, i) => Container(padding: const EdgeInsets.symmetric(horizontal: 15), alignment: Alignment.center, decoration: BoxDecoration(color: Colors.white, border: Border.all(color: AppColors.line), borderRadius: BorderRadius.circular(14)), child: Text(categoryLabel(categories[i]), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.navy)))))),
+          SliverToBoxAdapter(child: _Shelf(title: 'Les plus lus', books: popular.take(10).toList(), state: state, onBook: onBook)),
+          SliverToBoxAdapter(child: _StudyCard(onTap: onExplore)),
+          SliverToBoxAdapter(child: _Shelf(title: 'Nouveautés', books: recent.take(10).toList(), state: state, onBook: onBook)),
+        ],
         const SliverToBoxAdapter(child: SizedBox(height: 28)),
       ]),
     );
   }
+}
+
+class _OfflineWelcome extends StatelessWidget {
+  const _OfflineWelcome({required this.onRetry});
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    margin: const EdgeInsets.fromLTRB(16, 22, 16, 0),
+    padding: const EdgeInsets.all(20),
+    decoration: BoxDecoration(color: Colors.white, border: Border.all(color: AppColors.line), borderRadius: BorderRadius.circular(22)),
+    child: Column(children: [
+      const CircleAvatar(radius: 28, backgroundColor: AppColors.sky, child: Icon(Icons.cloud_off_rounded, color: AppColors.blue, size: 28)),
+      const SizedBox(height: 13),
+      const Text('Fasobiblio fonctionne hors connexion', textAlign: TextAlign.center, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: AppColors.ink)),
+      const SizedBox(height: 7),
+      const Text('L’application est prête même lors de cette première ouverture. Connectez-vous une fois pour synchroniser le catalogue ; les PDF que vous lirez resteront ensuite disponibles sans Internet.', textAlign: TextAlign.center, style: TextStyle(fontSize: 12, height: 1.5, color: AppColors.muted)),
+      const SizedBox(height: 16),
+      SizedBox(width: double.infinity, child: FilledButton.icon(onPressed: onRetry, icon: const Icon(Icons.sync_rounded), label: const Text('Réessayer la synchronisation'))),
+    ]),
+  );
 }
 
 class _Hero extends StatelessWidget {
