@@ -98,7 +98,7 @@ class FasobiblioApi {
   Future<UserSession> logout() async {
     _session = null;
     await (await SharedPreferences.getInstance()).remove(_sessionKey);
-    return _guest();
+    try { return await _guest(); } catch (_) { return UserSession.offlineGuest(); }
   }
 
   Future<dynamic> authenticated(String path, {String method = 'GET', Map<String, dynamic>? body}) async {

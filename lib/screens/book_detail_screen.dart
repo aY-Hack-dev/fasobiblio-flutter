@@ -49,6 +49,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
   Future<void> open(String mode) async {
     final cacheKey = '${widget.book.id}-${widget.book.title}';
     final cached = await documents.cached(cacheKey);
+    if (!mounted) return;
     if (cached == null && !requireInternet(context, widget.state)) return;
     if (widget.book.isPremium && !widget.state.hasAccess(widget.book)) {
       if (!requireInternet(context, widget.state)) return;
@@ -242,7 +243,18 @@ class _ReviewCard extends StatelessWidget {
     child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
       CircleAvatar(backgroundColor: AppColors.sky, foregroundColor: AppColors.blue, child: Text(review.name.isEmpty ? 'L' : review.name[0].toUpperCase(), style: const TextStyle(fontWeight: FontWeight.w900))),
       const SizedBox(width: 12),
-      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Row(children: [Expanded(child: Text(review.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w900))), ...List.generate(5, (index) => Icon(index < review.stars ? Icons.star_rounded : Icons.star_border_rounded, size: 14, color: const Color(0xFFF4B740)))]), if (review.comment.isNotEmpty) ...[const SizedBox(height: 6), Text(review.comment, style: const TextStyle(height: 1.45))]])]),
+      Expanded(
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Expanded(child: Text(review.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w900))),
+            ...List.generate(5, (index) => Icon(index < review.stars ? Icons.star_rounded : Icons.star_border_rounded, size: 14, color: const Color(0xFFF4B740))),
+          ]),
+          if (review.comment.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Text(review.comment, style: const TextStyle(height: 1.45)),
+          ],
+        ]),
+      ),
     ]),
   );
 }

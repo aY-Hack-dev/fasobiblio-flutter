@@ -91,6 +91,7 @@ Future<T?> _startPayment<T>(BuildContext context, Future<T> Function() action) a
 }
 
 Future<bool> purchaseDocument(BuildContext context, AppState state, Book book) async {
+  if (!requireInternet(context, state)) return false;
   if (!await _ensureAccount(context, state) || !context.mounted) return false;
   final phone = await _askPhone(context, title: book.title, price: '${book.price.toInt()} FCFA');
   if (phone == null || !context.mounted) return false;
@@ -116,6 +117,7 @@ Future<bool> purchaseDocument(BuildContext context, AppState state, Book book) a
 }
 
 Future<bool> purchaseSubscription(BuildContext context, AppState state, Map<String, dynamic> offer) async {
+  if (!requireInternet(context, state)) return false;
   if (!await _ensureAccount(context, state) || !context.mounted) return false;
   final id = '${offer['id'] ?? ''}';
   final nameValue = offer['name'];
