@@ -16,13 +16,13 @@ class FasobiblioApi {
 
   Future<dynamic> _request(Uri uri, {String method = 'GET', Map<String, String>? headers, Object? body, Duration timeout = const Duration(seconds: 30)}) async {
     final allHeaders = {'Accept': 'application/json', ...?headers};
-    final response = await switch (method) {
+    final response = await (switch (method) {
       'POST' => http.post(uri, headers: allHeaders, body: body),
       'PUT' => http.put(uri, headers: allHeaders, body: body),
       'PATCH' => http.patch(uri, headers: allHeaders, body: body),
       'DELETE' => http.delete(uri, headers: allHeaders, body: body),
       _ => http.get(uri, headers: allHeaders),
-    }.timeout(timeout);
+    }).timeout(timeout);
     dynamic data;
     try { data = response.body.isEmpty ? <String, dynamic>{} : jsonDecode(response.body); }
     catch (_) { data = {'error': response.body}; }
@@ -154,6 +154,28 @@ class FasobiblioApi {
     );
   }
 
+  Future<void> sendSupportMessage({required String type, required String message}) async {
+    final auth = await ensureSession();
+    if (auth.idToken.isEmpty) throw Exception('Connexion Internet requise.');
+    await _request(
+      Uri.parse('$database/messages_soutien.json?auth=${Uri.encodeQueryComponent(auth.idToken)}'),
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'nom': auth.anonymous ? 'Lecteur invité' : auth.pseudo, 'message': message.trim(), 'type': type, 'deviceId': auth.uid, 'lu': false, 'createdAt': DateTime.now().millisecondsSinceEpoch}),
+    );
+  }
+
+  Future<void> sendSuggestion({required String title, required String subject, required String level, required String details}) async {
+    final auth = await ensureSession();
+    if (auth.idToken.isEmpty) throw Exception('Connexion Internet requise.');
+    await _request(
+      Uri.parse('$database/suggestions.json?auth=${Uri.encodeQueryComponent(auth.idToken)}'),
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'name': auth.anonymous ? 'Lecteur invité' : auth.pseudo, 'title': title.trim(), 'subject': subject.trim(), 'level': level.trim(), 'details': details.trim(), 'status': 'pending', 'createdAt': DateTime.now().millisecondsSinceEpoch}),
+    );
+  }
+
   Future<Map<String, String>> documentFile(String id, String mode) async {
     final data = await authenticated('/api/doc-file?docId=${Uri.encodeQueryComponent(id)}&mode=$mode');
     return {'url': '${data['fileUrl'] ?? data['file_url'] ?? ''}', 'name': '${data['fileName'] ?? data['file_name'] ?? 'Document.pdf'}'};
@@ -199,7 +221,7 @@ class FasobiblioApi {
   }
 
   Future<String> assistant(String question) async {
-    final data = await _request(Uri.parse('$api/api/chat'), method: 'POST', headers: {'Content-Type': 'application/json'}, body: jsonEncode({'systemPrompt': 'Tu es l’assistant pédagogique de Fasobiblio. Réponds clairement en français.', 'userPrompt': question, 'max_completion_tokens': 700, 'temperature': .3}), timeout: const Duration(seconds: 50));
+    final data = await _request(Uri.parse('$api/api/chat'), method: 'POST', headers: {'Content-Type': 'application/json'}, body: jsonEncode({'systemPrompt': 'Tu es l’assistant pédagogique de Fasobiblio. Réponds clairement en français. Utilise du Markdown propre pour structurer la réponse : titres, listes, gras, italique et liens si utile. Ne montre jamais les marqueurs Markdown sans raison.', 'userPrompt': question, 'max_completion_tokens': 700, 'temperature': .3}), timeout: const Duration(seconds: 50));
     return '${data['text'] ?? data['answer'] ?? data['response'] ?? 'Réponse indisponible.'}';
   }
 }

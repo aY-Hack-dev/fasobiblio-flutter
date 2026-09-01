@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../core/theme.dart';
 import '../models/book.dart';
 import '../services/app_state.dart';
+import '../core/app_feedback.dart';
 import 'auth_sheet.dart';
 import 'payment_webview_screen.dart';
 
@@ -34,7 +35,7 @@ Future<String?> _askPhone(BuildContext context, {required String title, required
     builder: (sheetContext) => StatefulBuilder(
       builder: (context, setState) => Container(
         padding: EdgeInsets.fromLTRB(22, 12, 22, MediaQuery.viewInsetsOf(context).bottom + 24),
-        decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
+        decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: const BorderRadius.vertical(top: Radius.circular(28))),
         child: SafeArea(
           top: false,
           child: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -106,10 +107,10 @@ Future<bool> purchaseDocument(BuildContext context, AppState state, Book book) a
     }
     if (context.mounted) Navigator.of(context, rootNavigator: true).pop();
     await state.refreshAccount();
-    if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(unlocked ? 'Paiement confirmé : document débloqué.' : 'Paiement reçu. L’activation apparaîtra dès sa confirmation.')));
+    if (context.mounted) showToast(context, unlocked ? 'Paiement confirmé : document débloqué.' : 'Paiement reçu. L’activation apparaîtra dès sa confirmation.', success: unlocked);
     return unlocked;
   } catch (error) {
-    if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.toString().replaceFirst('Exception: ', ''))));
+    if (context.mounted) showToast(context, friendlyFailure(error, action: 'finaliser cet achat'));
     return false;
   }
 }
@@ -136,10 +137,10 @@ Future<bool> purchaseSubscription(BuildContext context, AppState state, Map<Stri
     }
     if (context.mounted) Navigator.of(context, rootNavigator: true).pop();
     await state.refreshAccount();
-    if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(subscription != null ? 'Votre abonnement Premium est actif.' : 'Paiement reçu. Activation Premium en cours.')));
+    if (context.mounted) showToast(context, subscription != null ? 'Votre abonnement Premium est actif.' : 'Paiement reçu. Activation Premium en cours.', success: subscription != null);
     return subscription != null;
   } catch (error) {
-    if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.toString().replaceFirst('Exception: ', ''))));
+    if (context.mounted) showToast(context, friendlyFailure(error, action: 'finaliser cet abonnement'));
     return false;
   }
 }

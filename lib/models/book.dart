@@ -14,6 +14,8 @@ class Book {
     required this.language,
     required this.level,
     required this.year,
+    required this.rating,
+    required this.reviewsCount,
   });
 
   final String id;
@@ -30,6 +32,8 @@ class Book {
   final String language;
   final String level;
   final String year;
+  final double rating;
+  final int reviewsCount;
 
   factory Book.fromJson(String id, Map<String, dynamic> value) => Book(
     id: id,
@@ -46,6 +50,8 @@ class Book {
     language: '${value['language'] ?? 'fr'}',
     level: '${value['level'] ?? ''}',
     year: '${value['year'] ?? ''}',
+    rating: _number(value['averageRating'] ?? value['rating'] ?? value['note']).toDouble(),
+    reviewsCount: _number(value['reviewsCount'] ?? value['ratingsCount'] ?? value['avis']).toInt(),
   );
 
   Map<String, dynamic> toJson() => {
@@ -63,6 +69,8 @@ class Book {
     'language': language,
     'level': level,
     'year': year,
+    'averageRating': rating,
+    'reviewsCount': reviewsCount,
   };
 
   static num _number(dynamic value) => value is num ? value : num.tryParse('$value') ?? 0;

@@ -26,6 +26,7 @@ class AppState extends ChangeNotifier {
   DateTime? lastSync;
   String? error;
   bool darkMode = false;
+  bool welcomeSeen = false;
   bool _hydrated = false;
   StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
 
@@ -49,7 +50,7 @@ class AppState extends ChangeNotifier {
     error = null;
     notifyListeners();
     if (!_hydrated) {
-      final local = await Future.wait([store.loadCatalog(), store.load(LocalStore.favoritesKey), store.load(LocalStore.laterKey), store.lastSync(), store.loadAccountAccess(), store.loadDarkMode(), store.loadJson(LocalStore.notificationsKey), store.load(LocalStore.notificationReadsKey)]);
+      final local = await Future.wait([store.loadCatalog(), store.load(LocalStore.favoritesKey), store.load(LocalStore.laterKey), store.lastSync(), store.loadAccountAccess(), store.loadDarkMode(), store.loadJson(LocalStore.notificationsKey), store.load(LocalStore.notificationReadsKey), store.loadWelcomeSeen()]);
       books = local[0] as List<Book>;
       favorites = local[1] as Set<String>;
       later = local[2] as Set<String>;
@@ -61,6 +62,7 @@ class AppState extends ChangeNotifier {
       final cachedNotifications = local[6];
       if (cachedNotifications is List) notifications = cachedNotifications.whereType<Map>().map((item) => AppNotification.fromJson('${item['id'] ?? ''}', Map<String, dynamic>.from(item))).where((item) => item.id.isNotEmpty).toList();
       notificationReads = local[7] as Set<String>;
+      welcomeSeen = local[8] as bool;
       session ??= UserSession.offlineGuest();
       _hydrated = true;
       loading = false;
@@ -98,6 +100,7 @@ class AppState extends ChangeNotifier {
     await store.save(LocalStore.laterKey, later);
   }
   Future<void> toggleDarkMode(bool value) async { darkMode = value; notifyListeners(); await store.saveDarkMode(value); }
+  Future<void> completeWelcome() async { welcomeSeen = true; notifyListeners(); await store.saveWelcomeSeen(); }
 
   Future<void> markNotificationRead(String id) async {
     notificationReads.add(id);

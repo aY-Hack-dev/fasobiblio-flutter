@@ -24,7 +24,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
       ]))),
       SliverToBoxAdapter(child: SizedBox(height: 43, child: ListView(padding: const EdgeInsets.symmetric(horizontal: 16), scrollDirection: Axis.horizontal, children: [FilterChip(label: const Text('Tous'), selected: category.isEmpty, onSelected: (_) => setState(() => category = '')), const SizedBox(width: 8), ...categories.map((c) => Padding(padding: const EdgeInsets.only(right: 8), child: FilterChip(label: Text(categoryLabel(c)), selected: category == c, onSelected: (_) => setState(() => category = c))))]))),
       SliverToBoxAdapter(child: Padding(padding: const EdgeInsets.fromLTRB(20, 20, 20, 8), child: Text('${results.length} document${results.length > 1 ? 's' : ''}', style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.muted)))),
-      SliverToBoxAdapter(child: results.isEmpty ? const Padding(padding: EdgeInsets.all(40), child: Center(child: Text('Aucun document ne correspond à cette recherche.'))) : BookGrid(books: results, favorites: widget.state.favorites, onBook: widget.onBook)),
+      SliverToBoxAdapter(child: results.isEmpty ? const Padding(padding: EdgeInsets.all(40), child: Center(child: Text('Aucun document ne correspond à cette recherche.'))) : BookGrid(books: results, favorites: widget.state.favorites, onBook: widget.onBook, onFavorite: (book) => widget.state.toggleFavorite(book.id))),
       const SliverToBoxAdapter(child: SizedBox(height: 24)),
     ]);
   }

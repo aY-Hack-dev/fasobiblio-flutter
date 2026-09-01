@@ -11,6 +11,7 @@ class LocalStore {
   static const darkModeKey = 'fasobiblio.flutter.darkMode';
   static const notificationsKey = 'fasobiblio.flutter.notifications';
   static const notificationReadsKey = 'fasobiblio.flutter.notificationReads';
+  static const welcomeSeenKey = 'fasobiblio.flutter.welcomeSeen';
 
   Future<Set<String>> load(String key) async => (await SharedPreferences.getInstance()).getStringList(key)?.toSet() ?? <String>{};
   Future<void> save(String key, Set<String> values) async => (await SharedPreferences.getInstance()).setStringList(key, values.toList());
@@ -69,4 +70,6 @@ class LocalStore {
   }
 
   Future<void> saveJson(String key, Object value) async => (await SharedPreferences.getInstance()).setString(key, jsonEncode(value));
+  Future<bool> loadWelcomeSeen() async => (await SharedPreferences.getInstance()).getBool(welcomeSeenKey) ?? false;
+  Future<void> saveWelcomeSeen() async => (await SharedPreferences.getInstance()).setBool(welcomeSeenKey, true);
 }

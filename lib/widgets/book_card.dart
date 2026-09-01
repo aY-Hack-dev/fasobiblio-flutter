@@ -4,17 +4,18 @@ import '../core/theme.dart';
 import '../models/book.dart';
 
 class BookCard extends StatelessWidget {
-  const BookCard({super.key, required this.book, required this.favorite, required this.onTap, this.width = 150});
+  const BookCard({super.key, required this.book, required this.favorite, required this.onTap, this.onFavorite, this.width = 150});
   final Book book;
   final bool favorite;
   final VoidCallback onTap;
+  final VoidCallback? onFavorite;
   final double width;
 
   @override
   Widget build(BuildContext context) => SizedBox(
     width: width,
     child: Material(
-      color: Colors.white,
+      color: Theme.of(context).colorScheme.surface,
       borderRadius: BorderRadius.circular(18),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -25,14 +26,14 @@ class BookCard extends StatelessWidget {
             AspectRatio(aspectRatio: .7, child: Stack(fit: StackFit.expand, children: [
               ClipRRect(borderRadius: BorderRadius.circular(12), child: _Cover(book: book)),
               if (book.isPremium) Positioned(left: 7, top: 7, child: _Badge(text: 'PREMIUM', gold: true)),
-              Positioned(right: 7, top: 7, child: Container(width: 30, height: 30, decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle), child: Icon(favorite ? Icons.favorite_rounded : Icons.favorite_border_rounded, size: 17, color: favorite ? Colors.red : AppColors.muted))),
+              Positioned(right: 7, top: 7, child: Material(color: Theme.of(context).colorScheme.surface, shape: const CircleBorder(), elevation: 1, child: InkWell(customBorder: const CircleBorder(), onTap: onFavorite, child: SizedBox(width: 32, height: 32, child: Icon(favorite ? Icons.favorite_rounded : Icons.favorite_border_rounded, size: 18, color: favorite ? const Color(0xFFE5484D) : AppColors.muted))))),
             ])),
             const SizedBox(height: 10),
-            Text(book.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13, height: 1.22, fontWeight: FontWeight.w800, color: AppColors.ink)),
+            Text(book.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13, height: 1.22, fontWeight: FontWeight.w800)),
             const SizedBox(height: 4),
             Text(book.author, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11, color: AppColors.muted)),
             const Spacer(),
-            Row(children: [const Icon(Icons.visibility_outlined, size: 14, color: AppColors.muted), const SizedBox(width: 4), Text('${book.views}', style: const TextStyle(fontSize: 10, color: AppColors.muted)), const Spacer(), if (book.isPremium) Text('${book.price.toInt()} F', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: AppColors.gold))]),
+            Row(children: [const Icon(Icons.star_rounded, size: 14, color: Color(0xFFF4B740)), const SizedBox(width: 3), Text(book.rating > 0 ? book.rating.toStringAsFixed(1) : 'Nouveau', style: const TextStyle(fontSize: 10, color: AppColors.muted)), const Spacer(), if (book.isPremium) Text(book.price > 0 ? '${book.price.toInt()} F' : 'Premium', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: AppColors.gold))]),
           ]),
         ),
       ),
@@ -53,11 +54,11 @@ class _Badge extends StatelessWidget {
 }
 
 class BookGrid extends StatelessWidget {
-  const BookGrid({super.key, required this.books, required this.favorites, required this.onBook});
-  final List<Book> books; final Set<String> favorites; final ValueChanged<Book> onBook;
+  const BookGrid({super.key, required this.books, required this.favorites, required this.onBook, this.onFavorite});
+  final List<Book> books; final Set<String> favorites; final ValueChanged<Book> onBook; final ValueChanged<Book>? onFavorite;
   @override Widget build(BuildContext context) => GridView.builder(
     shrinkWrap: true, physics: const NeverScrollableScrollPhysics(), padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, mainAxisExtent: 304, crossAxisSpacing: 12, mainAxisSpacing: 12),
-    itemCount: books.length, itemBuilder: (_, i) => BookCard(book: books[i], favorite: favorites.contains(books[i].id), onTap: () => onBook(books[i]), width: double.infinity),
+    itemCount: books.length, itemBuilder: (_, i) => BookCard(book: books[i], favorite: favorites.contains(books[i].id), onTap: () => onBook(books[i]), onFavorite: onFavorite == null ? null : () => onFavorite!(books[i]), width: double.infinity),
   );
 }

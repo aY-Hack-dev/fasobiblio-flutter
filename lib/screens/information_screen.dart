@@ -57,9 +57,9 @@ class InformationScreen extends StatelessWidget {
         ...sections.map((section) => Container(
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(color: Colors.white, border: Border.all(color: AppColors.line), borderRadius: BorderRadius.circular(18)),
+          decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: .5)), borderRadius: BorderRadius.circular(18)),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(section.$1, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: AppColors.ink)),
+            Text(section.$1, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
             const SizedBox(height: 8),
             Text(section.$2, style: const TextStyle(height: 1.55, color: AppColors.muted)),
           ]),

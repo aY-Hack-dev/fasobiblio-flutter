@@ -96,7 +96,7 @@ class _AssistantScreenState extends State<AssistantScreen> {
               onChanged: (_) => setState(() {}),
             )),
             const SizedBox(width: 9),
-            IconButton.filled(onPressed: busy ? null : ask, icon: const Icon(Icons.send_rounded), tooltip: 'Envoyer', style: IconButton.styleFrom(minimumSize: const Size(50, 50))),
+            IconButton.filled(onPressed: busy ? null : () => ask(), icon: const Icon(Icons.send_rounded), tooltip: 'Envoyer', style: IconButton.styleFrom(minimumSize: const Size(50, 50))),
           ]),
         ),
       ]),
