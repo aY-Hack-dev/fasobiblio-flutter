@@ -4,6 +4,7 @@ import '../core/theme.dart';
 import '../models/book.dart';
 import '../services/app_state.dart';
 import '../services/document_service.dart';
+import 'pdf_reader_screen.dart';
 
 class BookDetailScreen extends StatefulWidget {
   const BookDetailScreen({super.key, required this.book, required this.state});
@@ -14,11 +15,27 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
   final documents = DocumentService(); bool busy = false; double? progress;
   Future<void> open(String mode) async {
     if (widget.book.isPremium) { if (mounted) showDialog(context: context, builder: (_) => AlertDialog(icon: const Icon(Icons.workspace_premium_rounded, color: AppColors.gold, size: 38), title: const Text('Document Premium'), content: Text('Cet ouvrage est proposé à ${widget.book.price.toInt()} FCFA. Activez une offre Premium depuis l’onglet dédié.'), actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Compris'))])); return; }
-    setState(() { busy = true; progress = mode == 'download' ? 0 : null; });
+    setState(() { busy = true; progress = 0; });
     try {
-      final file = await widget.state.api.documentFile(widget.book.id, mode);
-      if ((file['url'] ?? '').isEmpty) throw Exception('Le fichier est momentanément indisponible.');
-      mode == 'read' ? await documents.read(file['url']!) : await documents.download(file['url']!, file['name'] ?? widget.book.title, onProgress: (value) { if (mounted) setState(() => progress = value); });
+      final cacheKey = '${widget.book.id}-${widget.book.title}';
+      final cached = await documents.cached(cacheKey);
+      String path;
+      String name = widget.book.title;
+      if (cached != null) {
+        path = cached;
+      } else {
+        final file = await widget.state.api.documentFile(widget.book.id, mode);
+        if ((file['url'] ?? '').isEmpty) throw Exception('Le fichier est momentanément indisponible.');
+        name = file['name'] ?? widget.book.title;
+        path = await documents.ensureLocal(file['url']!, cacheKey, onProgress: (value) { if (mounted) setState(() => progress = value); });
+      }
+      if (!mounted) return;
+      if (mode == 'read') {
+        await Navigator.of(context).push(MaterialPageRoute(builder: (_) => PdfReaderScreen(path: path, title: widget.book.title)));
+      } else {
+        final destination = await documents.exportToDownloads(path, name);
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Enregistré dans $destination')));
+      }
     } catch (e) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString().replaceFirst('Exception: ', '')))); }
     finally { if (mounted) setState(() { busy = false; progress = null; }); }
   }
@@ -34,7 +51,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
         const SizedBox(height: 17), Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [_Action(icon: fav ? Icons.favorite_rounded : Icons.favorite_border_rounded, label: fav ? 'Favori' : 'Ajouter', active: fav, onTap: () => widget.state.toggleFavorite(b.id)), _Action(icon: later ? Icons.bookmark_rounded : Icons.bookmark_border_rounded, label: 'À lire', active: later, onTap: () => widget.state.toggleLater(b.id)), _Action(icon: Icons.share_outlined, label: 'Partager', onTap: () => SharePlus.instance.share(ShareParams(text: '${b.title}\nhttps://fasobiblio.com/?doc=${b.id}')))]),
         if (b.description.isNotEmpty) ...[const SizedBox(height: 25), const Text('À propos de cet ouvrage', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: AppColors.ink)), const SizedBox(height: 10), Text(b.description, style: const TextStyle(height: 1.55, color: AppColors.ink))],
         const SizedBox(height: 22), Container(padding: const EdgeInsets.symmetric(horizontal: 15), decoration: BoxDecoration(color: Colors.white, border: Border.all(color: AppColors.line), borderRadius: BorderRadius.circular(17)), child: Column(children: [_Info('Langue', b.language.toUpperCase()), _Info('Niveau', b.level.isEmpty ? 'Tous niveaux' : b.level), _Info('Année', b.year.isEmpty ? 'Non précisée' : b.year, last: true)])),
-      ]), if (busy) Positioned.fill(child: ColoredBox(color: const Color(0x66000000), child: Center(child: Container(width: 240, padding: const EdgeInsets.all(23), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)), child: Column(mainAxisSize: MainAxisSize.min, children: [CircularProgressIndicator(value: progress), const SizedBox(height: 13), Text(progress == null ? 'Ouverture du document…' : 'Téléchargement ${((progress ?? 0) * 100).round()} %', style: const TextStyle(fontWeight: FontWeight.w800))])))))]),
+      ]), if (busy) Positioned.fill(child: ColoredBox(color: const Color(0x66000000), child: Center(child: Container(width: 240, padding: const EdgeInsets.all(23), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)), child: Column(mainAxisSize: MainAxisSize.min, children: [CircularProgressIndicator(value: progress == 0 ? null : progress), const SizedBox(height: 13), Text(progress == 0 ? 'Préparation du document…' : 'Téléchargement ${((progress ?? 0) * 100).round()} %', style: const TextStyle(fontWeight: FontWeight.w800))])))))]),
     );
   }
 }
