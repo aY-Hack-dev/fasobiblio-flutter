@@ -8,6 +8,9 @@ class LocalStore {
   static const catalogKey = 'fasobiblio.flutter.catalog';
   static const lastSyncKey = 'fasobiblio.flutter.lastSync';
   static const accountAccessKey = 'fasobiblio.flutter.accountAccess';
+  static const darkModeKey = 'fasobiblio.flutter.darkMode';
+  static const notificationsKey = 'fasobiblio.flutter.notifications';
+  static const notificationReadsKey = 'fasobiblio.flutter.notificationReads';
 
   Future<Set<String>> load(String key) async => (await SharedPreferences.getInstance()).getStringList(key)?.toSet() ?? <String>{};
   Future<void> save(String key, Set<String> values) async => (await SharedPreferences.getInstance()).setStringList(key, values.toList());
@@ -55,4 +58,15 @@ class LocalStore {
   }
 
   Future<void> clearAccountAccess() async => (await SharedPreferences.getInstance()).remove(accountAccessKey);
+
+  Future<bool> loadDarkMode() async => (await SharedPreferences.getInstance()).getBool(darkModeKey) ?? false;
+  Future<void> saveDarkMode(bool value) async => (await SharedPreferences.getInstance()).setBool(darkModeKey, value);
+
+  Future<dynamic> loadJson(String key) async {
+    final raw = (await SharedPreferences.getInstance()).getString(key);
+    if (raw == null || raw.isEmpty) return null;
+    try { return jsonDecode(raw); } catch (_) { return null; }
+  }
+
+  Future<void> saveJson(String key, Object value) async => (await SharedPreferences.getInstance()).setString(key, jsonEncode(value));
 }

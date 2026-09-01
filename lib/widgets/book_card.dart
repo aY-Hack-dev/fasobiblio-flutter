@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../core/theme.dart';
 import '../models/book.dart';
 
@@ -43,7 +44,7 @@ class _Cover extends StatelessWidget {
   const _Cover({required this.book}); final Book book;
   @override Widget build(BuildContext context) => book.image.isEmpty
     ? Container(color: AppColors.sky, alignment: Alignment.center, padding: const EdgeInsets.all(12), child: const Text('FASOBIBLIO', textAlign: TextAlign.center, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: AppColors.blue)))
-    : Image.network(book.image, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Container(color: AppColors.sky, alignment: Alignment.center, child: const Icon(Icons.menu_book_rounded, size: 38, color: AppColors.blue)));
+    : CachedNetworkImage(imageUrl: book.image, fit: BoxFit.cover, placeholder: (_, __) => Container(color: AppColors.sky, alignment: Alignment.center, child: const CircularProgressIndicator(strokeWidth: 2)), errorWidget: (_, __, ___) => Container(color: AppColors.sky, alignment: Alignment.center, child: const Icon(Icons.menu_book_rounded, size: 38, color: AppColors.blue)));
 }
 
 class _Badge extends StatelessWidget {

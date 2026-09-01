@@ -3,7 +3,6 @@ import '../core/theme.dart';
 import '../models/book.dart';
 import '../services/app_state.dart';
 import '../widgets/book_card.dart';
-import '../widgets/brand_header.dart';
 import '../widgets/section.dart';
 import 'payment_flow.dart';
 
@@ -13,7 +12,6 @@ class PremiumScreen extends StatelessWidget {
   @override Widget build(BuildContext context) {
     final books = state.books.where((b) => b.isPremium).toList();
     return CustomScrollView(slivers: [
-      const SliverToBoxAdapter(child: BrandHeader(compact: true)),
       SliverToBoxAdapter(child: Container(margin: const EdgeInsets.symmetric(horizontal: 16), padding: const EdgeInsets.all(24), decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFF231A47), Color(0xFF4C3575)]), borderRadius: BorderRadius.circular(26)), child: const Column(children: [Icon(Icons.workspace_premium_rounded, color: Color(0xFFFFD66B), size: 48), SizedBox(height: 9), Text('Fasobiblio Premium', style: TextStyle(fontSize: 25, fontWeight: FontWeight.w900, color: Colors.white)), SizedBox(height: 7), Text('Toute la bibliothèque avancée pour accélérer vos études et vos recherches.', textAlign: TextAlign.center, style: TextStyle(fontSize: 12, height: 1.5, color: Color(0xFFDCD4EC)))]))),
       if (state.subscription != null) SliverToBoxAdapter(child: Container(margin: const EdgeInsets.fromLTRB(16, 14, 16, 0), padding: const EdgeInsets.all(15), decoration: BoxDecoration(color: const Color(0xFFFFF8E3), border: Border.all(color: const Color(0xFFEAD9A7)), borderRadius: BorderRadius.circular(17)), child: const Row(children: [Icon(Icons.verified_rounded, color: AppColors.gold), SizedBox(width: 11), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('Premium actif', style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.ink)), Text('Toute la collection Premium est débloquée.', style: TextStyle(fontSize: 11, color: AppColors.muted))]))]))),
       if (state.offers.isNotEmpty) const SliverToBoxAdapter(child: SectionTitle('Choisissez votre formule')),

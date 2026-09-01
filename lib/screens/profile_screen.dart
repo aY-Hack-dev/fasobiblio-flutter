@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/theme.dart';
 import '../services/app_state.dart';
-import '../widgets/brand_header.dart';
 import '../widgets/section.dart';
 import 'auth_sheet.dart';
 import 'information_screen.dart';
@@ -20,7 +19,6 @@ class ProfileScreen extends StatelessWidget {
     final subscription = state.subscription;
     final lastSync = state.lastSync;
     return ListView(children: [
-      const BrandHeader(compact: true),
       Container(margin: const EdgeInsets.symmetric(horizontal: 16), padding: const EdgeInsets.all(23), decoration: BoxDecoration(color: Colors.white, border: Border.all(color: AppColors.line), borderRadius: BorderRadius.circular(23)), child: Column(children: [
         CircleAvatar(radius: 36, backgroundColor: AppColors.sky, child: Text(user ? name.substring(0, 1).toUpperCase() : 'L', style: const TextStyle(fontSize: 25, fontWeight: FontWeight.w900, color: AppColors.blue))),
         const SizedBox(height: 12), Text(name, style: Theme.of(context).textTheme.titleLarge), const SizedBox(height: 5), Text(user ? 'Compte Fasobiblio' : 'Connectez-vous pour retrouver votre compte', style: const TextStyle(fontSize: 12, color: AppColors.muted)), const SizedBox(height: 17),

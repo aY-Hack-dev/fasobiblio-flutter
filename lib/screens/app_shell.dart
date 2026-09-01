@@ -9,17 +9,20 @@ import 'home_screen.dart';
 import 'library_screen.dart';
 import 'premium_screen.dart';
 import 'profile_screen.dart';
+import 'notifications_screen.dart';
+import '../widgets/app_header.dart';
 
 class AppShell extends StatefulWidget { const AppShell({super.key, required this.state}); final AppState state; @override State<AppShell> createState() => _AppShellState(); }
 class _AppShellState extends State<AppShell> {
   int index = 0;
   void book(Book value) => Navigator.push(context, MaterialPageRoute(builder: (_) => BookDetailScreen(book: value, state: widget.state)));
-  void assistant() => Navigator.push(context, MaterialPageRoute(builder: (_) => AssistantScreen(api: widget.state.api)));
+  void assistant() => Navigator.push(context, MaterialPageRoute(builder: (_) => AssistantScreen(state: widget.state)));
+  void notifications() => Navigator.push(context, MaterialPageRoute(builder: (_) => NotificationsScreen(state: widget.state)));
   @override Widget build(BuildContext context) {
     final pages = [HomeScreen(state: widget.state, onExplore: () => setState(() => index = 2), onBook: book), PremiumScreen(state: widget.state, onBook: book), ExploreScreen(state: widget.state, onBook: book, onAssistant: assistant), LibraryScreen(state: widget.state, onBook: book), ProfileScreen(state: widget.state, onAssistant: assistant, onLibrary: () => setState(() => index = 3))];
     return Scaffold(
       body: SafeArea(child: Column(children: [
-        if (widget.state.offline) const _OfflineBanner(),
+        AppHeader(state: widget.state, onNotifications: notifications),
         Expanded(child: IndexedStack(index: index, children: pages)),
       ])),
       bottomNavigationBar: _ResponsiveBottomNav(
@@ -29,20 +32,6 @@ class _AppShellState extends State<AppShell> {
       ),
     );
   }
-}
-
-class _OfflineBanner extends StatelessWidget {
-  const _OfflineBanner();
-  @override Widget build(BuildContext context) => Container(
-    width: double.infinity,
-    color: const Color(0xFFFFF3D6),
-    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-    child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-      Icon(Icons.cloud_off_rounded, size: 16, color: AppColors.gold),
-      SizedBox(width: 7),
-      Flexible(child: Text('Mode hors connexion', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.gold))),
-    ]),
-  );
 }
 
 class _ResponsiveBottomNav extends StatelessWidget {

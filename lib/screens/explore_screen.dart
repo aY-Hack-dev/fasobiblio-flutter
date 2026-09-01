@@ -3,7 +3,6 @@ import '../core/theme.dart';
 import '../models/book.dart';
 import '../services/app_state.dart';
 import '../widgets/book_card.dart';
-import '../widgets/brand_header.dart';
 
 class ExploreScreen extends StatefulWidget {
   const ExploreScreen({super.key, required this.state, required this.onBook, required this.onAssistant});
@@ -18,7 +17,6 @@ class _ExploreScreenState extends State<ExploreScreen> {
     final q = query.toLowerCase().trim();
     final results = widget.state.books.where((b) => (category.isEmpty || b.category == category) && (q.isEmpty || '${b.title} ${b.author} ${b.description}'.toLowerCase().contains(q))).take(150).toList();
     return CustomScrollView(slivers: [
-      const SliverToBoxAdapter(child: BrandHeader(compact: true)),
       SliverToBoxAdapter(child: Padding(padding: const EdgeInsets.fromLTRB(20, 4, 20, 14), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text('Explorer', style: Theme.of(context).textTheme.headlineMedium), const SizedBox(height: 5), const Text('Trouvez la bonne ressource, au bon moment.', style: TextStyle(color: AppColors.muted)),
         const SizedBox(height: 18), TextField(onChanged: (v) => setState(() => query = v), decoration: const InputDecoration(prefixIcon: Icon(Icons.search_rounded), hintText: 'Titre, auteur, matière…')),

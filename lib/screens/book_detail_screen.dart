@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import '../core/app_feedback.dart';
 import '../core/theme.dart';
 import '../models/book.dart';
 import '../services/app_state.dart';
@@ -39,9 +41,9 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
         await Navigator.of(context).push(MaterialPageRoute(builder: (_) => PdfReaderScreen(path: path, title: widget.book.title)));
       } else {
         final destination = await documents.exportToDownloads(path, name);
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Enregistré dans $destination')));
+        if (mounted) showToast(context, 'Document enregistré dans $destination.', success: true);
       }
-    } catch (e) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString().replaceFirst('Exception: ', '')))); }
+    } catch (e) { if (mounted) showToast(context, friendlyFailure(e, action: mode == 'read' ? 'ouvrir ce document' : 'télécharger ce document')); }
     finally { if (mounted) setState(() { busy = false; progress = null; }); }
   }
   @override Widget build(BuildContext context) {
@@ -50,7 +52,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
       appBar: AppBar(title: const Text('Détail du document'), actions: [IconButton(onPressed: () => SharePlus.instance.share(ShareParams(text: '${b.title}\nhttps://fasobiblio.com/?doc=${b.id}')), icon: const Icon(Icons.ios_share_rounded))]),
       bottomNavigationBar: SafeArea(child: Container(padding: const EdgeInsets.all(12), decoration: const BoxDecoration(color: Colors.white, border: Border(top: BorderSide(color: AppColors.line))), child: Row(children: [Expanded(child: FilledButton.icon(onPressed: busy ? null : () => open('read'), icon: const Icon(Icons.menu_book_rounded), label: Text(b.isPremium ? 'Débloquer / Lire' : 'Lire maintenant'))), const SizedBox(width: 9), IconButton.filledTonal(onPressed: busy ? null : () => open('download'), icon: const Icon(Icons.download_rounded), tooltip: 'Télécharger')]))),
       body: Stack(children: [ListView(padding: const EdgeInsets.fromLTRB(20, 20, 20, 35), children: [
-        Center(child: Hero(tag: 'book-${b.id}', child: ClipRRect(borderRadius: BorderRadius.circular(18), child: b.image.isEmpty ? Container(width: 190, height: 270, color: AppColors.sky, alignment: Alignment.center, child: const Icon(Icons.menu_book_rounded, size: 55, color: AppColors.blue)) : Image.network(b.image, width: 190, height: 270, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Container(width: 190, height: 270, color: AppColors.sky, child: const Icon(Icons.menu_book_rounded, color: AppColors.blue)))))),
+        Center(child: Hero(tag: 'book-${b.id}', child: ClipRRect(borderRadius: BorderRadius.circular(18), child: b.image.isEmpty ? Container(width: 190, height: 270, color: AppColors.sky, alignment: Alignment.center, child: const Icon(Icons.menu_book_rounded, size: 55, color: AppColors.blue)) : CachedNetworkImage(imageUrl: b.image, width: 190, height: 270, fit: BoxFit.cover, placeholder: (_, __) => Container(width: 190, height: 270, color: AppColors.sky), errorWidget: (_, __, ___) => Container(width: 190, height: 270, color: AppColors.sky, child: const Icon(Icons.menu_book_rounded, color: AppColors.blue)))))),
         const SizedBox(height: 19), Text(b.title, textAlign: TextAlign.center, style: Theme.of(context).textTheme.headlineMedium), const SizedBox(height: 7), Text(b.author, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.muted)),
         const SizedBox(height: 20), Container(padding: const EdgeInsets.symmetric(vertical: 14), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(17), border: Border.all(color: AppColors.line)), child: Row(children: [_Stat('${b.views}', 'Lectures'), _Stat('${b.downloads}', 'Téléch.'), _Stat(categoryLabel(b.category), 'Rayon')])),
         const SizedBox(height: 17), Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [_Action(icon: fav ? Icons.favorite_rounded : Icons.favorite_border_rounded, label: fav ? 'Favori' : 'Ajouter', active: fav, onTap: () => widget.state.toggleFavorite(b.id)), _Action(icon: later ? Icons.bookmark_rounded : Icons.bookmark_border_rounded, label: 'À lire', active: later, onTap: () => widget.state.toggleLater(b.id)), _Action(icon: Icons.share_outlined, label: 'Partager', onTap: () => SharePlus.instance.share(ShareParams(text: '${b.title}\nhttps://fasobiblio.com/?doc=${b.id}')))]),

@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/book.dart';
 import '../models/session.dart';
+import '../models/app_notification.dart';
 
 class FasobiblioApi {
   static const database = 'https://alifam-hub-1b32a-default-rtdb.europe-west1.firebasedatabase.app';
@@ -14,9 +15,14 @@ class FasobiblioApi {
   UserSession? get session => _session;
 
   Future<dynamic> _request(Uri uri, {String method = 'GET', Map<String, String>? headers, Object? body, Duration timeout = const Duration(seconds: 30)}) async {
-    final response = await (method == 'POST'
-      ? http.post(uri, headers: {'Accept': 'application/json', ...?headers}, body: body)
-      : http.get(uri, headers: {'Accept': 'application/json', ...?headers})).timeout(timeout);
+    final allHeaders = {'Accept': 'application/json', ...?headers};
+    final response = await switch (method) {
+      'POST' => http.post(uri, headers: allHeaders, body: body),
+      'PUT' => http.put(uri, headers: allHeaders, body: body),
+      'PATCH' => http.patch(uri, headers: allHeaders, body: body),
+      'DELETE' => http.delete(uri, headers: allHeaders, body: body),
+      _ => http.get(uri, headers: allHeaders),
+    }.timeout(timeout);
     dynamic data;
     try { data = response.body.isEmpty ? <String, dynamic>{} : jsonDecode(response.body); }
     catch (_) { data = {'error': response.body}; }
@@ -108,6 +114,44 @@ class FasobiblioApi {
       final value = entry.value;
       return value is Map && value['active'] != false && value['published'] != false;
     }).map((entry) => Book.fromJson('${entry.key}', Map<String, dynamic>.from(entry.value))).toList();
+  }
+
+  Future<List<AppNotification>> notifications() async {
+    final data = await _request(Uri.parse('$database/notifications.json'), timeout: const Duration(seconds: 12));
+    if (data is! Map) return [];
+    final values = data.entries.where((entry) => entry.value is Map).map((entry) => AppNotification.fromJson('${entry.key}', Map<String, dynamic>.from(entry.value))).toList();
+    values.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return values;
+  }
+
+  Future<void> markNotificationRead(String notificationId) async {
+    final auth = await ensureSession();
+    if (auth.idToken.isEmpty) throw Exception('Connexion Internet requise.');
+    await _request(Uri.parse('$database/notif_reads/${Uri.encodeComponent(auth.uid)}/${Uri.encodeComponent(notificationId)}.json?auth=${Uri.encodeQueryComponent(auth.idToken)}'), method: 'PUT', headers: {'Content-Type': 'application/json'}, body: 'true');
+  }
+
+  Future<void> markAllNotificationsRead(Iterable<String> ids) async {
+    final auth = await ensureSession();
+    if (auth.idToken.isEmpty) throw Exception('Connexion Internet requise.');
+    final values = <String, bool>{for (final id in ids) id: true};
+    await _request(Uri.parse('$database/notif_reads/${Uri.encodeComponent(auth.uid)}.json?auth=${Uri.encodeQueryComponent(auth.idToken)}'), method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: jsonEncode(values));
+  }
+
+  Future<List<DocumentReview>> reviews(String documentId) async {
+    final data = await _request(Uri.parse('$database/document_reviews/${Uri.encodeComponent(documentId)}.json'), timeout: const Duration(seconds: 12));
+    if (data is! Map) return [];
+    return data.entries.where((entry) => entry.value is Map).map((entry) => DocumentReview.fromJson('${entry.key}', Map<String, dynamic>.from(entry.value))).toList();
+  }
+
+  Future<void> submitReview(String documentId, int stars, String comment) async {
+    final auth = await ensureSession();
+    if (auth.anonymous || auth.idToken.isEmpty) throw Exception('Connectez-vous avec votre compte pour publier un avis.');
+    await _request(
+      Uri.parse('$database/document_reviews/${Uri.encodeComponent(documentId)}/${Uri.encodeComponent(auth.uid)}.json?auth=${Uri.encodeQueryComponent(auth.idToken)}'),
+      method: 'PUT',
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'stars': stars, 'comment': comment.trim(), 'name': auth.pseudo, 'ts': DateTime.now().millisecondsSinceEpoch, 'status': 'pending'}),
+    );
   }
 
   Future<Map<String, String>> documentFile(String id, String mode) async {

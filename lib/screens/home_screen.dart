@@ -3,7 +3,6 @@ import '../core/theme.dart';
 import '../models/book.dart';
 import '../services/app_state.dart';
 import '../widgets/book_card.dart';
-import '../widgets/brand_header.dart';
 import '../widgets/section.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -15,10 +14,7 @@ class HomeScreen extends StatelessWidget {
     final popular = [...state.books]..sort((a, b) => b.views.compareTo(a.views));
     final recent = [...state.books]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     final categories = state.books.map((book) => book.category).toSet().take(10).toList();
-    return RefreshIndicator(
-      onRefresh: () => state.load(refresh: true),
-      child: CustomScrollView(slivers: [
-        const SliverToBoxAdapter(child: BrandHeader()),
+    return CustomScrollView(slivers: [
         SliverToBoxAdapter(child: _Hero(count: state.books.length, categories: categories.length, reads: state.books.fold(0, (sum, book) => sum + book.views), onExplore: onExplore)),
         if (state.books.isEmpty) SliverToBoxAdapter(child: _OfflineWelcome(onRetry: () => state.load(refresh: true))),
         if (state.books.isNotEmpty) ...[
@@ -29,8 +25,7 @@ class HomeScreen extends StatelessWidget {
           SliverToBoxAdapter(child: _Shelf(title: 'Nouveautés', books: recent.take(10).toList(), state: state, onBook: onBook)),
         ],
         const SliverToBoxAdapter(child: SizedBox(height: 28)),
-      ]),
-    );
+      ]);
   }
 }
 

@@ -69,12 +69,6 @@ class _PaymentWebViewScreenState extends State<PaymentWebViewScreen> {
       ),
       body: Column(children: [
         if (progress < 100) LinearProgressIndicator(value: progress == 0 ? null : progress / 100, color: AppColors.blue),
-        const MaterialBanner(
-          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          content: Text('Paiement traité dans l’application par MoneyFusion.', style: TextStyle(fontSize: 12)),
-          leading: Icon(Icons.lock_rounded, color: AppColors.blue),
-          actions: [SizedBox.shrink()],
-        ),
         Expanded(child: WebViewWidget(controller: controller)),
       ]),
     ),

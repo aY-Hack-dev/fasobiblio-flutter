@@ -11,9 +11,10 @@ void main() {
   final state = AppState(FasobiblioApi(), LocalStore());
   runApp(FasobiblioApp(state: state));
   state.load();
+  state.startConnectivityMonitoring();
 }
 
 class FasobiblioApp extends StatelessWidget {
   const FasobiblioApp({super.key, required this.state}); final AppState state;
-  @override Widget build(BuildContext context) => AppScope(state: state, child: MaterialApp(title: 'Fasobiblio', debugShowCheckedModeBanner: false, theme: buildTheme(), home: AnimatedBuilder(animation: state, builder: (_, __) => StartupScreen(state: state))));
+  @override Widget build(BuildContext context) => AppScope(state: state, child: AnimatedBuilder(animation: state, builder: (_, __) => MaterialApp(title: 'Fasobiblio', debugShowCheckedModeBanner: false, theme: buildTheme(), darkTheme: buildTheme(brightness: Brightness.dark), themeMode: state.darkMode ? ThemeMode.dark : ThemeMode.light, home: StartupScreen(state: state))));
 }

@@ -12,49 +12,56 @@ abstract final class AppColors {
   static const cream = Color(0xFFFFF8E8);
 }
 
-ThemeData buildTheme() {
+ThemeData buildTheme({Brightness brightness = Brightness.light}) {
   final scheme = ColorScheme.fromSeed(
     seedColor: AppColors.blue,
-    brightness: Brightness.light,
-    surface: Colors.white,
+    brightness: brightness,
+    surface: brightness == Brightness.light ? Colors.white : const Color(0xFF161B22),
   );
+  final dark = brightness == Brightness.dark;
+  final textColor = dark ? const Color(0xFFE6EDF3) : AppColors.ink;
+  final mutedColor = dark ? const Color(0xFF9AA4B2) : AppColors.muted;
+  final surface = dark ? const Color(0xFF161B22) : Colors.white;
+  final canvas = dark ? const Color(0xFF0D1117) : AppColors.canvas;
+  final line = dark ? const Color(0xFF30363D) : AppColors.line;
   return ThemeData(
     useMaterial3: true,
     colorScheme: scheme,
-    scaffoldBackgroundColor: AppColors.canvas,
+    brightness: brightness,
+    scaffoldBackgroundColor: canvas,
     fontFamily: 'sans-serif',
     textTheme: const TextTheme(
-      headlineLarge: TextStyle(fontSize: 31, height: 1.08, fontWeight: FontWeight.w800, color: AppColors.ink),
-      headlineMedium: TextStyle(fontSize: 25, height: 1.15, fontWeight: FontWeight.w800, color: AppColors.ink),
-      titleLarge: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: AppColors.ink),
-      titleMedium: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.ink),
-      bodyMedium: TextStyle(fontSize: 14, height: 1.5, color: AppColors.ink),
-      bodySmall: TextStyle(fontSize: 12, height: 1.4, color: AppColors.muted),
+      headlineLarge: TextStyle(fontSize: 31, height: 1.08, fontWeight: FontWeight.w800),
+      headlineMedium: TextStyle(fontSize: 25, height: 1.15, fontWeight: FontWeight.w800),
+      titleLarge: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+      titleMedium: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+      bodyMedium: TextStyle(fontSize: 14, height: 1.5),
+      bodySmall: TextStyle(fontSize: 12, height: 1.4),
     ),
-    appBarTheme: const AppBarTheme(
+    appBarTheme: AppBarTheme(
       elevation: 0,
       centerTitle: false,
-      backgroundColor: Colors.white,
-      foregroundColor: AppColors.ink,
+      backgroundColor: surface,
+      foregroundColor: textColor,
       surfaceTintColor: Colors.transparent,
-      titleTextStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.ink),
+      titleTextStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: textColor),
     ),
     navigationBarTheme: NavigationBarThemeData(
       height: 72,
-      backgroundColor: Colors.white,
+      backgroundColor: surface,
       indicatorColor: AppColors.sky,
       labelTextStyle: WidgetStateProperty.resolveWith((states) => TextStyle(
         fontSize: 11,
         fontWeight: states.contains(WidgetState.selected) ? FontWeight.w800 : FontWeight.w600,
-        color: states.contains(WidgetState.selected) ? AppColors.blue : AppColors.muted,
+        color: states.contains(WidgetState.selected) ? AppColors.blue : mutedColor,
       )),
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: Colors.white,
+      fillColor: surface,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppColors.line)),
-      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppColors.line)),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: line)),
+      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: line)),
       focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppColors.blue, width: 1.5)),
     ),
     filledButtonTheme: FilledButtonThemeData(

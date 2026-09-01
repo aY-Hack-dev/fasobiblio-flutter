@@ -3,7 +3,6 @@ import '../core/theme.dart';
 import '../models/book.dart';
 import '../services/app_state.dart';
 import '../widgets/book_card.dart';
-import '../widgets/brand_header.dart';
 import '../widgets/section.dart';
 
 class LibraryScreen extends StatefulWidget {
@@ -17,7 +16,6 @@ class _LibraryScreenState extends State<LibraryScreen> {
     final ids = section == 0 ? widget.state.favorites : section == 1 ? widget.state.later : widget.state.purchased;
     final books = widget.state.books.where((b) => ids.contains(b.id)).toList();
     return CustomScrollView(slivers: [
-      const SliverToBoxAdapter(child: BrandHeader(compact: true)),
       SliverToBoxAdapter(child: Padding(padding: const EdgeInsets.fromLTRB(20, 4, 20, 15), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('Ma bibliothèque', style: Theme.of(context).textTheme.headlineMedium), const SizedBox(height: 5), const Text('Retrouvez vos lectures personnelles et vos achats.', style: TextStyle(color: AppColors.muted)), const SizedBox(height: 18), Container(padding: const EdgeInsets.all(4), decoration: BoxDecoration(color: Colors.white, border: Border.all(color: AppColors.line), borderRadius: BorderRadius.circular(15)), child: Row(children: [_LibraryTab(label: 'Favoris', count: widget.state.favorites.length, selected: section == 0, onTap: () => setState(() => section = 0)), _LibraryTab(label: 'À lire', count: widget.state.later.length, selected: section == 1, onTap: () => setState(() => section = 1)), _LibraryTab(label: 'Achats', count: widget.state.purchased.length, selected: section == 2, onTap: () => setState(() => section = 2))]))]))),
       SliverToBoxAdapter(child: books.isEmpty ? EmptyState(title: section == 0 ? 'Aucun favori' : section == 1 ? 'Rien dans votre liste' : 'Aucun achat', message: section == 0 ? 'Touchez le cœur d’un ouvrage pour le retrouver ici.' : section == 1 ? 'Ajoutez des documents à lire plus tard.' : 'Vos documents Premium achetés apparaîtront ici.', icon: section == 0 ? Icons.favorite_border_rounded : section == 1 ? Icons.bookmark_border_rounded : Icons.shopping_bag_outlined) : BookGrid(books: books, favorites: widget.state.favorites, onBook: widget.onBook)),
       const SliverToBoxAdapter(child: SizedBox(height: 30)),
