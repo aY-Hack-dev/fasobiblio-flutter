@@ -25,11 +25,14 @@ class AppState extends ChangeNotifier {
     refresh ? refreshing = true : loading = true;
     error = null;
     notifyListeners();
-    final local = await Future.wait([store.loadCatalog(), store.load(LocalStore.favoritesKey), store.load(LocalStore.laterKey), store.lastSync()]);
+    final local = await Future.wait([store.loadCatalog(), store.load(LocalStore.favoritesKey), store.load(LocalStore.laterKey), store.lastSync(), store.loadAccountAccess()]);
     books = local[0] as List<Book>;
     favorites = local[1] as Set<String>;
     later = local[2] as Set<String>;
     lastSync = local[3] as DateTime?;
+    final access = local[4] as Map<String, dynamic>;
+    subscription = access['subscription'] is Map ? Map<String, dynamic>.from(access['subscription']) : null;
+    purchased = (access['purchased'] is List ? access['purchased'] as List : const []).map((id) => '$id').where((id) => id.isNotEmpty).toSet();
     session ??= UserSession.offlineGuest();
     loading = false;
     refreshing = true;
@@ -79,6 +82,7 @@ class AppState extends ChangeNotifier {
           .map((item) => '${item['docId'] ?? ''}')
           .where((id) => id.isNotEmpty)
           .toSet();
+      await store.saveAccountAccess(subscription, purchased);
     } catch (_) {
       // Le catalogue et le mode hors ligne restent utilisables si le compte
       // ne peut pas être synchronisé momentanément.
@@ -90,5 +94,5 @@ class AppState extends ChangeNotifier {
   Future<void> refreshAccount() => _refreshAccount();
   Future<void> login(String pseudo, String password) async { session = await api.login(pseudo, password); await _refreshAccount(); }
   Future<void> signup(String pseudo, String password, String phone) async { session = await api.signup(pseudo, password, phone); await _refreshAccount(); }
-  Future<void> logout() async { session = await api.logout(); subscription = null; purchased = {}; notifyListeners(); }
+  Future<void> logout() async { session = await api.logout(); subscription = null; purchased = {}; await store.clearAccountAccess(); notifyListeners(); }
 }

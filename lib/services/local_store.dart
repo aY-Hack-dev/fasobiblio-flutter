@@ -7,6 +7,7 @@ class LocalStore {
   static const laterKey = 'fasobiblio.flutter.later';
   static const catalogKey = 'fasobiblio.flutter.catalog';
   static const lastSyncKey = 'fasobiblio.flutter.lastSync';
+  static const accountAccessKey = 'fasobiblio.flutter.accountAccess';
 
   Future<Set<String>> load(String key) async => (await SharedPreferences.getInstance()).getStringList(key)?.toSet() ?? <String>{};
   Future<void> save(String key, Set<String> values) async => (await SharedPreferences.getInstance()).setStringList(key, values.toList());
@@ -34,4 +35,24 @@ class LocalStore {
     final value = (await SharedPreferences.getInstance()).getInt(lastSyncKey);
     return value == null ? null : DateTime.fromMillisecondsSinceEpoch(value);
   }
+
+  Future<Map<String, dynamic>> loadAccountAccess() async {
+    final raw = (await SharedPreferences.getInstance()).getString(accountAccessKey);
+    if (raw == null || raw.isEmpty) return {};
+    try {
+      final decoded = jsonDecode(raw);
+      return decoded is Map ? Map<String, dynamic>.from(decoded) : {};
+    } catch (_) {
+      return {};
+    }
+  }
+
+  Future<void> saveAccountAccess(Map<String, dynamic>? subscription, Set<String> purchased) async {
+    await (await SharedPreferences.getInstance()).setString(accountAccessKey, jsonEncode({
+      'subscription': subscription,
+      'purchased': purchased.toList(),
+    }));
+  }
+
+  Future<void> clearAccountAccess() async => (await SharedPreferences.getInstance()).remove(accountAccessKey);
 }
