@@ -138,7 +138,7 @@ class _Shelf extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Column(children: [
     SectionTitle(title, action: 'Voir tout'),
-    SizedBox(height: 304, child: ListView.separated(padding: const EdgeInsets.symmetric(horizontal: 16), scrollDirection: Axis.horizontal, itemCount: books.length, separatorBuilder: (_, __) => const SizedBox(width: 12), itemBuilder: (_, i) => BookCard(book: books[i], favorite: state.favorites.contains(books[i].id), onTap: () => onBook(books[i]), onFavorite: () => state.toggleFavorite(books[i].id)))),
+    SizedBox(height: 324, child: ListView.separated(padding: const EdgeInsets.symmetric(horizontal: 16), scrollDirection: Axis.horizontal, itemCount: books.length, separatorBuilder: (_, __) => const SizedBox(width: 12), itemBuilder: (_, i) => BookCard(book: books[i], favorite: state.favorites.contains(books[i].id), onTap: () => onBook(books[i]), onFavorite: () => state.toggleFavorite(books[i].id)))),
   ]);
 }
 

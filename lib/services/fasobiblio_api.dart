@@ -124,6 +124,12 @@ class FasobiblioApi {
     return values;
   }
 
+  Future<Map<String, dynamic>> setting(String path) async {
+    final encodedPath = path.split('/').where((part) => part.isNotEmpty).map(Uri.encodeComponent).join('/');
+    final data = await _request(Uri.parse('$database/$encodedPath.json'), timeout: const Duration(seconds: 12));
+    return data is Map ? Map<String, dynamic>.from(data) : <String, dynamic>{};
+  }
+
   Future<void> markNotificationRead(String notificationId) async {
     final auth = await ensureSession();
     if (auth.idToken.isEmpty) throw Exception('Connexion Internet requise.');

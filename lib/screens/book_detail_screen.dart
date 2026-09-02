@@ -127,7 +127,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(color: surface, border: Border(top: BorderSide(color: Theme.of(context).dividerColor.withValues(alpha: .5)))),
           child: Row(children: [
-            Expanded(child: FilledButton.icon(onPressed: busy ? null : () => open('read'), icon: const Icon(Icons.auto_stories_rounded), label: Text(book.isPremium && !widget.state.hasAccess(book) ? 'Débloquer et lire' : 'Lire maintenant'))),
+            Expanded(child: FilledButton.icon(style: FilledButton.styleFrom(backgroundColor: AppColors.blue, foregroundColor: Colors.white), onPressed: busy ? null : () => open('read'), icon: const Icon(Icons.auto_stories_rounded), label: Text(book.isPremium && !widget.state.hasAccess(book) ? 'Débloquer et lire' : 'Lire maintenant'))),
             const SizedBox(width: 9),
             IconButton.filledTonal(onPressed: busy ? null : () => open('download'), icon: const Icon(Icons.download_rounded), tooltip: 'Enregistrer dans Download'),
           ]),
@@ -143,7 +143,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
               padding: const EdgeInsets.fromLTRB(18, 20, 18, 18),
               decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(25), boxShadow: const [BoxShadow(color: Color(0x16000000), blurRadius: 20, offset: Offset(0, 8))]),
               child: Column(children: [
-                Text(book.title, textAlign: TextAlign.center, style: Theme.of(context).textTheme.headlineMedium),
+                Text(book.title, textAlign: TextAlign.center, style: AppTypography.bookTitle(size: 27, color: Theme.of(context).colorScheme.onSurface)),
                 const SizedBox(height: 7),
                 Text(book.author, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.muted)),
                 const SizedBox(height: 18),
@@ -165,7 +165,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text('À propos de cet ouvrage', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900)),
+              Text('À propos de cet ouvrage', style: AppTypography.editorial(size: 22, color: Theme.of(context).colorScheme.onSurface)),
               const SizedBox(height: 10),
               Text(book.description.isEmpty ? 'La description de ce document sera bientôt disponible.' : book.description, style: const TextStyle(height: 1.6)),
               const SizedBox(height: 22),

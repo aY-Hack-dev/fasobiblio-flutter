@@ -4,7 +4,7 @@ import '../core/theme.dart';
 import '../models/book.dart';
 
 class BookCard extends StatelessWidget {
-  const BookCard({super.key, required this.book, required this.favorite, required this.onTap, this.onFavorite, this.width = 150});
+  const BookCard({super.key, required this.book, required this.favorite, required this.onTap, this.onFavorite, this.width = 162});
   final Book book;
   final bool favorite;
   final VoidCallback onTap;
@@ -29,7 +29,7 @@ class BookCard extends StatelessWidget {
               Positioned(right: 7, top: 7, child: Material(color: Theme.of(context).colorScheme.surface, shape: const CircleBorder(), elevation: 1, child: InkWell(customBorder: const CircleBorder(), onTap: onFavorite, child: SizedBox(width: 32, height: 32, child: Icon(favorite ? Icons.favorite_rounded : Icons.favorite_border_rounded, size: 18, color: favorite ? const Color(0xFFE5484D) : AppColors.muted))))),
             ])),
             const SizedBox(height: 10),
-            Text(book.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13, height: 1.22, fontWeight: FontWeight.w800)),
+            Text(book.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: AppTypography.bookTitle(size: 14, weight: FontWeight.w700)),
             const SizedBox(height: 4),
             Text(book.author, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11, color: AppColors.muted)),
             const Spacer(),
@@ -58,7 +58,7 @@ class BookGrid extends StatelessWidget {
   final List<Book> books; final Set<String> favorites; final ValueChanged<Book> onBook; final ValueChanged<Book>? onFavorite;
   @override Widget build(BuildContext context) => GridView.builder(
     shrinkWrap: true, physics: const NeverScrollableScrollPhysics(), padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, mainAxisExtent: 304, crossAxisSpacing: 12, mainAxisSpacing: 12),
+    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, mainAxisExtent: 324, crossAxisSpacing: 12, mainAxisSpacing: 12),
     itemCount: books.length, itemBuilder: (_, i) => BookCard(book: books[i], favorite: favorites.contains(books[i].id), onTap: () => onBook(books[i]), onFavorite: onFavorite == null ? null : () => onFavorite!(books[i]), width: double.infinity),
   );
 }

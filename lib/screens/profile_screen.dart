@@ -13,7 +13,7 @@ class ProfileScreen extends StatelessWidget {
   final VoidCallback onLibrary;
   final VoidCallback onNotifications;
 
-  void information(BuildContext context, InformationKind kind) => Navigator.of(context).push(MaterialPageRoute(builder: (_) => InformationScreen(kind: kind)));
+  void information(BuildContext context, InformationKind kind) => Navigator.of(context).push(MaterialPageRoute(builder: (_) => InformationScreen(kind: kind, state: state)));
 
   Future<void> _support(BuildContext context) async {
     if (!requireInternet(context, state)) return;
@@ -62,7 +62,7 @@ class ProfileScreen extends StatelessWidget {
       _Menu(icon: Icons.description_outlined, title: 'Conditions d’utilisation', subtitle: 'Règles du service et contenus Premium', onTap: () => information(context, InformationKind.terms)),
       _Menu(icon: Icons.privacy_tip_outlined, title: 'Politique de confidentialité', subtitle: 'Compte, stockage local et paiements', onTap: () => information(context, InformationKind.privacy)),
       _Menu(icon: Icons.balance_rounded, title: 'Mentions légales et contact', subtitle: 'Éditeur et coordonnées de Fasobiblio', onTap: () => information(context, InformationKind.legal)),
-      const Padding(padding: EdgeInsets.all(27), child: Text('Fasobiblio Mobile • version 3.0.0', textAlign: TextAlign.center, style: TextStyle(fontSize: 10, color: AppColors.muted))),
+      const Padding(padding: EdgeInsets.all(27), child: Text('Fasobiblio Mobile • version 3.1.0', textAlign: TextAlign.center, style: TextStyle(fontSize: 10, color: AppColors.muted))),
     ]);
   }
 }
@@ -138,10 +138,50 @@ class _SupportSheet extends StatefulWidget {
 class _SupportSheetState extends State<_SupportSheet> {
   final controller = TextEditingController();
   String type = 'Assistance';
+  static const topics = <(String, IconData)>[
+    ('Assistance', Icons.support_agent_rounded),
+    ('Paiement', Icons.account_balance_wallet_rounded),
+    ('Document', Icons.menu_book_rounded),
+    ('Autre', Icons.more_horiz_rounded),
+  ];
   @override
   void dispose() { controller.dispose(); super.dispose(); }
   @override
-  Widget build(BuildContext context) => Padding(padding: EdgeInsets.fromLTRB(20, 14, 20, MediaQuery.viewInsetsOf(context).bottom + 20), child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [const Center(child: SizedBox(width: 42, child: Divider(thickness: 4))), const SizedBox(height: 12), Text('Contacter Fasobiblio', style: Theme.of(context).textTheme.titleLarge), const SizedBox(height: 15), DropdownButtonFormField<String>(initialValue: type, items: const ['Assistance', 'Paiement', 'Document', 'Autre'].map((value) => DropdownMenuItem(value: value, child: Text(value))).toList(), onChanged: (value) => setState(() => type = value ?? type), decoration: const InputDecoration(labelText: 'Sujet')), const SizedBox(height: 12), TextField(controller: controller, onChanged: (_) => setState(() {}), minLines: 4, maxLines: 6, maxLength: 1000, decoration: const InputDecoration(labelText: 'Votre message')), const SizedBox(height: 10), SizedBox(width: double.infinity, child: FilledButton.icon(onPressed: controller.text.trim().length < 4 ? null : () => Navigator.pop(context, (type, controller.text.trim())), icon: const Icon(Icons.send_rounded), label: const Text('Envoyer')))]));
+  Widget build(BuildContext context) => SingleChildScrollView(
+    padding: EdgeInsets.fromLTRB(20, 14, 20, MediaQuery.viewInsetsOf(context).bottom + 20),
+    child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+      const Center(child: SizedBox(width: 42, child: Divider(thickness: 4))),
+      const SizedBox(height: 12),
+      Text('Contacter Fasobiblio', style: Theme.of(context).textTheme.titleLarge),
+      const SizedBox(height: 5),
+      const Text('Quel sujet pouvons-nous traiter ?', style: TextStyle(fontSize: 12, color: AppColors.muted)),
+      const SizedBox(height: 15),
+      Wrap(
+        spacing: 9,
+        runSpacing: 9,
+        children: topics.map((topic) {
+          final selected = type == topic.$1;
+          return ChoiceChip(
+            selected: selected,
+            onSelected: (_) => setState(() => type = topic.$1),
+            showCheckmark: false,
+            avatar: Icon(topic.$2, size: 18, color: selected ? Colors.white : AppColors.blue),
+            label: Text(topic.$1),
+            labelStyle: TextStyle(fontWeight: FontWeight.w800, color: selected ? Colors.white : Theme.of(context).colorScheme.onSurface),
+            selectedColor: AppColors.blue,
+            backgroundColor: Theme.of(context).colorScheme.surface,
+            side: BorderSide(color: selected ? AppColors.blue : Theme.of(context).dividerColor.withValues(alpha: .65)),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          );
+        }).toList(),
+      ),
+      const SizedBox(height: 15),
+      TextField(controller: controller, onChanged: (_) => setState(() {}), minLines: 4, maxLines: 6, maxLength: 1000, decoration: const InputDecoration(labelText: 'Votre message', hintText: 'Décrivez votre demande…')),
+      const SizedBox(height: 10),
+      SizedBox(width: double.infinity, child: FilledButton.icon(onPressed: controller.text.trim().length < 4 ? null : () => Navigator.pop(context, (type, controller.text.trim())), icon: const Icon(Icons.send_rounded), label: const Text('Envoyer'))),
+    ]),
+  );
 }
 
 class _SuggestionSheet extends StatefulWidget {

@@ -1,13 +1,23 @@
 import 'package:flutter/material.dart';
 import '../core/theme.dart';
+import '../services/app_state.dart';
 
 enum InformationKind { about, terms, privacy, legal, downloads }
 
-class InformationScreen extends StatelessWidget {
-  const InformationScreen({super.key, required this.kind});
+class InformationScreen extends StatefulWidget {
+  const InformationScreen({super.key, required this.kind, required this.state});
   final InformationKind kind;
+  final AppState state;
 
-  String get title => switch (kind) {
+  @override
+  State<InformationScreen> createState() => _InformationScreenState();
+}
+
+class _InformationScreenState extends State<InformationScreen> {
+  List<(String, String)> sections = const [];
+  bool loading = true;
+
+  String get title => switch (widget.kind) {
     InformationKind.about => 'À propos de Fasobiblio',
     InformationKind.terms => 'Conditions d’utilisation',
     InformationKind.privacy => 'Politique de confidentialité',
@@ -15,57 +25,138 @@ class InformationScreen extends StatelessWidget {
     InformationKind.downloads => 'Lecture et téléchargements',
   };
 
-  List<(String, String)> get sections => switch (kind) {
-    InformationKind.about => const [
-      ('Notre mission', 'Fasobiblio est une bibliothèque numérique conçue pour rapprocher les ouvrages, cours et ressources pédagogiques des apprenants du Burkina Faso et d’ailleurs.'),
-      ('Une vraie application mobile', 'Le catalogue, le lecteur PDF, la bibliothèque personnelle et les paiements sont intégrés à l’application. Les documents déjà ouverts restent disponibles sans connexion.'),
-      ('Apprendre, comprendre, réussir', 'Nous sélectionnons et organisons les ressources pour faciliter la découverte, la lecture et la progression de chaque apprenant.'),
-    ],
-    InformationKind.terms => const [
-      ('Utilisation du service', 'L’application est destinée à un usage personnel, éducatif et légal. L’utilisateur s’engage à respecter les droits attachés aux documents proposés.'),
-      ('Compte', 'Le titulaire du compte est responsable de la confidentialité de son pseudo et de son mot de passe. Les achats et abonnements sont rattachés au compte connecté.'),
-      ('Contenus Premium', 'L’accès est activé après confirmation du paiement par le serveur. Une interruption réseau peut retarder momentanément l’affichage de la confirmation.'),
-      ('Disponibilité', 'Fasobiblio peut faire évoluer le catalogue et les fonctionnalités pour améliorer le service, la sécurité ou respecter les obligations applicables.'),
-    ],
-    InformationKind.privacy => const [
-      ('Données utilisées', 'Fasobiblio traite les informations nécessaires au compte, à la récupération, aux achats, aux abonnements et à la synchronisation de votre bibliothèque.'),
-      ('Stockage local', 'Les favoris, la liste de lecture, le catalogue récent et les PDF mis en cache sont enregistrés sur votre téléphone afin d’assurer le mode hors connexion.'),
-      ('Paiements', 'Les paiements Mobile Money sont traités par MoneyFusion. Fasobiblio vérifie uniquement le statut de la transaction et ne stocke pas votre code secret Mobile Money.'),
-      ('Vos choix', 'Vous pouvez vous déconnecter à tout moment. La suppression de l’application efface les données privées stockées dans son espace local, mais pas nécessairement les fichiers exportés dans Téléchargements.'),
-    ],
-    InformationKind.legal => const [
-      ('Éditeur', 'Fasobiblio — bibliothèque numérique, Burkina Faso.'),
-      ('Contact', 'WhatsApp / téléphone : +226 57 15 90 44'),
-      ('Propriété intellectuelle', 'Les marques, l’interface et les contenus éditoriaux propres à Fasobiblio sont protégés. Les ouvrages restent soumis aux droits de leurs auteurs et éditeurs respectifs.'),
-      ('Responsabilité', 'Les informations pédagogiques sont fournies comme ressources d’apprentissage. Elles ne remplacent pas les conseils d’un professionnel qualifié lorsque ceux-ci sont nécessaires.'),
-    ],
-    InformationKind.downloads => const [
-      ('Lecture intégrée', 'Quand vous ouvrez un PDF, il est conservé dans l’espace privé de l’application et reste lisible hors connexion.'),
-      ('Dossier public', 'Le bouton Télécharger crée une copie dans Download/Fasobiblio. Vous pouvez ensuite la retrouver avec l’application Fichiers de votre téléphone.'),
-      ('Mises à jour', 'Une copie déjà enregistrée peut rester sur le téléphone même si une nouvelle version du document est publiée en ligne.'),
-    ],
+  String? get firebasePath => switch (widget.kind) {
+    InformationKind.about => 'settings/about',
+    InformationKind.terms => 'settings/cgu',
+    InformationKind.privacy => 'settings/privacy',
+    InformationKind.legal => 'settings/mentionsLegales',
+    InformationKind.downloads => null,
   };
+
+  String get cacheKey => 'fasobiblio.flutter.${firebasePath?.replaceAll('/', '.') ?? 'downloads'}';
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    if (widget.kind == InformationKind.downloads) {
+      setState(() {
+        sections = const [
+          ('Lecture intégrée', 'Quand vous ouvrez un PDF, il est conservé dans l’espace privé de l’application et reste lisible hors connexion.'),
+          ('Dossier public', 'Le bouton Télécharger crée une copie dans Download/Fasobiblio. Vous pouvez ensuite la retrouver avec l’application Fichiers de votre téléphone.'),
+          ('Mises à jour', 'Une copie déjà enregistrée peut rester sur le téléphone même si une nouvelle version du document est publiée en ligne.'),
+        ];
+        loading = false;
+      });
+      return;
+    }
+
+    final cached = await widget.state.store.loadJson(cacheKey);
+    final cachedSections = _parseSections(cached);
+    if (mounted && cachedSections.isNotEmpty) {
+      setState(() {
+        sections = cachedSections;
+        loading = false;
+      });
+    }
+
+    if (!widget.state.offline && firebasePath != null) {
+      try {
+        final remote = await widget.state.api.setting(firebasePath!);
+        final remoteSections = _parseSections(remote);
+        if (remoteSections.isNotEmpty) {
+          await widget.state.store.saveJson(cacheKey, remote);
+          if (mounted) setState(() => sections = remoteSections);
+        }
+      } catch (_) {
+        // La dernière version enregistrée reste affichée sans exposer d'erreur technique.
+      }
+    }
+    if (mounted) setState(() => loading = false);
+  }
+
+  List<(String, String)> _parseSections(dynamic value) {
+    if (value is! Map) return const [];
+    final raw = value['sections'];
+    final items = raw is List ? raw : raw is Map ? raw.values.toList() : const [];
+    return items.whereType<Map>().map((item) {
+      final sectionTitle = _localized(item['title']);
+      final content = _localized(item['content']);
+      return (sectionTitle, content);
+    }).where((item) => item.$1.isNotEmpty || item.$2.isNotEmpty).toList();
+  }
+
+  String _localized(dynamic value) {
+    if (value is String) return value.trim();
+    if (value is Map) {
+      final french = value['fr'];
+      if (french is String && french.trim().isNotEmpty) return french.trim();
+      for (final candidate in value.values) {
+        if (candidate is String && candidate.trim().isNotEmpty) return candidate.trim();
+      }
+    }
+    return '';
+  }
 
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: Text(title)),
-    body: ListView(
-      padding: const EdgeInsets.fromLTRB(20, 18, 20, 36),
-      children: [
-        if (kind == InformationKind.about) Center(child: Image.asset('assets/branding/logo-full.jpg', width: 180, height: 130, fit: BoxFit.contain)),
-        if (kind == InformationKind.about) const SizedBox(height: 10),
-        ...sections.map((section) => Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: .5)), borderRadius: BorderRadius.circular(18)),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(section.$1, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
-            const SizedBox(height: 8),
-            Text(section.$2, style: const TextStyle(height: 1.55, color: AppColors.muted)),
-          ]),
-        )),
-        const Padding(padding: EdgeInsets.only(top: 10), child: Text('Dernière mise à jour : septembre 2026', textAlign: TextAlign.center, style: TextStyle(fontSize: 10, color: AppColors.muted))),
-      ],
+    body: loading
+        ? const Center(child: CircularProgressIndicator())
+        : sections.isEmpty
+            ? const _UnavailableContent()
+            : ListView(
+                padding: const EdgeInsets.fromLTRB(18, 18, 18, 38),
+                children: [
+                  if (widget.kind == InformationKind.about) ...[
+                    Container(
+                      height: 155,
+                      padding: const EdgeInsets.all(22),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(colors: [AppColors.blueDeep, AppColors.blue]),
+                        borderRadius: BorderRadius.circular(26),
+                      ),
+                      child: Image.asset('assets/branding/logo-full.jpg', fit: BoxFit.contain),
+                    ),
+                    const SizedBox(height: 18),
+                  ],
+                  ...sections.map((section) => Container(
+                    margin: const EdgeInsets.only(bottom: 13),
+                    padding: const EdgeInsets.all(19),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface,
+                      border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: .5)),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: const [BoxShadow(color: Color(0x0B0B3B78), blurRadius: 16, offset: Offset(0, 7))],
+                    ),
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      if (section.$1.isNotEmpty) Text(section.$1, style: AppTypography.editorial(size: 20, color: Theme.of(context).colorScheme.onSurface)),
+                      if (section.$1.isNotEmpty && section.$2.isNotEmpty) const SizedBox(height: 9),
+                      if (section.$2.isNotEmpty) Text(section.$2, style: const TextStyle(height: 1.62, color: AppColors.muted)),
+                    ]),
+                  )),
+                ],
+              ),
+  );
+}
+
+class _UnavailableContent extends StatelessWidget {
+  const _UnavailableContent();
+
+  @override
+  Widget build(BuildContext context) => Center(
+    child: Padding(
+      padding: const EdgeInsets.all(34),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        const CircleAvatar(radius: 30, backgroundColor: AppColors.sky, foregroundColor: AppColors.blue, child: Icon(Icons.cloud_sync_rounded)),
+        const SizedBox(height: 15),
+        Text('Contenu en cours de synchronisation', textAlign: TextAlign.center, style: AppTypography.editorial(size: 21, color: Theme.of(context).colorScheme.onSurface)),
+        const SizedBox(height: 8),
+        const Text('Cette rubrique apparaîtra automatiquement dès que les informations du site seront disponibles.', textAlign: TextAlign.center, style: TextStyle(height: 1.5, color: AppColors.muted)),
+      ]),
     ),
   );
 }
