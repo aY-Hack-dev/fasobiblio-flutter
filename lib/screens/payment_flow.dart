@@ -11,7 +11,7 @@ Future<bool> _ensureAccount(BuildContext context, AppState state) async {
   final create = await showDialog<bool>(
     context: context,
     builder: (dialogContext) => AlertDialog(
-      icon: const Icon(Icons.account_circle_rounded, color: AppColors.blue, size: 40),
+      icon: const Icon(AppIcons.account, color: AppColors.blue, size: 40),
       title: const Text('Compte Fasobiblio requis'),
       content: const Text('Connectez-vous pour conserver vos achats et votre abonnement sur tous vos appareils.'),
       actions: [
@@ -41,7 +41,7 @@ Future<String?> _askPhone(BuildContext context, {required String title, required
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             Container(width: 44, height: 5, decoration: BoxDecoration(color: AppColors.line, borderRadius: BorderRadius.circular(3))),
             const SizedBox(height: 18),
-            const Icon(Icons.mobile_friendly_rounded, color: AppColors.blue, size: 38),
+            const Icon(AppIcons.smartphone, color: AppColors.blue, size: 38),
             const SizedBox(height: 10),
             Text(title, textAlign: TextAlign.center, style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 5),
@@ -51,14 +51,14 @@ Future<String?> _askPhone(BuildContext context, {required String title, required
               controller: controller,
               autofocus: true,
               keyboardType: TextInputType.phone,
-              decoration: const InputDecoration(labelText: 'Numéro Mobile Money', hintText: 'Ex : 70 12 34 56', prefixIcon: Icon(Icons.phone_android_rounded)),
+              decoration: const InputDecoration(labelText: 'Numéro Mobile Money', hintText: 'Ex : 70 12 34 56', prefixIcon: Icon(AppIcons.smartphone)),
             ),
             if (error != null) Padding(padding: const EdgeInsets.only(top: 10), child: Text(error!, style: const TextStyle(color: Colors.red, fontSize: 12))),
             const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
               child: FilledButton.icon(
-                icon: const Icon(Icons.lock_rounded),
+                icon: const Icon(AppIcons.lock),
                 label: const Text('Continuer vers le paiement'),
                 onPressed: () {
                   final phone = controller.text.replaceAll(RegExp(r'\D'), '');

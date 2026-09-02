@@ -16,10 +16,10 @@ Application Android native de Fasobiblio, sans WebView. Elle consomme directemen
 
 ```bash
 flutter pub get
-flutter build apk --release
+flutter build apk --release --split-per-abi --tree-shake-icons
 ```
 
-APK généré : `build/app/outputs/flutter-apk/app-release.apk`.
+Les APK optimisés sont générés dans `build/app/outputs/flutter-apk/`. Pour la majorité des téléphones Android récents, utilisez `app-arm64-v8a-release.apk`. La séparation par architecture évite d’embarquer dans un même fichier les bibliothèques natives destinées à tous les processeurs.
 
 Le workflow `.github/workflows/android-apk.yml` permet aussi de compiler
 automatiquement l’APK depuis GitHub Actions (bouton **Run workflow**).

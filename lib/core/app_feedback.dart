@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'theme.dart';
 import '../services/app_state.dart';
 
 const offlineMessage = 'Vous êtes en mode hors connexion. Veuillez vérifier votre connexion Internet.';
@@ -25,7 +26,7 @@ void showToast(BuildContext context, String message, {bool success = false}) {
     behavior: SnackBarBehavior.floating,
     margin: const EdgeInsets.fromLTRB(16, 0, 16, 18),
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-    content: Row(children: [Icon(success ? Icons.check_circle_rounded : Icons.info_rounded, color: Colors.white, size: 20), const SizedBox(width: 10), Expanded(child: Text(message))]),
+    content: Row(children: [Icon(success ? AppIcons.checkCircle : AppIcons.info, color: Colors.white, size: 20), const SizedBox(width: 10), Expanded(child: Text(message))]),
   ));
 }
 

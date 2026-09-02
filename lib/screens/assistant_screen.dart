@@ -64,7 +64,7 @@ class _AssistantScreenState extends State<AssistantScreen> {
       appBar: AppBar(
         titleSpacing: 0,
         title: const Row(children: [
-          CircleAvatar(backgroundColor: AppColors.blue, foregroundColor: Colors.white, child: Icon(Icons.smart_toy_rounded, size: 21)),
+          CircleAvatar(backgroundColor: AppColors.blue, foregroundColor: Colors.white, child: Icon(AppIcons.bot, size: 21)),
           SizedBox(width: 10),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('Assistant Fasobiblio', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)), SizedBox(height: 2), Row(children: [CircleAvatar(radius: 4, backgroundColor: Color(0xFF22C55E)), SizedBox(width: 5), Text('Assistant bibliothèque', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500, color: AppColors.muted))])])),
         ]),
@@ -96,7 +96,7 @@ class _AssistantScreenState extends State<AssistantScreen> {
               onChanged: (_) => setState(() {}),
             )),
             const SizedBox(width: 9),
-            IconButton.filled(onPressed: busy ? null : () => ask(), icon: const Icon(Icons.send_rounded), tooltip: 'Envoyer', style: IconButton.styleFrom(minimumSize: const Size(50, 50))),
+            IconButton.filled(onPressed: busy ? null : () => ask(), icon: const Icon(AppIcons.send), tooltip: 'Envoyer', style: IconButton.styleFrom(minimumSize: const Size(50, 50))),
           ]),
         ),
       ]),
@@ -110,13 +110,13 @@ class _Welcome extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ListView(padding: const EdgeInsets.fromLTRB(24, 48, 24, 20), children: [
-    Center(child: Container(width: 66, height: 66, decoration: BoxDecoration(gradient: const LinearGradient(colors: [AppColors.ink, AppColors.blue]), borderRadius: BorderRadius.circular(19)), child: const Icon(Icons.smart_toy_rounded, color: Colors.white, size: 31))),
+    Center(child: Container(width: 66, height: 66, decoration: BoxDecoration(gradient: const LinearGradient(colors: [AppColors.ink, AppColors.blue]), borderRadius: BorderRadius.circular(19)), child: const Icon(AppIcons.bot, color: Colors.white, size: 31))),
     const SizedBox(height: 18),
     Text('Comment puis-je vous aider ?', textAlign: TextAlign.center, style: Theme.of(context).textTheme.headlineMedium),
     const SizedBox(height: 8),
     const Text('Interrogez-moi sur le catalogue, vos lectures ou le fonctionnement de Fasobiblio.', textAlign: TextAlign.center, style: TextStyle(color: AppColors.muted, height: 1.5)),
     const SizedBox(height: 28),
-    ...['Trouve-moi un roman africain', 'Comment fonctionne Premium ?', 'Recommande-moi un document scientifique'].map((text) => Padding(padding: const EdgeInsets.only(bottom: 9), child: OutlinedButton.icon(onPressed: () => onSuggestion(text), icon: const Icon(Icons.auto_awesome_rounded, size: 18), label: Align(alignment: Alignment.centerLeft, child: Text(text)), style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 14))))),
+    ...['Trouve-moi un roman africain', 'Comment fonctionne Premium ?', 'Recommande-moi un document scientifique'].map((text) => Padding(padding: const EdgeInsets.only(bottom: 9), child: OutlinedButton.icon(onPressed: () => onSuggestion(text), icon: const Icon(AppIcons.sparkles, size: 18), label: Align(alignment: Alignment.centerLeft, child: Text(text)), style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 14))))),
   ]);
 }
 

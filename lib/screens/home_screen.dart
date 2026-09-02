@@ -45,9 +45,9 @@ class _Intro extends StatelessWidget {
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.fromLTRB(18, 12, 18, 14),
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text('Bonjour, bonne lecture 👋🏽', style: Theme.of(context).textTheme.headlineMedium),
+      Text('Chaque lecture ouvre un nouvel horizon.', style: Theme.of(context).textTheme.headlineMedium),
       const SizedBox(height: 5),
-      const Text('Découvrez le document qui vous fera avancer.', style: TextStyle(color: AppColors.muted)),
+      const Text('Explorez le savoir qui fera grandir vos idées.', style: TextStyle(fontSize: 12, color: AppColors.muted)),
       const SizedBox(height: 16),
       Material(
         color: Theme.of(context).colorScheme.surface,
@@ -58,7 +58,7 @@ class _Intro extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: .55)), borderRadius: BorderRadius.circular(18)),
-            child: const Row(children: [Icon(Icons.search_rounded, color: AppColors.blue), SizedBox(width: 11), Expanded(child: Text('Rechercher un livre, un cours…', style: TextStyle(color: AppColors.muted))), Icon(Icons.tune_rounded, size: 20, color: AppColors.muted)]),
+            child: const Row(children: [Icon(AppIcons.search, color: AppColors.blue), SizedBox(width: 11), Expanded(child: Text('Rechercher un livre, un cours…', style: TextStyle(color: AppColors.muted))), Icon(AppIcons.filters, size: 20, color: AppColors.muted)]),
           ),
         ),
       ),
@@ -90,7 +90,7 @@ class _Featured extends StatelessWidget {
           const SizedBox(height: 8),
           Text(book.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, height: 1.35, color: Color(0xFFDCE6FF))),
           const Spacer(),
-          FilledButton.icon(onPressed: onTap, style: FilledButton.styleFrom(backgroundColor: Colors.white, foregroundColor: AppColors.blue, minimumSize: const Size(0, 42)), icon: const Icon(Icons.auto_stories_rounded, size: 18), label: const Text('Découvrir')),
+          FilledButton.icon(onPressed: onTap, style: FilledButton.styleFrom(backgroundColor: Colors.white, foregroundColor: AppColors.blue, minimumSize: const Size(0, 42)), icon: const Icon(AppIcons.bookOpen, size: 18), label: const Text('Découvrir')),
         ])),
       ),
     ]),
@@ -105,7 +105,7 @@ class _FirstOfflineWelcome extends StatelessWidget {
     padding: const EdgeInsets.all(20),
     decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: .5)), borderRadius: BorderRadius.circular(22)),
     child: const Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      CircleAvatar(backgroundColor: AppColors.sky, child: Icon(Icons.auto_stories_rounded, color: AppColors.blue)),
+      CircleAvatar(backgroundColor: AppColors.sky, child: Icon(AppIcons.bookOpen, color: AppColors.blue)),
       SizedBox(width: 13),
       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('Votre bibliothèque reste accessible', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)), SizedBox(height: 6), Text('Dès que la connexion revient, le catalogue se synchronise automatiquement. Vos documents déjà enregistrés restent lisibles sans Internet.', style: TextStyle(fontSize: 12, height: 1.5, color: AppColors.muted))])),
     ]),
@@ -124,7 +124,7 @@ class _Categories extends StatelessWidget {
       scrollDirection: Axis.horizontal,
       itemCount: values.length,
       separatorBuilder: (_, __) => const SizedBox(width: 8),
-      itemBuilder: (_, i) => ActionChip(onPressed: onExplore, avatar: const Icon(Icons.grid_view_rounded, size: 15, color: AppColors.blue), label: Text(categoryLabel(values[i]), maxLines: 1, overflow: TextOverflow.ellipsis), side: BorderSide(color: Theme.of(context).dividerColor.withValues(alpha: .5)), backgroundColor: Theme.of(context).colorScheme.surface),
+      itemBuilder: (_, i) => ActionChip(onPressed: onExplore, avatar: const Icon(AppIcons.grid, size: 15, color: AppColors.blue), label: Text(categoryLabel(values[i]), maxLines: 1, overflow: TextOverflow.ellipsis), side: BorderSide(color: Theme.of(context).dividerColor.withValues(alpha: .5)), backgroundColor: Theme.of(context).colorScheme.surface),
     ),
   );
 }
@@ -149,7 +149,7 @@ class _StudyCard extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     margin: const EdgeInsets.fromLTRB(16, 27, 16, 0),
     padding: const EdgeInsets.all(18),
-    decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFFFFF8E8), Color(0xFFFFEFC4)]), borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFFF1D99E))),
-    child: Row(children: [Container(width: 50, height: 50, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(15)), child: const Icon(Icons.psychology_alt_rounded, color: AppColors.gold)), const SizedBox(width: 14), const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('Besoin d’un coup de pouce ?', style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.ink)), SizedBox(height: 3), Text('L’assistant Fasobiblio vous guide dans vos recherches.', style: TextStyle(fontSize: 11, color: AppColors.muted))])), IconButton(onPressed: onTap, icon: const Icon(Icons.arrow_forward_rounded, color: AppColors.gold))]),
+    decoration: BoxDecoration(gradient: const LinearGradient(colors: [AppColors.sky, Colors.white]), borderRadius: BorderRadius.circular(20), border: Border.all(color: AppColors.blue.withValues(alpha: .18))),
+    child: Row(children: [Container(width: 50, height: 50, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(15), border: Border.all(color: AppColors.line)), child: const Icon(AppIcons.brain, color: AppColors.blue)), const SizedBox(width: 14), const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('Besoin d’un coup de pouce ?', style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.ink)), SizedBox(height: 3), Text('L’assistant Fasobiblio vous guide dans vos recherches.', style: TextStyle(fontSize: 11, color: AppColors.muted))])), IconButton(onPressed: onTap, icon: const Icon(AppIcons.arrowRight, color: AppColors.blue))]),
   );
 }

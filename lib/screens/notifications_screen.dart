@@ -27,7 +27,7 @@ class NotificationsScreen extends StatelessWidget {
       showDragHandle: true,
       isScrollControlled: true,
       builder: (_) => SafeArea(child: Padding(padding: const EdgeInsets.fromLTRB(22, 4, 22, 28), child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [const CircleAvatar(backgroundColor: AppColors.sky, foregroundColor: AppColors.blue, child: Icon(Icons.notifications_rounded)), const SizedBox(width: 12), Expanded(child: Text(item.title, style: Theme.of(context).textTheme.titleLarge))]),
+        Row(children: [const CircleAvatar(backgroundColor: AppColors.sky, foregroundColor: AppColors.blue, child: Icon(AppIcons.bell)), const SizedBox(width: 12), Expanded(child: Text(item.title, style: Theme.of(context).textTheme.titleLarge))]),
         const SizedBox(height: 18),
         Text(item.message, style: const TextStyle(fontSize: 15, height: 1.6)),
         const SizedBox(height: 18),
@@ -43,7 +43,7 @@ class NotificationsScreen extends StatelessWidget {
       actions: [if (state.unreadNotifications > 0) TextButton(onPressed: () => markAll(context), child: const Text('Tout lire'))],
     ),
     body: state.notifications.isEmpty
-      ? const Center(child: Padding(padding: EdgeInsets.all(30), child: Column(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.notifications_off_outlined, size: 52, color: AppColors.muted), SizedBox(height: 14), Text('Aucune notification pour le moment.', style: TextStyle(fontWeight: FontWeight.w800)), SizedBox(height: 5), Text('Les annonces envoyées depuis Fasobiblio apparaîtront ici.', textAlign: TextAlign.center, style: TextStyle(color: AppColors.muted))])))
+      ? const Center(child: Padding(padding: EdgeInsets.all(30), child: Column(mainAxisSize: MainAxisSize.min, children: [Icon(AppIcons.bellOff, size: 52, color: AppColors.muted), SizedBox(height: 14), Text('Aucune notification pour le moment.', style: TextStyle(fontWeight: FontWeight.w800)), SizedBox(height: 5), Text('Les annonces envoyées depuis Fasobiblio apparaîtront ici.', textAlign: TextAlign.center, style: TextStyle(color: AppColors.muted))])))
       : ListView.separated(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 30),
           itemCount: state.notifications.length,
@@ -58,7 +58,7 @@ class NotificationsScreen extends StatelessWidget {
                 onTap: () => open(context, item),
                 borderRadius: BorderRadius.circular(18),
                 child: Padding(padding: const EdgeInsets.all(15), child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  CircleAvatar(backgroundColor: read ? Theme.of(context).colorScheme.surfaceContainerHighest : Colors.white, foregroundColor: AppColors.blue, child: const Icon(Icons.notifications_rounded, size: 20)),
+                  CircleAvatar(backgroundColor: read ? Theme.of(context).colorScheme.surfaceContainerHighest : Colors.white, foregroundColor: AppColors.blue, child: const Icon(AppIcons.bell, size: 20)),
                   const SizedBox(width: 12),
                   Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Row(children: [Expanded(child: Text(item.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w900))), if (!read) Container(width: 8, height: 8, decoration: const BoxDecoration(color: AppColors.blue, shape: BoxShape.circle))]),

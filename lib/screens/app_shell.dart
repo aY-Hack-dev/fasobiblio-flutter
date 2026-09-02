@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import '../core/app_feedback.dart';
 import '../core/theme.dart';
 import '../models/book.dart';
 import '../services/app_state.dart';
@@ -11,24 +13,44 @@ import 'premium_screen.dart';
 import 'profile_screen.dart';
 import 'notifications_screen.dart';
 import '../widgets/app_header.dart';
+import '../widgets/app_background.dart';
 
 class AppShell extends StatefulWidget { const AppShell({super.key, required this.state}); final AppState state; @override State<AppShell> createState() => _AppShellState(); }
 class _AppShellState extends State<AppShell> {
   int index = 0;
+  DateTime? lastBackPress;
   void book(Book value) => Navigator.push(context, MaterialPageRoute(builder: (_) => BookDetailScreen(book: value, state: widget.state)));
   void assistant() => Navigator.push(context, MaterialPageRoute(builder: (_) => AssistantScreen(state: widget.state)));
   void notifications() => Navigator.push(context, MaterialPageRoute(builder: (_) => NotificationsScreen(state: widget.state)));
+  void handleBack() {
+    if (index != 0) {
+      setState(() => index = 0);
+      return;
+    }
+    final now = DateTime.now();
+    if (lastBackPress == null || now.difference(lastBackPress!) > const Duration(seconds: 2)) {
+      lastBackPress = now;
+      showToast(context, 'Cliquez à nouveau pour quitter Fasobiblio.');
+      return;
+    }
+    SystemNavigator.pop();
+  }
+
   @override Widget build(BuildContext context) {
     final pages = [HomeScreen(state: widget.state, onExplore: () => setState(() => index = 2), onBook: book), PremiumScreen(state: widget.state, onBook: book), ExploreScreen(state: widget.state, onBook: book, onAssistant: assistant), LibraryScreen(state: widget.state, onBook: book), ProfileScreen(state: widget.state, onAssistant: assistant, onLibrary: () => setState(() => index = 3), onNotifications: notifications)];
-    return Scaffold(
-      body: SafeArea(child: Column(children: [
-        AppHeader(state: widget.state, onNotifications: notifications),
-        Expanded(child: IndexedStack(index: index, children: pages)),
-      ])),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) { if (!didPop) handleBack(); },
+      child: Scaffold(
+      body: AppBackground(child: SafeArea(child: Column(children: [
+        Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 720), child: AppHeader(state: widget.state, onNotifications: notifications))),
+        Expanded(child: Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 720), child: IndexedStack(index: index, children: pages)))),
+      ]))),
       bottomNavigationBar: _ResponsiveBottomNav(
         selectedIndex: index,
         libraryCount: widget.state.favorites.length + widget.state.later.length,
         onSelected: (value) => setState(() => index = value),
+      ),
       ),
     );
   }
@@ -55,13 +77,13 @@ class _ResponsiveBottomNav extends StatelessWidget {
       child: LayoutBuilder(builder: (context, constraints) {
         final compact = constraints.maxWidth < 370;
         final items = <_NavItemData>[
-          const _NavItemData('Accueil', Icons.home_outlined, Icons.home_rounded),
-          const _NavItemData('Premium', Icons.workspace_premium_outlined, Icons.workspace_premium_rounded),
-          const _NavItemData('Explorer', Icons.search_rounded, Icons.search_rounded),
-          _NavItemData('Bibliothèque', Icons.local_library_outlined, Icons.local_library_rounded, badge: libraryCount),
-          const _NavItemData('Profil', Icons.person_outline_rounded, Icons.person_rounded),
+          const _NavItemData('Accueil', AppIcons.home, AppIcons.home),
+          const _NavItemData('Premium', AppIcons.premium, AppIcons.premium),
+          const _NavItemData('Explorer', AppIcons.search, AppIcons.search),
+          _NavItemData('Bibliothèque', AppIcons.library, AppIcons.library, badge: libraryCount),
+          const _NavItemData('Profil', AppIcons.user, AppIcons.user),
         ];
-        return SizedBox(
+        return Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 720), child: SizedBox(
           height: compact ? 62 : 66,
           child: Row(
             children: List.generate(items.length, (itemIndex) => Expanded(
@@ -73,7 +95,7 @@ class _ResponsiveBottomNav extends StatelessWidget {
               ),
             )),
           ),
-        );
+        )));
       }),
     ),
   );

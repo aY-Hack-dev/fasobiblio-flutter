@@ -65,7 +65,7 @@ class _PaymentWebViewScreenState extends State<PaymentWebViewScreen> {
     child: Scaffold(
       appBar: AppBar(
         title: const Text('Paiement sécurisé'),
-        actions: [IconButton(onPressed: () => Navigator.of(context).pop(false), icon: const Icon(Icons.close_rounded), tooltip: 'Fermer')],
+        actions: [IconButton(onPressed: () => Navigator.of(context).pop(false), icon: const Icon(AppIcons.close), tooltip: 'Fermer')],
       ),
       body: Column(children: [
         if (progress < 100) LinearProgressIndicator(value: progress == 0 ? null : progress / 100, color: AppColors.blue),

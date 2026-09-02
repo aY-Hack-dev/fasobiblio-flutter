@@ -151,7 +151,7 @@ class _UnavailableContent extends StatelessWidget {
     child: Padding(
       padding: const EdgeInsets.all(34),
       child: Column(mainAxisSize: MainAxisSize.min, children: [
-        const CircleAvatar(radius: 30, backgroundColor: AppColors.sky, foregroundColor: AppColors.blue, child: Icon(Icons.cloud_sync_rounded)),
+        const CircleAvatar(radius: 30, backgroundColor: AppColors.sky, foregroundColor: AppColors.blue, child: Icon(AppIcons.cloudSync)),
         const SizedBox(height: 15),
         Text('Contenu en cours de synchronisation', textAlign: TextAlign.center, style: AppTypography.display(size: 19, weight: FontWeight.w900, color: Theme.of(context).colorScheme.onSurface)),
         const SizedBox(height: 8),

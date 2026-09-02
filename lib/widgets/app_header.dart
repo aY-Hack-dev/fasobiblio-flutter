@@ -32,7 +32,7 @@ class AppHeader extends StatelessWidget {
             icon: Badge(
               isLabelVisible: state.unreadNotifications > 0,
               label: Text(state.unreadNotifications > 99 ? '99+' : '${state.unreadNotifications}'),
-              child: const Icon(Icons.notifications_none_rounded, size: 24),
+              child: const Icon(AppIcons.bell, size: 24),
             ),
           ),
         ]),

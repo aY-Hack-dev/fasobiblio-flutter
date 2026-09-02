@@ -34,7 +34,7 @@ class BrandHeader extends StatelessWidget {
           radius: narrow ? 19 : 20,
           backgroundColor: AppColors.sky,
           foregroundColor: AppColors.blue,
-          child: const Icon(Icons.notifications_none_rounded),
+          child: const Icon(AppIcons.bell),
         ),
       ]),
     );

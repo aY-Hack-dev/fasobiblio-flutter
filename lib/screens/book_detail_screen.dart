@@ -120,16 +120,16 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Détail du document'),
-        actions: [IconButton(onPressed: () => SharePlus.instance.share(ShareParams(text: '${book.title}\nhttps://fasobiblio.com/?doc=${book.id}')), icon: const Icon(Icons.ios_share_rounded), tooltip: 'Partager')],
+        actions: [IconButton(onPressed: () => SharePlus.instance.share(ShareParams(text: '${book.title}\nhttps://fasobiblio.com/?doc=${book.id}')), icon: const Icon(AppIcons.share), tooltip: 'Partager')],
       ),
       bottomNavigationBar: SafeArea(
         child: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(color: surface, border: Border(top: BorderSide(color: Theme.of(context).dividerColor.withValues(alpha: .5)))),
           child: Row(children: [
-            Expanded(child: FilledButton.icon(style: FilledButton.styleFrom(backgroundColor: AppColors.blue, foregroundColor: Colors.white), onPressed: busy ? null : () => open('read'), icon: const Icon(Icons.auto_stories_rounded), label: Text(book.isPremium && !widget.state.hasAccess(book) ? 'Débloquer et lire' : 'Lire maintenant'))),
+            Expanded(child: FilledButton.icon(style: FilledButton.styleFrom(backgroundColor: AppColors.blue, foregroundColor: Colors.white), onPressed: busy ? null : () => open('read'), icon: const Icon(AppIcons.bookOpen), label: Text(book.isPremium && !widget.state.hasAccess(book) ? 'Débloquer et lire' : 'Lire maintenant'))),
             const SizedBox(width: 9),
-            IconButton.filledTonal(onPressed: busy ? null : () => open('download'), icon: const Icon(Icons.download_rounded), tooltip: 'Enregistrer dans Download'),
+            IconButton.filledTonal(onPressed: busy ? null : () => open('download'), icon: const Icon(AppIcons.download), tooltip: 'Enregistrer dans Download'),
           ]),
         ),
       ),
@@ -148,16 +148,16 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                 Text(book.author, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.muted)),
                 const SizedBox(height: 18),
                 Row(children: [
-                  _Stat(icon: Icons.star_rounded, value: averageRating > 0 ? averageRating.toStringAsFixed(1) : '—', label: 'Note', color: const Color(0xFFF4B740)),
-                  _Stat(icon: Icons.visibility_outlined, value: _compact(book.views), label: 'Lectures'),
-                  _Stat(icon: Icons.reviews_outlined, value: '${reviews.length}', label: 'Avis'),
-                  _Stat(icon: Icons.download_outlined, value: _compact(book.downloads), label: 'Téléch.'),
+                  _Stat(icon: AppIcons.star, value: averageRating > 0 ? averageRating.toStringAsFixed(1) : '—', label: 'Note', color: const Color(0xFFF4B740)),
+                  _Stat(icon: AppIcons.eye, value: _compact(book.views), label: 'Lectures'),
+                  _Stat(icon: AppIcons.review, value: '${reviews.length}', label: 'Avis'),
+                  _Stat(icon: AppIcons.download, value: _compact(book.downloads), label: 'Téléch.'),
                 ]),
                 const SizedBox(height: 18),
                 Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-                  _Action(icon: favorite ? Icons.favorite_rounded : Icons.favorite_border_rounded, label: favorite ? 'Favori' : 'Ajouter', active: favorite, onTap: () => widget.state.toggleFavorite(book.id)),
-                  _Action(icon: later ? Icons.bookmark_rounded : Icons.bookmark_border_rounded, label: 'À lire', active: later, onTap: () => widget.state.toggleLater(book.id)),
-                  _Action(icon: Icons.share_outlined, label: 'Partager', onTap: () => SharePlus.instance.share(ShareParams(text: '${book.title}\nhttps://fasobiblio.com/?doc=${book.id}'))),
+                  _Action(icon: favorite ? AppIcons.heart : AppIcons.heart, label: favorite ? 'Favori' : 'Ajouter', active: favorite, onTap: () => widget.state.toggleFavorite(book.id)),
+                  _Action(icon: later ? AppIcons.bookmark : AppIcons.bookmark, label: 'À lire', active: later, onTap: () => widget.state.toggleLater(book.id)),
+                  _Action(icon: AppIcons.share, label: 'Partager', onTap: () => SharePlus.instance.share(ShareParams(text: '${book.title}\nhttps://fasobiblio.com/?doc=${book.id}'))),
                 ]),
               ]),
             ),
@@ -171,7 +171,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
               const SizedBox(height: 22),
               Container(padding: const EdgeInsets.symmetric(horizontal: 15), decoration: BoxDecoration(color: surface, border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: .5)), borderRadius: BorderRadius.circular(17)), child: Column(children: [_Info('Rayon', categoryLabel(book.category)), _Info('Langue', book.language.toUpperCase()), _Info('Niveau', book.level.isEmpty ? 'Tous niveaux' : book.level), _Info('Année', book.year.isEmpty ? 'Non précisée' : book.year, last: true)])),
               const SizedBox(height: 28),
-              Row(children: [const Expanded(child: Text('Avis des lecteurs', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900))), TextButton.icon(onPressed: _writeReview, icon: const Icon(Icons.rate_review_outlined, size: 18), label: const Text('Donner mon avis'))]),
+              Row(children: [const Expanded(child: Text('Avis des lecteurs', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900))), TextButton.icon(onPressed: _writeReview, icon: const Icon(AppIcons.review, size: 18), label: const Text('Donner mon avis'))]),
               if (loadingReviews) const Padding(padding: EdgeInsets.symmetric(vertical: 20), child: Center(child: CircularProgressIndicator()))
               else if (reviews.isEmpty) const _NoReviews()
               else ...reviews.map((review) => _ReviewCard(review: review)),
@@ -229,7 +229,7 @@ class _Info extends StatelessWidget {
 class _NoReviews extends StatelessWidget {
   const _NoReviews();
   @override
-  Widget build(BuildContext context) => Container(width: double.infinity, padding: const EdgeInsets.all(18), decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(17)), child: const Column(children: [Icon(Icons.chat_bubble_outline_rounded, color: AppColors.muted), SizedBox(height: 8), Text('Aucun avis publié pour le moment.', style: TextStyle(color: AppColors.muted))]));
+  Widget build(BuildContext context) => Container(width: double.infinity, padding: const EdgeInsets.all(18), decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(17)), child: const Column(children: [Icon(AppIcons.message, color: AppColors.muted), SizedBox(height: 8), Text('Aucun avis publié pour le moment.', style: TextStyle(color: AppColors.muted))]));
 }
 
 class _ReviewCard extends StatelessWidget {
@@ -247,7 +247,7 @@ class _ReviewCard extends StatelessWidget {
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
             Expanded(child: Text(review.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w900))),
-            ...List.generate(5, (index) => Icon(index < review.stars ? Icons.star_rounded : Icons.star_border_rounded, size: 14, color: const Color(0xFFF4B740))),
+            ...List.generate(5, (index) => Icon(index < review.stars ? AppIcons.star : AppIcons.star, size: 14, color: const Color(0xFFF4B740))),
           ]),
           if (review.comment.isNotEmpty) ...[
             const SizedBox(height: 6),
@@ -286,11 +286,11 @@ class _ReviewSheetState extends State<_ReviewSheet> {
       const SizedBox(height: 7),
       const Text('Il sera publié après validation par Fasobiblio.', style: TextStyle(color: AppColors.muted)),
       const SizedBox(height: 15),
-      Row(mainAxisAlignment: MainAxisAlignment.center, children: List.generate(5, (index) => IconButton(onPressed: () => setState(() => stars = index + 1), icon: Icon(index < stars ? Icons.star_rounded : Icons.star_border_rounded, color: const Color(0xFFF4B740), size: 32)))),
+      Row(mainAxisAlignment: MainAxisAlignment.center, children: List.generate(5, (index) => IconButton(onPressed: () => setState(() => stars = index + 1), icon: Icon(index < stars ? AppIcons.star : AppIcons.star, color: const Color(0xFFF4B740), size: 32)))),
       const SizedBox(height: 8),
       TextField(controller: controller, minLines: 3, maxLines: 5, maxLength: 500, decoration: const InputDecoration(labelText: 'Votre commentaire', hintText: 'Ce que vous avez pensé du document…')),
       const SizedBox(height: 12),
-      SizedBox(width: double.infinity, child: FilledButton.icon(onPressed: () => Navigator.pop(context, _ReviewDraft(stars, controller.text.trim())), icon: const Icon(Icons.send_rounded), label: const Text('Envoyer mon avis'))),
+      SizedBox(width: double.infinity, child: FilledButton.icon(onPressed: () => Navigator.pop(context, _ReviewDraft(stars, controller.text.trim())), icon: const Icon(AppIcons.send), label: const Text('Envoyer mon avis'))),
     ]),
   );
 }
