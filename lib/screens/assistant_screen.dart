@@ -110,7 +110,7 @@ class _Welcome extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ListView(padding: const EdgeInsets.fromLTRB(24, 48, 24, 20), children: [
-    Center(child: Container(width: 72, height: 72, decoration: BoxDecoration(gradient: const LinearGradient(colors: [AppColors.blue, Color(0xFF7157D9)]), borderRadius: BorderRadius.circular(22)), child: const Icon(Icons.smart_toy_rounded, color: Colors.white, size: 34))),
+    Center(child: Container(width: 66, height: 66, decoration: BoxDecoration(gradient: const LinearGradient(colors: [AppColors.ink, AppColors.blue]), borderRadius: BorderRadius.circular(19)), child: const Icon(Icons.smart_toy_rounded, color: Colors.white, size: 31))),
     const SizedBox(height: 18),
     Text('Comment puis-je vous aider ?', textAlign: TextAlign.center, style: Theme.of(context).textTheme.headlineMedium),
     const SizedBox(height: 8),

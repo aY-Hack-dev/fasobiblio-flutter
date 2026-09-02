@@ -63,7 +63,7 @@ class _ResponsiveBottomNav extends StatelessWidget {
           const _NavItemData('Profil', Icons.person_outline_rounded, Icons.person_rounded),
         ];
         return SizedBox(
-          height: compact ? 68 : 72,
+          height: compact ? 62 : 66,
           child: Row(
             children: List.generate(items.length, (itemIndex) => Expanded(
               child: _BottomNavItem(
@@ -98,7 +98,7 @@ class _BottomNavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = selected ? AppColors.blue : AppColors.muted;
-    final icon = Icon(selected ? data.selectedIcon : data.icon, color: color, size: compact ? 24 : 26);
+    final icon = Icon(selected ? data.selectedIcon : data.icon, color: color, size: compact ? 22 : 24);
     return Semantics(
       button: true,
       selected: selected,
@@ -106,11 +106,11 @@ class _BottomNavItem extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: EdgeInsets.fromLTRB(compact ? 3 : 5, 6, compact ? 3 : 5, 4),
+          padding: EdgeInsets.fromLTRB(compact ? 3 : 5, 5, compact ? 3 : 5, 3),
           child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
             AnimatedContainer(
               duration: const Duration(milliseconds: 180),
-              padding: EdgeInsets.symmetric(horizontal: compact ? 13 : 16, vertical: 4),
+              padding: EdgeInsets.symmetric(horizontal: compact ? 12 : 15, vertical: 3),
               decoration: BoxDecoration(
                 color: selected ? AppColors.sky : Colors.transparent,
                 borderRadius: BorderRadius.circular(22),
@@ -129,7 +129,7 @@ class _BottomNavItem extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: compact ? 10 : 11,
+                  fontSize: compact ? 9 : 10,
                   height: 1.05,
                   fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
                   color: color,
@@ -190,9 +190,9 @@ class WelcomeScreen extends StatelessWidget {
             const SizedBox(height: 8),
             const Text('Découvrez, lisez, téléchargez et sauvegardez vos documents préférés.', textAlign: TextAlign.center, style: TextStyle(height: 1.45, color: Color(0xFFE6EDFF))),
             const SizedBox(height: 22),
-            SizedBox(width: double.infinity, child: FilledButton.icon(onPressed: state.completeWelcome, style: FilledButton.styleFrom(backgroundColor: const Color(0xFFFFC928), foregroundColor: AppColors.navy), icon: const Icon(Icons.arrow_forward_rounded), label: const Text('Continuer directement'))),
+            SizedBox(width: double.infinity, child: FilledButton.icon(onPressed: state.completeWelcome, style: FilledButton.styleFrom(backgroundColor: Colors.white, foregroundColor: AppColors.blue), icon: const Icon(Icons.arrow_forward_rounded), label: const Text('Continuer directement'))),
             const SizedBox(height: 9),
-            SizedBox(width: double.infinity, child: FilledButton.icon(onPressed: () => _auth(context, signup: true), style: FilledButton.styleFrom(backgroundColor: Colors.white, foregroundColor: AppColors.navy), icon: const Icon(Icons.person_add_alt_1_rounded), label: const Text('Créer un compte'))),
+            SizedBox(width: double.infinity, child: FilledButton.icon(onPressed: () => _auth(context, signup: true), style: FilledButton.styleFrom(backgroundColor: AppColors.ink, foregroundColor: Colors.white), icon: const Icon(Icons.person_add_alt_1_rounded), label: const Text('Créer un compte'))),
             const SizedBox(height: 9),
             SizedBox(width: double.infinity, child: OutlinedButton.icon(onPressed: () => _auth(context, signup: false), style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white), minimumSize: const Size(0, 50), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))), icon: const Icon(Icons.login_rounded), label: const Text('Se connecter'))),
             const SizedBox(height: 13),

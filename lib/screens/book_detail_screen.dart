@@ -143,7 +143,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
               padding: const EdgeInsets.fromLTRB(18, 20, 18, 18),
               decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(25), boxShadow: const [BoxShadow(color: Color(0x16000000), blurRadius: 20, offset: Offset(0, 8))]),
               child: Column(children: [
-                Text(book.title, textAlign: TextAlign.center, style: AppTypography.bookTitle(size: 27, color: Theme.of(context).colorScheme.onSurface)),
+                Text(book.title, textAlign: TextAlign.center, style: AppTypography.bookTitle(size: 24, weight: FontWeight.w900, color: Theme.of(context).colorScheme.onSurface)),
                 const SizedBox(height: 7),
                 Text(book.author, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.muted)),
                 const SizedBox(height: 18),
@@ -165,7 +165,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('À propos de cet ouvrage', style: AppTypography.editorial(size: 22, color: Theme.of(context).colorScheme.onSurface)),
+              Text('À propos de cet ouvrage', style: AppTypography.display(size: 19, weight: FontWeight.w900, color: Theme.of(context).colorScheme.onSurface)),
               const SizedBox(height: 10),
               Text(book.description.isEmpty ? 'La description de ce document sera bientôt disponible.' : book.description, style: const TextStyle(height: 1.6)),
               const SizedBox(height: 22),

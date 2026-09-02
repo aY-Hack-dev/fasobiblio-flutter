@@ -7,7 +7,7 @@ class BrandHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) => LayoutBuilder(builder: (context, constraints) {
     final narrow = constraints.maxWidth < 350;
-    final logoSize = narrow ? 40.0 : 46.0;
+    final logoSize = narrow ? 36.0 : 40.0;
     return Padding(
       padding: EdgeInsets.fromLTRB(narrow ? 14 : 20, compact ? 12 : 18, narrow ? 14 : 20, 14),
       child: Row(children: [
@@ -25,7 +25,7 @@ class BrandHeader extends StatelessWidget {
             maxLines: 1,
             softWrap: false,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(fontSize: narrow ? 17 : 19, fontWeight: FontWeight.w900, letterSpacing: narrow ? .3 : .6),
+            style: AppTypography.display(size: narrow ? 16 : 18, weight: FontWeight.w900),
           ),
           const Text('Bibliothèque numérique', maxLines: 1, softWrap: false, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 11, color: AppColors.muted)),
         ])),

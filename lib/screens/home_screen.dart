@@ -74,10 +74,10 @@ class _Featured extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    height: 235,
+    height: 220,
     margin: const EdgeInsets.symmetric(horizontal: 16),
     clipBehavior: Clip.antiAlias,
-    decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFF0C2C62), AppColors.blue], begin: Alignment.topLeft, end: Alignment.bottomRight), borderRadius: BorderRadius.circular(28), boxShadow: const [BoxShadow(color: Color(0x333157D5), blurRadius: 25, offset: Offset(0, 13))]),
+    decoration: BoxDecoration(gradient: const LinearGradient(colors: [AppColors.ink, AppColors.blue], begin: Alignment.topLeft, end: Alignment.bottomRight), borderRadius: BorderRadius.circular(22), boxShadow: const [BoxShadow(color: Color(0x241860F0), blurRadius: 20, offset: Offset(0, 10))]),
     child: Stack(children: [
       Positioned(right: -45, top: -45, child: Container(width: 180, height: 180, decoration: const BoxDecoration(color: Color(0x1AFFFFFF), shape: BoxShape.circle))),
       Positioned(right: -20, bottom: -35, child: Transform.rotate(angle: .08, child: ClipRRect(borderRadius: BorderRadius.circular(14), child: book.image.isEmpty ? Container(width: 135, height: 200, color: AppColors.sky, child: const Icon(Icons.menu_book_rounded, size: 48, color: AppColors.blue)) : CachedNetworkImage(imageUrl: book.image, width: 135, height: 200, fit: BoxFit.cover, errorWidget: (_, __, ___) => Container(width: 135, height: 200, color: AppColors.sky, child: const Icon(Icons.menu_book_rounded, color: AppColors.blue)))))),
@@ -86,7 +86,7 @@ class _Featured extends StatelessWidget {
         child: SizedBox(width: MediaQuery.sizeOf(context).width * .55, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Container(padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5), decoration: BoxDecoration(color: const Color(0x2AFFFFFF), borderRadius: BorderRadius.circular(9)), child: Text('$count DOCUMENTS', style: const TextStyle(fontSize: 9, letterSpacing: .8, fontWeight: FontWeight.w900, color: Colors.white))),
           const SizedBox(height: 13),
-          const Text('Le savoir, partout avec vous.', maxLines: 2, style: TextStyle(fontSize: 25, height: 1.05, fontWeight: FontWeight.w900, color: Colors.white)),
+          Text('Le savoir, partout avec vous.', maxLines: 2, style: AppTypography.display(size: 23, weight: FontWeight.w900, color: Colors.white)),
           const SizedBox(height: 8),
           Text(book.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, height: 1.35, color: Color(0xFFDCE6FF))),
           const Spacer(),
@@ -138,7 +138,7 @@ class _Shelf extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Column(children: [
     SectionTitle(title, action: 'Voir tout'),
-    SizedBox(height: 324, child: ListView.separated(padding: const EdgeInsets.symmetric(horizontal: 16), scrollDirection: Axis.horizontal, itemCount: books.length, separatorBuilder: (_, __) => const SizedBox(width: 12), itemBuilder: (_, i) => BookCard(book: books[i], favorite: state.favorites.contains(books[i].id), onTap: () => onBook(books[i]), onFavorite: () => state.toggleFavorite(books[i].id)))),
+    SizedBox(height: 312, child: ListView.separated(padding: const EdgeInsets.symmetric(horizontal: 16), scrollDirection: Axis.horizontal, itemCount: books.length, separatorBuilder: (_, __) => const SizedBox(width: 12), itemBuilder: (_, i) => BookCard(book: books[i], favorite: state.favorites.contains(books[i].id), onTap: () => onBook(books[i]), onFavorite: () => state.toggleFavorite(books[i].id)))),
   ]);
 }
 

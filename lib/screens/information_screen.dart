@@ -133,7 +133,7 @@ class _InformationScreenState extends State<InformationScreen> {
                       boxShadow: const [BoxShadow(color: Color(0x0B0B3B78), blurRadius: 16, offset: Offset(0, 7))],
                     ),
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      if (section.$1.isNotEmpty) Text(section.$1, style: AppTypography.editorial(size: 20, color: Theme.of(context).colorScheme.onSurface)),
+                      if (section.$1.isNotEmpty) Text(section.$1, style: AppTypography.display(size: 18, weight: FontWeight.w900, color: Theme.of(context).colorScheme.onSurface)),
                       if (section.$1.isNotEmpty && section.$2.isNotEmpty) const SizedBox(height: 9),
                       if (section.$2.isNotEmpty) Text(section.$2, style: const TextStyle(height: 1.62, color: AppColors.muted)),
                     ]),
@@ -153,7 +153,7 @@ class _UnavailableContent extends StatelessWidget {
       child: Column(mainAxisSize: MainAxisSize.min, children: [
         const CircleAvatar(radius: 30, backgroundColor: AppColors.sky, foregroundColor: AppColors.blue, child: Icon(Icons.cloud_sync_rounded)),
         const SizedBox(height: 15),
-        Text('Contenu en cours de synchronisation', textAlign: TextAlign.center, style: AppTypography.editorial(size: 21, color: Theme.of(context).colorScheme.onSurface)),
+        Text('Contenu en cours de synchronisation', textAlign: TextAlign.center, style: AppTypography.display(size: 19, weight: FontWeight.w900, color: Theme.of(context).colorScheme.onSurface)),
         const SizedBox(height: 8),
         const Text('Cette rubrique apparaîtra automatiquement dès que les informations du site seront disponibles.', textAlign: TextAlign.center, style: TextStyle(height: 1.5, color: AppColors.muted)),
       ]),

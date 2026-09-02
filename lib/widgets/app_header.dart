@@ -9,23 +9,22 @@ class AppHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final surface = Theme.of(context).colorScheme.surface;
     final text = Theme.of(context).colorScheme.onSurface;
     return Material(
-      color: surface,
+      color: Theme.of(context).scaffoldBackgroundColor,
       elevation: 0,
-      child: Container(
-        height: 66,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        decoration: BoxDecoration(border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor.withValues(alpha: .45)))),
+      child: SizedBox(
+        height: 60,
+        child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 15),
         child: Row(children: [
-          ClipRRect(borderRadius: BorderRadius.circular(11), child: Image.asset('assets/branding/icon.png', width: 40, height: 40, fit: BoxFit.cover)),
-          const SizedBox(width: 10),
+          ClipRRect(borderRadius: BorderRadius.circular(9), child: Image.asset('assets/branding/icon.png', width: 34, height: 34, fit: BoxFit.cover)),
+          const SizedBox(width: 9),
           Expanded(child: Text.rich(
-            const TextSpan(children: [TextSpan(text: 'Faso', style: TextStyle(fontWeight: FontWeight.w900)), TextSpan(text: 'biblio', style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.blue))]),
+            TextSpan(children: [TextSpan(text: 'Faso', style: AppTypography.display(size: 18, weight: FontWeight.w900)), TextSpan(text: 'biblio', style: AppTypography.display(size: 18, weight: FontWeight.w900, color: AppColors.blue))]),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(fontSize: 20, letterSpacing: -.4, color: text),
+            style: TextStyle(color: text),
           )),
           IconButton(
             onPressed: onNotifications,
@@ -33,10 +32,11 @@ class AppHeader extends StatelessWidget {
             icon: Badge(
               isLabelVisible: state.unreadNotifications > 0,
               label: Text(state.unreadNotifications > 99 ? '99+' : '${state.unreadNotifications}'),
-              child: const Icon(Icons.notifications_none_rounded, size: 27),
+              child: const Icon(Icons.notifications_none_rounded, size: 24),
             ),
           ),
         ]),
+        ),
       ),
     );
   }
