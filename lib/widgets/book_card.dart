@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import '../core/theme.dart';
 import '../models/book.dart';
+import 'document_cover.dart';
 
 class BookCard extends StatelessWidget {
   const BookCard({super.key, required this.book, required this.favorite, required this.onTap, this.onFavorite, this.width = 156});
@@ -16,7 +16,9 @@ class BookCard extends StatelessWidget {
     width: width,
     child: Material(
       color: Theme.of(context).colorScheme.surface,
-      borderRadius: BorderRadius.circular(18),
+      elevation: 1,
+      shadowColor: const Color(0x160F172A),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: AppColors.line)),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
@@ -24,7 +26,7 @@ class BookCard extends StatelessWidget {
           padding: const EdgeInsets.all(9),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             AspectRatio(aspectRatio: .7, child: Stack(fit: StackFit.expand, children: [
-              ClipRRect(borderRadius: BorderRadius.circular(12), child: _Cover(book: book)),
+              ClipRRect(borderRadius: BorderRadius.circular(10), child: DocumentCover(imageUrl: book.image)),
               if (book.isPremium) Positioned(left: 7, top: 7, child: _Badge(text: 'PREMIUM', gold: true)),
               Positioned(right: 7, top: 7, child: Material(color: Theme.of(context).colorScheme.surface, shape: const CircleBorder(), elevation: 1, child: InkWell(customBorder: const CircleBorder(), onTap: onFavorite, child: SizedBox(width: 32, height: 32, child: Icon(favorite ? Icons.favorite_rounded : Icons.favorite_border_rounded, size: 18, color: favorite ? const Color(0xFFE5484D) : AppColors.muted))))),
             ])),
@@ -33,19 +35,13 @@ class BookCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(book.author, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11, color: AppColors.muted)),
             const Spacer(),
+            const Divider(height: 12, thickness: 1, color: AppColors.line),
             Row(children: [const Icon(Icons.star_rounded, size: 14, color: Color(0xFFF4B740)), const SizedBox(width: 3), Text(book.rating > 0 ? book.rating.toStringAsFixed(1) : 'Nouveau', style: const TextStyle(fontSize: 10, color: AppColors.muted)), const Spacer(), if (book.isPremium) Text(book.price > 0 ? '${book.price.toInt()} F' : 'Premium', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: AppColors.gold))]),
           ]),
         ),
       ),
     ),
   );
-}
-
-class _Cover extends StatelessWidget {
-  const _Cover({required this.book}); final Book book;
-  @override Widget build(BuildContext context) => book.image.isEmpty
-    ? Container(color: AppColors.sky, alignment: Alignment.center, padding: const EdgeInsets.all(12), child: const Text('FASOBIBLIO', textAlign: TextAlign.center, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: AppColors.blue)))
-    : CachedNetworkImage(imageUrl: book.image, fit: BoxFit.cover, placeholder: (_, __) => Container(color: AppColors.sky, alignment: Alignment.center, child: const CircularProgressIndicator(strokeWidth: 2)), errorWidget: (_, __, ___) => Container(color: AppColors.sky, alignment: Alignment.center, child: const Icon(Icons.menu_book_rounded, size: 38, color: AppColors.blue)));
 }
 
 class _Badge extends StatelessWidget {

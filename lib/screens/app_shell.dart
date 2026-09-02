@@ -10,7 +10,6 @@ import 'library_screen.dart';
 import 'premium_screen.dart';
 import 'profile_screen.dart';
 import 'notifications_screen.dart';
-import 'auth_sheet.dart';
 import '../widgets/app_header.dart';
 
 class AppShell extends StatefulWidget { const AppShell({super.key, required this.state}); final AppState state; @override State<AppShell> createState() => _AppShellState(); }
@@ -146,60 +145,75 @@ class _BottomNavItem extends StatelessWidget {
 class StartupScreen extends StatelessWidget {
   const StartupScreen({super.key, required this.state}); final AppState state;
   @override Widget build(BuildContext context) {
-    if (state.loading && state.books.isEmpty) return const Scaffold(body: Center(child: Column(mainAxisSize: MainAxisSize.min, children: [Image(image: AssetImage('assets/branding/icon.png'), width: 105, height: 105), SizedBox(height: 18), Text.rich(TextSpan(children: [TextSpan(text: 'FASO', style: TextStyle(color: AppColors.ink)), TextSpan(text: 'BIBLIO', style: TextStyle(color: AppColors.blue))]), style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900)), SizedBox(height: 25), CircularProgressIndicator(), SizedBox(height: 11), Text('Chargement de votre bibliothèque…', style: TextStyle(fontSize: 11, color: AppColors.muted))])));
-    if (!state.welcomeSeen) return WelcomeScreen(state: state);
+    if (state.loading && state.books.isEmpty) return const _LibraryLoadingScreen();
     return AppShell(state: state);
   }
 }
 
-class WelcomeScreen extends StatelessWidget {
-  const WelcomeScreen({super.key, required this.state});
-  final AppState state;
+class _LibraryLoadingScreen extends StatefulWidget {
+  const _LibraryLoadingScreen();
+  @override
+  State<_LibraryLoadingScreen> createState() => _LibraryLoadingScreenState();
+}
 
-  Future<void> _auth(BuildContext context, {required bool signup}) async {
-    await showAuthSheet(context, state, signup: signup);
-    if (state.session != null && !state.session!.anonymous) await state.completeWelcome();
+class _LibraryLoadingScreenState extends State<_LibraryLoadingScreen> with SingleTickerProviderStateMixin {
+  late final AnimationController controller;
+
+  @override
+  void initState() {
+    super.initState();
+    controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 1200))..repeat();
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    body: Container(
-      width: double.infinity,
-      decoration: const BoxDecoration(gradient: LinearGradient(colors: [Color(0xFF0B2C69), Color(0xFF1454D8), Color(0xFF082E91)], begin: Alignment.topLeft, end: Alignment.bottomRight)),
-      child: SafeArea(child: LayoutBuilder(builder: (context, constraints) => SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(26, 24, 26, 25),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(minHeight: constraints.maxHeight - 49),
-          child: IntrinsicHeight(child: Column(children: [
-            Row(mainAxisAlignment: MainAxisAlignment.center, children: [Image.asset('assets/branding/icon.png', width: 54, height: 54), const SizedBox(width: 11), const Text('Fasobiblio', style: TextStyle(fontSize: 31, fontWeight: FontWeight.w900, color: Colors.white))]),
-            const SizedBox(height: 8),
-            const Text('Votre bibliothèque numérique partout,\nmême hors connexion.', textAlign: TextAlign.center, style: TextStyle(fontSize: 15, height: 1.4, color: Color(0xFFE6EDFF))),
-            const Spacer(),
-            Container(
-              width: 260,
-              height: 245,
-              decoration: BoxDecoration(color: const Color(0x24FFFFFF), shape: BoxShape.circle, border: Border.all(color: const Color(0x2FFFFFFF))),
-              child: Stack(alignment: Alignment.center, children: [
-                Transform.rotate(angle: -.12, child: Container(width: 125, height: 175, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18), boxShadow: const [BoxShadow(color: Color(0x55000000), blurRadius: 22, offset: Offset(0, 12))]), child: const Icon(Icons.auto_stories_rounded, size: 70, color: AppColors.blue))),
-                const Positioned(left: 13, bottom: 35, child: Icon(Icons.cloud_download_rounded, color: Colors.white, size: 42)),
-                const Positioned(right: 17, top: 38, child: Icon(Icons.headphones_rounded, color: Colors.white, size: 39)),
-              ]),
+    backgroundColor: Colors.white,
+    body: SafeArea(
+      child: Stack(children: [
+        Center(child: Image.asset('assets/branding/icon.png', width: 154, height: 154, fit: BoxFit.contain)),
+        Positioned(
+          left: 24,
+          right: 24,
+          bottom: 44,
+          child: Column(children: [
+            AnimatedBuilder(
+              animation: controller,
+              builder: (_, __) => Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: List.generate(5, (index) {
+                  final phase = (controller.value + index * .14) % 1;
+                  final lift = phase < .5 ? phase * 2 : (1 - phase) * 2;
+                  return Transform.translate(
+                    offset: Offset(0, -5 * lift),
+                    child: Container(
+                      width: index == 2 ? 15 : 11,
+                      height: (22 + (index % 3) * 7).toDouble(),
+                      margin: const EdgeInsets.symmetric(horizontal: 3),
+                      decoration: BoxDecoration(
+                        color: index.isEven ? AppColors.blue : AppColors.ink,
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                    ),
+                  );
+                }),
+              ),
             ),
-            const Spacer(),
-            const Text('Bienvenue sur Fasobiblio', textAlign: TextAlign.center, style: TextStyle(fontSize: 27, fontWeight: FontWeight.w900, color: Colors.white)),
-            const SizedBox(height: 8),
-            const Text('Découvrez, lisez, téléchargez et sauvegardez vos documents préférés.', textAlign: TextAlign.center, style: TextStyle(height: 1.45, color: Color(0xFFE6EDFF))),
-            const SizedBox(height: 22),
-            SizedBox(width: double.infinity, child: FilledButton.icon(onPressed: state.completeWelcome, style: FilledButton.styleFrom(backgroundColor: Colors.white, foregroundColor: AppColors.blue), icon: const Icon(Icons.arrow_forward_rounded), label: const Text('Continuer directement'))),
-            const SizedBox(height: 9),
-            SizedBox(width: double.infinity, child: FilledButton.icon(onPressed: () => _auth(context, signup: true), style: FilledButton.styleFrom(backgroundColor: AppColors.ink, foregroundColor: Colors.white), icon: const Icon(Icons.person_add_alt_1_rounded), label: const Text('Créer un compte'))),
-            const SizedBox(height: 9),
-            SizedBox(width: double.infinity, child: OutlinedButton.icon(onPressed: () => _auth(context, signup: false), style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white), minimumSize: const Size(0, 50), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))), icon: const Icon(Icons.login_rounded), label: const Text('Se connecter'))),
-            const SizedBox(height: 13),
-            const Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.shield_outlined, color: Color(0xFFCCD8F5), size: 15), SizedBox(width: 5), Text('Vos données sont protégées et confidentielles', style: TextStyle(fontSize: 10, color: Color(0xFFCCD8F5)))]),
-          ])),
+            const SizedBox(height: 15),
+            Text(
+              'Fasobiblio, le savoir, partout avec vous.',
+              textAlign: TextAlign.center,
+              style: AppTypography.display(size: 13, weight: FontWeight.w700, color: AppColors.ink),
+            ),
+          ]),
         ),
-      ))),
+      ]),
     ),
   );
 }

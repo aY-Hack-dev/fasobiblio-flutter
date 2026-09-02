@@ -62,7 +62,7 @@ class ProfileScreen extends StatelessWidget {
       _Menu(icon: Icons.description_outlined, title: 'Conditions d’utilisation', subtitle: 'Règles du service et contenus Premium', onTap: () => information(context, InformationKind.terms)),
       _Menu(icon: Icons.privacy_tip_outlined, title: 'Politique de confidentialité', subtitle: 'Compte, stockage local et paiements', onTap: () => information(context, InformationKind.privacy)),
       _Menu(icon: Icons.balance_rounded, title: 'Mentions légales et contact', subtitle: 'Éditeur et coordonnées de Fasobiblio', onTap: () => information(context, InformationKind.legal)),
-      const Padding(padding: EdgeInsets.all(27), child: Text('Fasobiblio Mobile • version 3.2.0', textAlign: TextAlign.center, style: TextStyle(fontSize: 10, color: AppColors.muted))),
+      const Padding(padding: EdgeInsets.all(27), child: Text('Fasobiblio Mobile • version 3.3.0', textAlign: TextAlign.center, style: TextStyle(fontSize: 10, color: AppColors.muted))),
     ]);
   }
 }

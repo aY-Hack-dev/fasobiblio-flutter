@@ -14,14 +14,14 @@ class AppHeader extends StatelessWidget {
       color: Theme.of(context).scaffoldBackgroundColor,
       elevation: 0,
       child: SizedBox(
-        height: 60,
+        height: 68,
         child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 15),
         child: Row(children: [
-          ClipRRect(borderRadius: BorderRadius.circular(9), child: Image.asset('assets/branding/icon.png', width: 34, height: 34, fit: BoxFit.cover)),
-          const SizedBox(width: 9),
+          ClipRRect(borderRadius: BorderRadius.circular(10), child: Image.asset('assets/branding/icon.png', width: 43, height: 43, fit: BoxFit.cover)),
+          const SizedBox(width: 10),
           Expanded(child: Text.rich(
-            TextSpan(children: [TextSpan(text: 'Faso', style: AppTypography.display(size: 18, weight: FontWeight.w900)), TextSpan(text: 'biblio', style: AppTypography.display(size: 18, weight: FontWeight.w900, color: AppColors.blue))]),
+            TextSpan(children: [TextSpan(text: 'FASO', style: AppTypography.display(size: 21, weight: FontWeight.w900)), TextSpan(text: 'BIBLIO', style: AppTypography.display(size: 21, weight: FontWeight.w900, color: AppColors.blue))]),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(color: text),

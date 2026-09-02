@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 import '../core/app_feedback.dart';
@@ -7,6 +6,7 @@ import '../models/app_notification.dart';
 import '../models/book.dart';
 import '../services/app_state.dart';
 import '../services/document_service.dart';
+import '../widgets/document_cover.dart';
 import 'auth_sheet.dart';
 import 'payment_flow.dart';
 import 'pdf_reader_screen.dart';
@@ -193,7 +193,7 @@ class _BookHero extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     height: 335,
     decoration: const BoxDecoration(gradient: LinearGradient(colors: [Color(0xFF0D2750), AppColors.blue], begin: Alignment.topLeft, end: Alignment.bottomRight)),
-    child: Center(child: ClipRRect(borderRadius: BorderRadius.circular(17), child: book.image.isEmpty ? Container(width: 170, height: 245, color: AppColors.sky, child: const Icon(Icons.menu_book_rounded, size: 55, color: AppColors.blue)) : CachedNetworkImage(imageUrl: book.image, width: 170, height: 245, fit: BoxFit.cover, placeholder: (_, __) => Container(width: 170, height: 245, color: AppColors.sky), errorWidget: (_, __, ___) => Container(width: 170, height: 245, color: AppColors.sky, child: const Icon(Icons.menu_book_rounded, color: AppColors.blue))))),
+    child: Center(child: ClipRRect(borderRadius: BorderRadius.circular(17), child: DocumentCover(imageUrl: book.image, width: 170, height: 245))),
   );
 }
 

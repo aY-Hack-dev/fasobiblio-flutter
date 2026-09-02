@@ -1,9 +1,9 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../core/theme.dart';
 import '../models/book.dart';
 import '../services/app_state.dart';
 import '../widgets/book_card.dart';
+import '../widgets/document_cover.dart';
 import '../widgets/section.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -80,7 +80,7 @@ class _Featured extends StatelessWidget {
     decoration: BoxDecoration(gradient: const LinearGradient(colors: [AppColors.ink, AppColors.blue], begin: Alignment.topLeft, end: Alignment.bottomRight), borderRadius: BorderRadius.circular(22), boxShadow: const [BoxShadow(color: Color(0x241860F0), blurRadius: 20, offset: Offset(0, 10))]),
     child: Stack(children: [
       Positioned(right: -45, top: -45, child: Container(width: 180, height: 180, decoration: const BoxDecoration(color: Color(0x1AFFFFFF), shape: BoxShape.circle))),
-      Positioned(right: -20, bottom: -35, child: Transform.rotate(angle: .08, child: ClipRRect(borderRadius: BorderRadius.circular(14), child: book.image.isEmpty ? Container(width: 135, height: 200, color: AppColors.sky, child: const Icon(Icons.menu_book_rounded, size: 48, color: AppColors.blue)) : CachedNetworkImage(imageUrl: book.image, width: 135, height: 200, fit: BoxFit.cover, errorWidget: (_, __, ___) => Container(width: 135, height: 200, color: AppColors.sky, child: const Icon(Icons.menu_book_rounded, color: AppColors.blue)))))),
+      Positioned(right: -20, bottom: -35, child: Transform.rotate(angle: .08, child: ClipRRect(borderRadius: BorderRadius.circular(14), child: DocumentCover(imageUrl: book.image, width: 135, height: 200)))),
       Padding(
         padding: const EdgeInsets.all(22),
         child: SizedBox(width: MediaQuery.sizeOf(context).width * .55, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
