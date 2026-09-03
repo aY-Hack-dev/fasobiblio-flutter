@@ -65,18 +65,13 @@ class _AppShellState extends State<AppShell> {
         if (!didPop) handleBack();
       },
       child: Scaffold(
-        extendBody: true,
+        extendBody: false,
         body: AppBackground(
           child: SafeArea(
             bottom: false,
             child: Column(
               children: [
-                Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 720),
-                    child: AppHeader(state: widget.state, onNotifications: notifications),
-                  ),
-                ),
+                AppHeader(state: widget.state, onNotifications: notifications),
                 Expanded(
                   child: Center(
                     child: ConstrainedBox(
@@ -89,7 +84,7 @@ class _AppShellState extends State<AppShell> {
             ),
           ),
         ),
-        bottomNavigationBar: _FloatingBottomNav(
+        bottomNavigationBar: _StandardBottomNav(
           selectedIndex: index,
           libraryCount: widget.state.favorites.length + widget.state.later.length,
           onSelected: (value) => setState(() => index = value),
@@ -99,8 +94,8 @@ class _AppShellState extends State<AppShell> {
   }
 }
 
-class _FloatingBottomNav extends StatelessWidget {
-  const _FloatingBottomNav({required this.selectedIndex, required this.libraryCount, required this.onSelected});
+class _StandardBottomNav extends StatelessWidget {
+  const _StandardBottomNav({required this.selectedIndex, required this.libraryCount, required this.onSelected});
 
   final int selectedIndex;
   final int libraryCount;
@@ -108,7 +103,7 @@ class _FloatingBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final compact = MediaQuery.sizeOf(context).width < 370;
+    final dark = Theme.of(context).brightness == Brightness.dark;
     final items = <_NavItemData>[
       const _NavItemData('Accueil', AppIcons.home),
       const _NavItemData('Premium', AppIcons.premium, premium: true),
@@ -117,39 +112,37 @@ class _FloatingBottomNav extends StatelessWidget {
       const _NavItemData('Profil', AppIcons.user),
     ];
 
-    return SafeArea(
-      minimum: const EdgeInsets.fromLTRB(12, 0, 12, 10),
-      child: Center(
-        heightFactor: 1,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 700),
-          child: Container(
-            height: compact ? 66 : 72,
-            decoration: BoxDecoration(
-              color: const Color(0xF7112952),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: Colors.white.withValues(alpha: .10)),
-              boxShadow: const [
-                BoxShadow(color: Color(0x3506172F), blurRadius: 28, offset: Offset(0, 12)),
-                BoxShadow(color: Color(0x151860F0), blurRadius: 16, offset: Offset(0, 4)),
-              ],
+    return Material(
+      color: dark ? const Color(0xFF101827) : Colors.white,
+      elevation: 10,
+      shadowColor: Colors.black.withValues(alpha: .08),
+      child: SafeArea(
+        top: false,
+        child: Container(
+          height: 64,
+          decoration: BoxDecoration(
+            border: Border(
+              top: BorderSide(color: dark ? Colors.white.withValues(alpha: .07) : AppColors.line),
             ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 5),
-              child: Row(
+          ),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              IgnorePointer(child: CustomPaint(painter: _BottomPatternPainter(dark: dark))),
+              Row(
                 children: List.generate(
                   items.length,
                   (itemIndex) => Expanded(
                     child: _BottomNavItem(
                       data: items[itemIndex],
                       selected: selectedIndex == itemIndex,
-                      compact: compact,
+                      dark: dark,
                       onTap: () => onSelected(itemIndex),
                     ),
                   ),
                 ),
               ),
-            ),
+            ],
           ),
         ),
       ),
@@ -166,18 +159,18 @@ class _NavItemData {
 }
 
 class _BottomNavItem extends StatelessWidget {
-  const _BottomNavItem({required this.data, required this.selected, required this.compact, required this.onTap});
+  const _BottomNavItem({required this.data, required this.selected, required this.dark, required this.onTap});
 
   final _NavItemData data;
   final bool selected;
-  final bool compact;
+  final bool dark;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final selectedColor = data.premium ? const Color(0xFFFFD166) : Colors.white;
-    final idleColor = data.premium ? const Color(0xFFCEB268) : const Color(0xFFA7B5C9);
-    final iconColor = selected ? selectedColor : idleColor;
+    final selectedColor = data.premium ? const Color(0xFFB7791F) : AppColors.blue;
+    final idleColor = dark ? const Color(0xFF9AA8BC) : AppColors.muted;
+    final color = selected ? selectedColor : idleColor;
 
     return Semantics(
       button: true,
@@ -185,33 +178,24 @@ class _BottomNavItem extends StatelessWidget {
       label: data.label,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 6),
+          padding: const EdgeInsets.fromLTRB(3, 7, 3, 5),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 220),
-                curve: Curves.easeOutCubic,
-                width: selected ? (compact ? 43 : 48) : 35,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: selected
-                      ? (data.premium ? const Color(0x28FFD166) : const Color(0x2B4B8DFF))
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(14),
-                  border: selected ? Border.all(color: iconColor.withValues(alpha: .18)) : null,
-                ),
+              SizedBox(
+                height: 25,
                 child: Center(
                   child: data.badge > 0
                       ? Badge(
+                          isLabelVisible: data.badge > 0,
                           backgroundColor: AppColors.blue,
                           textColor: Colors.white,
+                          smallSize: 6,
                           label: Text(data.badge > 99 ? '99+' : '${data.badge}'),
-                          child: Icon(data.icon, color: iconColor, size: compact ? 20 : 22),
+                          child: Icon(data.icon, color: color, size: 22),
                         )
-                      : Icon(data.icon, color: iconColor, size: compact ? 20 : 22),
+                      : Icon(data.icon, color: color, size: 22),
                 ),
               ),
               const SizedBox(height: 3),
@@ -220,10 +204,20 @@ class _BottomNavItem extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: compact ? 8 : 9,
+                  fontSize: 9,
                   height: 1,
-                  fontWeight: selected ? FontWeight.w900 : FontWeight.w700,
-                  color: iconColor,
+                  fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                  color: color,
+                ),
+              ),
+              const SizedBox(height: 3),
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                width: selected ? 18 : 0,
+                height: 2,
+                decoration: BoxDecoration(
+                  color: selectedColor,
+                  borderRadius: BorderRadius.circular(2),
                 ),
               ),
             ],
@@ -232,6 +226,27 @@ class _BottomNavItem extends StatelessWidget {
       ),
     );
   }
+}
+
+class _BottomPatternPainter extends CustomPainter {
+  const _BottomPatternPainter({required this.dark});
+  final bool dark;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = AppColors.blue.withValues(alpha: dark ? .04 : .025)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1;
+
+    for (double x = 22; x < size.width; x += 86) {
+      canvas.drawCircle(Offset(x, 12), 11, paint);
+      canvas.drawLine(Offset(x - 8, 52), Offset(x + 10, 52), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _BottomPatternPainter oldDelegate) => oldDelegate.dark != dark;
 }
 
 class StartupScreen extends StatelessWidget {
