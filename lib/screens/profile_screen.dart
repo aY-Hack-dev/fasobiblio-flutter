@@ -45,14 +45,14 @@ class ProfileScreen extends StatelessWidget {
     final name = connected ? state.session!.pseudo : 'Lecteur invité';
     final subscription = state.subscription;
     return ListView(children: [
-      _ProfileCard(state: state, connected: connected, name: name),
+      _ProfileHero(state: state, connected: connected, name: name),
       if (connected) _PremiumStatus(subscription: subscription, purchased: state.purchased.length),
       const SectionTitle('Mon espace'),
       _Menu(icon: AppIcons.library, title: 'Ma bibliothèque', subtitle: 'Favoris, liste de lecture et achats', onTap: onLibrary),
       _Menu(icon: AppIcons.fileCheck, title: 'Documents hors connexion', subtitle: 'Lectures conservées et dossier Download/Fasobiblio', onTap: () => information(context, InformationKind.downloads)),
       _Menu(icon: AppIcons.bell, title: 'Notifications', subtitle: state.unreadNotifications == 0 ? 'Vous êtes à jour' : '${state.unreadNotifications} nouvelle(s) annonce(s)', onTap: onNotifications, badge: state.unreadNotifications),
       const SectionTitle('Services Fasobiblio'),
-      _Menu(icon: AppIcons.sparkles, title: 'Assistant d’étude', subtitle: 'Posez vos questions à l’assistant Fasobiblio', onTap: onAssistant),
+      _Menu(icon: AppIcons.sparkles, title: 'Assistant d’étude', subtitle: 'Posez vos questions à l’assistant Fasobiblio', onTap: onAssistant, accent: true),
       _Menu(icon: AppIcons.lightbulb, title: 'Suggérer un document', subtitle: 'Proposez un livre, un cours ou une ressource', onTap: () => _suggest(context)),
       _Menu(icon: AppIcons.support, title: 'Aide et assistance', subtitle: 'Écrivez directement à l’équipe Fasobiblio', onTap: () => _support(context)),
       const SectionTitle('Accessibilité'),
@@ -62,33 +62,76 @@ class ProfileScreen extends StatelessWidget {
       _Menu(icon: AppIcons.fileText, title: 'Conditions d’utilisation', subtitle: 'Règles du service et contenus Premium', onTap: () => information(context, InformationKind.terms)),
       _Menu(icon: AppIcons.shield, title: 'Politique de confidentialité', subtitle: 'Compte, stockage local et paiements', onTap: () => information(context, InformationKind.privacy)),
       _Menu(icon: AppIcons.scale, title: 'Mentions légales et contact', subtitle: 'Éditeur et coordonnées de Fasobiblio', onTap: () => information(context, InformationKind.legal)),
-      const Padding(padding: EdgeInsets.all(27), child: Text('Fasobiblio Mobile • version 3.4.0', textAlign: TextAlign.center, style: TextStyle(fontSize: 10, color: AppColors.muted))),
+      const Padding(padding: EdgeInsets.fromLTRB(27, 20, 27, 115), child: Text('Fasobiblio Mobile • version 3.4.0', textAlign: TextAlign.center, style: TextStyle(fontSize: 10, color: AppColors.muted))),
     ]);
   }
 }
 
-class _ProfileCard extends StatelessWidget {
-  const _ProfileCard({required this.state, required this.connected, required this.name});
+class _ProfileHero extends StatelessWidget {
+  const _ProfileHero({required this.state, required this.connected, required this.name});
   final AppState state;
   final bool connected;
   final String name;
+
   @override
   Widget build(BuildContext context) => Container(
-    margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+    margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
     padding: const EdgeInsets.all(22),
-    decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFF0D2853), AppColors.blue], begin: Alignment.topLeft, end: Alignment.bottomRight), borderRadius: BorderRadius.circular(25)),
-    child: Column(children: [
-      CircleAvatar(radius: 38, backgroundColor: Colors.white, child: Text(connected && name.isNotEmpty ? name[0].toUpperCase() : 'L', style: const TextStyle(fontSize: 27, fontWeight: FontWeight.w900, color: AppColors.blue))),
-      const SizedBox(height: 12),
-      Text(name, style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w900, color: Colors.white)),
-      const SizedBox(height: 4),
-      Text(connected ? 'Compte Fasobiblio synchronisé' : 'Profitez du catalogue en mode invité', style: const TextStyle(fontSize: 12, color: Color(0xFFDCE6FF))),
-      const SizedBox(height: 17),
-      if (connected)
-        OutlinedButton.icon(onPressed: state.logout, icon: const Icon(AppIcons.logout), label: const Text('Se déconnecter'), style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Color(0x66FFFFFF))))
-      else
-        Row(children: [Expanded(child: FilledButton(onPressed: () => showAuthSheet(context, state, signup: true), style: FilledButton.styleFrom(backgroundColor: Colors.white, foregroundColor: AppColors.blue), child: const Text('Créer un compte'))), const SizedBox(width: 9), Expanded(child: OutlinedButton(onPressed: () => showAuthSheet(context, state, signup: false), style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white)), child: const Text('Connexion')))]),
+    decoration: BoxDecoration(
+      gradient: const LinearGradient(colors: [Color(0xFF0A1C3A), Color(0xFF123E87), AppColors.blue], begin: Alignment.topLeft, end: Alignment.bottomRight),
+      borderRadius: BorderRadius.circular(28),
+      boxShadow: const [BoxShadow(color: Color(0x301860F0), blurRadius: 28, offset: Offset(0, 13))],
+    ),
+    child: Stack(children: [
+      Positioned(right: -30, top: -35, child: Container(width: 150, height: 150, decoration: BoxDecoration(color: Colors.white.withValues(alpha: .06), shape: BoxShape.circle))),
+      Column(children: [
+        Row(children: [
+          Container(
+            width: 72,
+            height: 72,
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(23), boxShadow: const [BoxShadow(color: Color(0x26000000), blurRadius: 16, offset: Offset(0, 7))]),
+            alignment: Alignment.center,
+            child: Text(connected && name.isNotEmpty ? name[0].toUpperCase() : 'L', style: const TextStyle(fontSize: 27, fontWeight: FontWeight.w900, color: AppColors.blue)),
+          ),
+          const SizedBox(width: 15),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTypography.display(size: 22, weight: FontWeight.w900, color: Colors.white)),
+            const SizedBox(height: 5),
+            Text(connected ? 'Compte Fasobiblio synchronisé' : 'Explorez le savoir en mode invité', style: const TextStyle(fontSize: 11.5, color: Color(0xFFDCE7FF))),
+          ])),
+        ]),
+        const SizedBox(height: 20),
+        Row(children: [
+          Expanded(child: _MiniStat(icon: AppIcons.heart, value: '${state.favorites.length}', label: 'Favoris')),
+          const SizedBox(width: 8),
+          Expanded(child: _MiniStat(icon: AppIcons.bookmark, value: '${state.later.length}', label: 'À lire')),
+          const SizedBox(width: 8),
+          Expanded(child: _MiniStat(icon: AppIcons.shoppingBag, value: '${state.purchased.length}', label: 'Achats')),
+        ]),
+        const SizedBox(height: 18),
+        if (connected)
+          SizedBox(width: double.infinity, child: OutlinedButton.icon(onPressed: state.logout, icon: const Icon(AppIcons.logout), label: const Text('Se déconnecter'), style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Color(0x55FFFFFF)), minimumSize: const Size(0, 46))))
+        else
+          Row(children: [
+            Expanded(child: FilledButton(onPressed: () => showAuthSheet(context, state, signup: true), style: FilledButton.styleFrom(backgroundColor: Colors.white, foregroundColor: AppColors.blue), child: const Text('Créer un compte'))),
+            const SizedBox(width: 9),
+            Expanded(child: OutlinedButton(onPressed: () => showAuthSheet(context, state, signup: false), style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white), minimumSize: const Size(0, 46)), child: const Text('Connexion'))),
+          ]),
+      ]),
     ]),
+  );
+}
+
+class _MiniStat extends StatelessWidget {
+  const _MiniStat({required this.icon, required this.value, required this.label});
+  final IconData icon;
+  final String value;
+  final String label;
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+    decoration: BoxDecoration(color: Colors.white.withValues(alpha: .09), borderRadius: BorderRadius.circular(14)),
+    child: Column(children: [Icon(icon, size: 16, color: const Color(0xFFBFD2FF)), const SizedBox(height: 5), Text(value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: Colors.white)), Text(label, style: const TextStyle(fontSize: 9.5, color: Color(0xFFCAD7EF))) ]),
   );
 }
 
@@ -100,8 +143,12 @@ class _PremiumStatus extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
     padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(color: subscription == null ? Theme.of(context).colorScheme.surface : const Color(0xFFFFF8E3), border: Border.all(color: subscription == null ? Theme.of(context).dividerColor.withValues(alpha: .5) : const Color(0xFFEAD9A7)), borderRadius: BorderRadius.circular(18)),
-    child: Row(children: [Icon(subscription == null ? AppIcons.user : AppIcons.premium, color: subscription == null ? AppColors.blue : AppColors.gold, size: 30), const SizedBox(width: 13), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(subscription == null ? 'Compte gratuit' : '${subscription!['planName'] ?? 'Premium actif'}', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.w900, color: subscription == null ? null : AppColors.ink)), const SizedBox(height: 3), Text(subscription == null ? '$purchased document(s) acheté(s)' : subscription!['lifetime'] == true ? 'Accès à vie' : 'Accès Premium actif', style: const TextStyle(fontSize: 11, color: AppColors.muted))]))]),
+    decoration: BoxDecoration(color: subscription == null ? Theme.of(context).colorScheme.surface : const Color(0xFFFFF8E3), border: Border.all(color: subscription == null ? Theme.of(context).dividerColor.withValues(alpha: .5) : const Color(0xFFEAD9A7)), borderRadius: BorderRadius.circular(19)),
+    child: Row(children: [
+      Container(width: 46, height: 46, decoration: BoxDecoration(color: subscription == null ? AppColors.sky : Colors.white, borderRadius: BorderRadius.circular(14)), child: Icon(subscription == null ? AppIcons.user : AppIcons.premium, color: subscription == null ? AppColors.blue : AppColors.gold)),
+      const SizedBox(width: 13),
+      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(subscription == null ? 'Compte gratuit' : '${subscription!['planName'] ?? 'Premium actif'}', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.w900, color: subscription == null ? null : AppColors.ink)), const SizedBox(height: 3), Text(subscription == null ? '$purchased document(s) acheté(s)' : subscription!['lifetime'] == true ? 'Accès à vie' : 'Accès Premium actif', style: const TextStyle(fontSize: 11, color: AppColors.muted))]))
+    ]),
   );
 }
 
@@ -111,21 +158,39 @@ class _DarkModeTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-    child: Material(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(17), child: SwitchListTile(value: state.darkMode, onChanged: state.toggleDarkMode, secondary: Container(width: 44, height: 44, decoration: BoxDecoration(color: AppColors.sky, borderRadius: BorderRadius.circular(13)), child: Icon(state.darkMode ? AppIcons.moon : AppIcons.sun, color: AppColors.blue)), title: const Text('Mode sombre', style: TextStyle(fontWeight: FontWeight.w800)), subtitle: const Text('Adapter l’interface pour la lecture nocturne', style: TextStyle(fontSize: 11, color: AppColors.muted)))),
+    child: Material(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(19), child: SwitchListTile(value: state.darkMode, onChanged: state.toggleDarkMode, secondary: Container(width: 44, height: 44, decoration: BoxDecoration(gradient: const LinearGradient(colors: [AppColors.sky, Color(0xFFE8F0FF)]), borderRadius: BorderRadius.circular(13)), child: Icon(state.darkMode ? AppIcons.moon : AppIcons.sun, color: AppColors.blue)), title: const Text('Mode sombre', style: TextStyle(fontWeight: FontWeight.w800)), subtitle: const Text('Adapter l’interface pour la lecture nocturne', style: TextStyle(fontSize: 11, color: AppColors.muted)))),
   );
 }
 
 class _Menu extends StatelessWidget {
-  const _Menu({required this.icon, required this.title, required this.subtitle, required this.onTap, this.badge = 0});
+  const _Menu({required this.icon, required this.title, required this.subtitle, required this.onTap, this.badge = 0, this.accent = false});
   final IconData icon;
   final String title;
   final String subtitle;
   final VoidCallback onTap;
   final int badge;
+  final bool accent;
+
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-    child: Material(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(17), child: InkWell(onTap: onTap, borderRadius: BorderRadius.circular(17), child: Padding(padding: const EdgeInsets.all(14), child: Row(children: [Container(width: 44, height: 44, decoration: BoxDecoration(color: AppColors.sky, borderRadius: BorderRadius.circular(13)), child: Icon(icon, color: AppColors.blue)), const SizedBox(width: 13), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: const TextStyle(fontWeight: FontWeight.w800)), const SizedBox(height: 3), Text(subtitle, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11, color: AppColors.muted))])), if (badge > 0) Badge(label: Text(badge > 99 ? '99+' : '$badge')) else const Icon(AppIcons.chevronRight, color: AppColors.muted)])))),
+    child: Material(
+      color: accent ? const Color(0xFF102C5C) : Theme.of(context).colorScheme.surface,
+      borderRadius: BorderRadius.circular(19),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(19),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(children: [
+            Container(width: 46, height: 46, decoration: BoxDecoration(color: accent ? Colors.white.withValues(alpha: .10) : AppColors.sky, borderRadius: BorderRadius.circular(14)), child: Icon(icon, color: accent ? const Color(0xFFBFD2FF) : AppColors.blue)),
+            const SizedBox(width: 13),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: TextStyle(fontWeight: FontWeight.w800, color: accent ? Colors.white : null)), const SizedBox(height: 3), Text(subtitle, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 11, color: accent ? const Color(0xFFCAD7EF) : AppColors.muted))])),
+            if (badge > 0) Badge(label: Text(badge > 99 ? '99+' : '$badge')) else Icon(AppIcons.chevronRight, color: accent ? const Color(0xFFBFD2FF) : AppColors.muted),
+          ]),
+        ),
+      ),
+    ),
   );
 }
 
@@ -154,26 +219,10 @@ class _SupportSheetState extends State<_SupportSheet> {
       const SizedBox(height: 5),
       const Text('Quel sujet pouvons-nous traiter ?', style: TextStyle(fontSize: 12, color: AppColors.muted)),
       const SizedBox(height: 15),
-      Wrap(
-        spacing: 9,
-        runSpacing: 9,
-        children: topics.map((topic) {
-          final selected = type == topic.$1;
-          return ChoiceChip(
-            selected: selected,
-            onSelected: (_) => setState(() => type = topic.$1),
-            showCheckmark: false,
-            avatar: Icon(topic.$2, size: 18, color: selected ? Colors.white : AppColors.blue),
-            label: Text(topic.$1),
-            labelStyle: TextStyle(fontWeight: FontWeight.w800, color: selected ? Colors.white : Theme.of(context).colorScheme.onSurface),
-            selectedColor: AppColors.blue,
-            backgroundColor: Theme.of(context).colorScheme.surface,
-            side: BorderSide(color: selected ? AppColors.blue : Theme.of(context).dividerColor.withValues(alpha: .65)),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          );
-        }).toList(),
-      ),
+      Wrap(spacing: 9, runSpacing: 9, children: topics.map((topic) {
+        final selected = type == topic.$1;
+        return ChoiceChip(selected: selected, onSelected: (_) => setState(() => type = topic.$1), showCheckmark: false, avatar: Icon(topic.$2, size: 18, color: selected ? Colors.white : AppColors.blue), label: Text(topic.$1), labelStyle: TextStyle(fontWeight: FontWeight.w800, color: selected ? Colors.white : Theme.of(context).colorScheme.onSurface), selectedColor: AppColors.blue, backgroundColor: Theme.of(context).colorScheme.surface, side: BorderSide(color: selected ? AppColors.blue : Theme.of(context).dividerColor.withValues(alpha: .65)), padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)));
+      }).toList()),
       const SizedBox(height: 15),
       TextField(controller: controller, onChanged: (_) => setState(() {}), minLines: 4, maxLines: 6, maxLength: 1000, decoration: const InputDecoration(labelText: 'Votre message', hintText: 'Décrivez votre demande…')),
       const SizedBox(height: 10),
