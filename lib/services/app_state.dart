@@ -8,9 +8,7 @@ import 'fasobiblio_api.dart';
 import 'local_store.dart';
 
 class AppState extends ChangeNotifier {
-  AppState(this.api, this.store) { current = this; }
-  static AppState? current;
-
+  AppState(this.api, this.store);
   final FasobiblioApi api;
   final LocalStore store;
   List<Book> books = [];
@@ -22,7 +20,6 @@ class AppState extends ChangeNotifier {
   Set<String> purchased = {};
   List<AppNotification> notifications = [];
   Set<String> notificationReads = {};
-  Map<String, dynamic> readingState = {};
   bool loading = true;
   bool refreshing = false;
   bool offline = false;
@@ -53,18 +50,7 @@ class AppState extends ChangeNotifier {
     error = null;
     notifyListeners();
     if (!_hydrated) {
-      final local = await Future.wait([
-        store.loadCatalog(),
-        store.load(LocalStore.favoritesKey),
-        store.load(LocalStore.laterKey),
-        store.lastSync(),
-        store.loadAccountAccess(),
-        store.loadDarkMode(),
-        store.loadJson(LocalStore.notificationsKey),
-        store.load(LocalStore.notificationReadsKey),
-        store.loadWelcomeSeen(),
-        store.loadReadingState(),
-      ]);
+      final local = await Future.wait([store.loadCatalog(), store.load(LocalStore.favoritesKey), store.load(LocalStore.laterKey), store.lastSync(), store.loadAccountAccess(), store.loadDarkMode(), store.loadJson(LocalStore.notificationsKey), store.load(LocalStore.notificationReadsKey), store.loadWelcomeSeen()]);
       books = local[0] as List<Book>;
       favorites = local[1] as Set<String>;
       later = local[2] as Set<String>;
@@ -77,7 +63,6 @@ class AppState extends ChangeNotifier {
       if (cachedNotifications is List) notifications = cachedNotifications.whereType<Map>().map((item) => AppNotification.fromJson('${item['id'] ?? ''}', Map<String, dynamic>.from(item))).where((item) => item.id.isNotEmpty).toList();
       notificationReads = local[7] as Set<String>;
       welcomeSeen = local[8] as bool;
-      readingState = local[9] as Map<String, dynamic>;
       session ??= UserSession.offlineGuest();
       _hydrated = true;
       loading = false;
@@ -109,59 +94,11 @@ class AppState extends ChangeNotifier {
     notifyListeners();
     await store.save(LocalStore.favoritesKey, favorites);
   }
-
   Future<void> toggleLater(String id) async {
     later.contains(id) ? later.remove(id) : later.add(id);
     notifyListeners();
     await store.save(LocalStore.laterKey, later);
   }
-
-  Map<String, dynamic> readingFor(String id) {
-    final value = readingState[id];
-    return value is Map ? Map<String, dynamic>.from(value) : <String, dynamic>{};
-  }
-
-  int readingPage(String id) => (readingFor(id)['page'] as num?)?.toInt() ?? 1;
-  int readingPageCount(String id) => (readingFor(id)['pageCount'] as num?)?.toInt() ?? 0;
-
-  double readingProgress(String id) {
-    final data = readingFor(id);
-    final page = (data['page'] as num?)?.toInt() ?? 0;
-    final count = (data['pageCount'] as num?)?.toInt() ?? 0;
-    if (page <= 0 || count <= 0) return 0;
-    return (page / count).clamp(0.0, 1.0);
-  }
-
-  Set<int> readingBookmarks(String id) {
-    final raw = readingFor(id)['bookmarks'];
-    if (raw is! List) return <int>{};
-    return raw.whereType<num>().map((value) => value.toInt()).where((value) => value > 0).toSet();
-  }
-
-  Future<void> saveReadingPosition(String id, int page, int pageCount, {String? title}) async {
-    if (id.isEmpty || page <= 0) return;
-    final current = readingFor(id);
-    readingState[id] = {
-      ...current,
-      'page': page,
-      'pageCount': pageCount,
-      if (title != null && title.isNotEmpty) 'title': title,
-      'updatedAt': DateTime.now().millisecondsSinceEpoch,
-    };
-    notifyListeners();
-    await store.saveReadingState(readingState);
-  }
-
-  Future<void> toggleReadingBookmark(String id, int page) async {
-    if (id.isEmpty || page <= 0) return;
-    final current = readingFor(id);
-    final bookmarks = readingBookmarks(id);
-    bookmarks.contains(page) ? bookmarks.remove(page) : bookmarks.add(page);
-    readingState[id] = {...current, 'bookmarks': bookmarks.toList()..sort()};
-    notifyListeners();
-    await store.saveReadingState(readingState);
-  }
-
   Future<void> toggleDarkMode(bool value) async { darkMode = value; notifyListeners(); await store.saveDarkMode(value); }
   Future<void> completeWelcome() async { welcomeSeen = true; notifyListeners(); await store.saveWelcomeSeen(); }
 
@@ -178,7 +115,6 @@ class AppState extends ChangeNotifier {
     await store.save(LocalStore.notificationReadsKey, notificationReads);
     if (!offline) await api.markAllNotificationsRead(notifications.map((item) => item.id));
   }
-
   bool hasAccess(Book book) => !book.isPremium || purchased.contains(book.id) || subscription != null;
 
   Future<void> _refreshAccount({bool notify = true}) async {
@@ -213,7 +149,6 @@ class AppState extends ChangeNotifier {
   @override
   void dispose() {
     _connectivitySubscription?.cancel();
-    if (identical(current, this)) current = null;
     super.dispose();
   }
 }
