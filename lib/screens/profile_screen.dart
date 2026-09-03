@@ -80,9 +80,9 @@ class _ProfileHero extends StatelessWidget {
     margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
     padding: const EdgeInsets.all(22),
     decoration: BoxDecoration(
-      gradient: const LinearGradient(colors: [Color(0xFF0A1D3D), Color(0xFF123F8C), AppColors.blue], begin: Alignment.topLeft, end: Alignment.bottomRight),
+      gradient: const LinearGradient(colors: [Color(0xFF0A1D3D), Color(0xFF123F8C), AppColors.blueDeep], begin: Alignment.topLeft, end: Alignment.bottomRight),
       borderRadius: BorderRadius.circular(28),
-      boxShadow: const [BoxShadow(color: Color(0x381860F0), blurRadius: 30, offset: Offset(0, 14))],
+      boxShadow: const [BoxShadow(color: Color(0x2B0B3FB9), blurRadius: 30, offset: Offset(0, 14))],
     ),
     child: Stack(children: [
       Positioned(right: -30, top: -35, child: Container(width: 150, height: 150, decoration: BoxDecoration(color: Colors.white.withValues(alpha: .06), shape: BoxShape.circle))),
@@ -108,10 +108,10 @@ class _ProfileHero extends StatelessWidget {
         if (connected)
           SizedBox(width: double.infinity, child: OutlinedButton.icon(onPressed: state.logout, icon: const Icon(AppIcons.logout), label: const Text('Se déconnecter'), style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Color(0x55FFFFFF)), minimumSize: const Size(0, 46))))
         else
-          Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            Expanded(child: FilledButton(onPressed: () => showAuthSheet(context, state, signup: true), style: FilledButton.styleFrom(backgroundColor: Colors.white, foregroundColor: AppColors.blue, padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10)), child: const Text('Créer un\ncompte', textAlign: TextAlign.center, style: TextStyle(height: 1.05)))),
+          Row(children: [
+            Expanded(child: SizedBox(height: 56, child: FilledButton(onPressed: () => showAuthSheet(context, state, signup: true), style: FilledButton.styleFrom(backgroundColor: Colors.white, foregroundColor: AppColors.blue, padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8)), child: const Text('Créer un\ncompte', textAlign: TextAlign.center, style: TextStyle(height: 1.05))))),
             const SizedBox(width: 9),
-            Expanded(child: OutlinedButton(onPressed: () => showAuthSheet(context, state, signup: false), style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white), minimumSize: const Size(0, 52)), child: const Text('Connexion'))),
+            Expanded(child: SizedBox(height: 56, child: OutlinedButton(onPressed: () => showAuthSheet(context, state, signup: false), style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white)), child: const Text('Connexion')))),
           ]),
       ]),
     ]),
