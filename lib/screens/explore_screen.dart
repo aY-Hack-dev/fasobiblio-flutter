@@ -22,11 +22,12 @@ class _ExploreScreenState extends State<ExploreScreen> {
   Widget build(BuildContext context) {
     final categories = widget.state.books.map((b) => b.category).where((c) => c.isNotEmpty).toSet().toList()..sort();
     final q = query.toLowerCase().trim();
-    final results = widget.state.books.where((b) {
+    final allResults = widget.state.books.where((b) {
       final matchesCategory = category.isEmpty || b.category == category;
       final matchesQuery = q.isEmpty || '${b.title} ${b.author} ${b.description}'.toLowerCase().contains(q);
       return matchesCategory && matchesQuery;
-    }).take(150).toList();
+    }).toList();
+    final visibleResults = allResults.take(150).toList();
 
     return CustomScrollView(slivers: [
       SliverToBoxAdapter(child: _ExploreHero(
@@ -45,7 +46,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
             decoration: BoxDecoration(color: AppColors.sky, borderRadius: BorderRadius.circular(12)),
-            child: Text('${results.length} résultat${results.length > 1 ? 's' : ''}', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: AppColors.blue)),
+            child: Text('${allResults.length} résultat${allResults.length > 1 ? 's' : ''}', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: AppColors.blue)),
           ),
         ]),
       )),
@@ -66,10 +67,10 @@ class _ExploreScreenState extends State<ExploreScreen> {
       )),
       const SliverToBoxAdapter(child: SizedBox(height: 12)),
       SliverToBoxAdapter(
-        child: results.isEmpty
+        child: visibleResults.isEmpty
             ? const _EmptySearch()
             : BookGrid(
-                books: results,
+                books: visibleResults,
                 favorites: widget.state.favorites,
                 onBook: widget.onBook,
                 onFavorite: (book) => widget.state.toggleFavorite(book.id),
@@ -103,12 +104,7 @@ class _ExploreHero extends StatelessWidget {
           Text('$count ressources disponibles dans la bibliothèque Fasobiblio.', style: const TextStyle(fontSize: 12, height: 1.45, color: Color(0xFFDDE8FF))),
         ])),
         const SizedBox(width: 14),
-        Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(color: const Color(0x22FFFFFF), borderRadius: BorderRadius.circular(16)),
-          child: const Icon(AppIcons.search, color: Colors.white, size: 24),
-        ),
+        Container(width: 48, height: 48, decoration: BoxDecoration(color: const Color(0x22FFFFFF), borderRadius: BorderRadius.circular(16)), child: const Icon(AppIcons.search, color: Colors.white, size: 24)),
       ]),
       const SizedBox(height: 18),
       TextField(
@@ -163,10 +159,7 @@ class _CategoryPill extends StatelessWidget {
       borderRadius: BorderRadius.circular(14),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: selected ? AppColors.blue : Theme.of(context).dividerColor.withValues(alpha: .65)),
-        ),
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(14), border: Border.all(color: selected ? AppColors.blue : Theme.of(context).dividerColor.withValues(alpha: .65))),
         child: Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: selected ? Colors.white : AppColors.muted)),
       ),
     ),
@@ -175,16 +168,11 @@ class _CategoryPill extends StatelessWidget {
 
 class _EmptySearch extends StatelessWidget {
   const _EmptySearch();
-
   @override
   Widget build(BuildContext context) => Container(
     margin: const EdgeInsets.fromLTRB(16, 10, 16, 0),
     padding: const EdgeInsets.all(28),
-    decoration: BoxDecoration(
-      color: Theme.of(context).colorScheme.surface,
-      borderRadius: BorderRadius.circular(24),
-      border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: .55)),
-    ),
+    decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(24), border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: .55))),
     child: const Column(children: [
       CircleAvatar(radius: 28, backgroundColor: AppColors.sky, child: Icon(AppIcons.search, color: AppColors.blue)),
       SizedBox(height: 14),
