@@ -41,19 +41,20 @@ class _PdfReaderScreenState extends State<PdfReaderScreen> {
   double speechRate = .46;
   _ReadingMode mode = _ReadingMode.light;
 
-  String get id => widget.documentId ?? '';
-  bool get bookmarked => id.isNotEmpty && (widget.state?.readingBookmarks(id).contains(page) ?? false);
+  AppState? get appState => widget.state ?? AppState.current;
+  String get id => (widget.documentId != null && widget.documentId!.isNotEmpty) ? widget.documentId! : widget.title;
+  bool get bookmarked => appState?.readingBookmarks(id).contains(page) ?? false;
 
   @override
   void initState() {
     super.initState();
-    page = id.isEmpty ? 1 : (widget.state?.readingPage(id) ?? 1);
+    page = appState?.readingPage(id) ?? 1;
     searcher = PdfTextSearcher(controller)..addListener(_searchChanged);
-    tts.setLanguage('fr-FR');
-    tts.setSpeechRate(speechRate);
-    tts.setVolume(1);
-    tts.setPitch(1);
-    tts.awaitSpeakCompletion(true);
+    unawaited(tts.setLanguage('fr-FR'));
+    unawaited(tts.setSpeechRate(speechRate));
+    unawaited(tts.setVolume(1));
+    unawaited(tts.setPitch(1));
+    unawaited(tts.awaitSpeakCompletion(true));
     tts.setStartHandler(() {
       if (mounted) setState(() { speaking = true; paused = false; });
     });
@@ -64,7 +65,7 @@ class _PdfReaderScreenState extends State<PdfReaderScreen> {
       if (mounted) setState(() { speaking = true; paused = false; });
     });
     tts.setCompletionHandler(() => unawaited(_afterSpeech()));
-    tts.setCancelHandler((_) {
+    tts.setCancelHandler(() {
       if (mounted) setState(() { speaking = false; paused = false; });
     });
     tts.setErrorHandler((_) {
@@ -87,10 +88,8 @@ class _PdfReaderScreenState extends State<PdfReaderScreen> {
 
   Future<void> _savePage(int value) async {
     if (value <= 0) return;
-    setState(() => page = value);
-    if (id.isNotEmpty && widget.state != null) {
-      await widget.state!.saveReadingPosition(id, value, pageCount, title: widget.title);
-    }
+    if (mounted) setState(() => page = value);
+    await appState?.saveReadingPosition(id, value, pageCount, title: widget.title);
   }
 
   Future<String> _currentPageText() async {
@@ -111,18 +110,12 @@ class _PdfReaderScreenState extends State<PdfReaderScreen> {
     await tts.setSpeechRate(speechRate);
     final maxLength = await tts.getMaxSpeechInputLength;
     final limit = maxLength is int && maxLength > 100 ? maxLength : 3500;
-    final safeText = text.length > limit ? text.substring(0, limit) : text;
-    await tts.speak(safeText);
+    await tts.speak(text.length > limit ? text.substring(0, limit) : text);
   }
 
   Future<void> _toggleAudio() async {
     if (speaking) {
       await tts.pause();
-      return;
-    }
-    if (paused) {
-      final result = await tts.speak(await _currentPageText());
-      if (result == 1 && mounted) setState(() { speaking = true; paused = false; });
       return;
     }
     await _speakCurrentPage();
@@ -131,7 +124,7 @@ class _PdfReaderScreenState extends State<PdfReaderScreen> {
   Future<void> _afterSpeech() async {
     if (!mounted) return;
     setState(() { speaking = false; paused = false; });
-    if (!autoContinueAudio || page >= pageCount || !controller.isReady) return;
+    if (!autoContinueAudio || pageCount <= 0 || page >= pageCount || !controller.isReady) return;
     final next = page + 1;
     await controller.goToPage(pageNumber: next);
     await _savePage(next);
@@ -144,11 +137,8 @@ class _PdfReaderScreenState extends State<PdfReaderScreen> {
   }
 
   Future<void> _toggleBookmark() async {
-    if (id.isEmpty || widget.state == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Les signets sont disponibles pour les documents ouverts depuis Fasobiblio.')));
-      return;
-    }
-    await widget.state!.toggleReadingBookmark(id, page);
+    if (appState == null) return;
+    await appState!.toggleReadingBookmark(id, page);
     if (mounted) setState(() {});
   }
 
@@ -157,53 +147,54 @@ class _PdfReaderScreenState extends State<PdfReaderScreen> {
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      builder: (sheetContext) => StatefulBuilder(builder: (context, update) {
-        return Padding(
-          padding: EdgeInsets.fromLTRB(18, 12, 18, MediaQuery.viewInsetsOf(context).bottom + 18),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Row(children: [
-              const Icon(Icons.search_rounded),
-              const SizedBox(width: 10),
-              Expanded(child: Text('Rechercher dans le document', style: Theme.of(context).textTheme.titleMedium)),
-            ]),
-            const SizedBox(height: 14),
-            TextField(
-              controller: searchController,
-              autofocus: true,
-              textInputAction: TextInputAction.search,
-              decoration: const InputDecoration(hintText: 'Mot ou expression…'),
-              onSubmitted: (value) {
-                if (value.trim().isEmpty) return;
-                searcher.startTextSearch(value.trim(), searchImmediately: true);
-                update(() {});
-              },
-            ),
-            const SizedBox(height: 12),
-            Row(children: [
-              Expanded(child: Text(searcher.isSearching
+      builder: (sheetContext) => StatefulBuilder(builder: (context, update) => Padding(
+        padding: EdgeInsets.fromLTRB(18, 12, 18, MediaQuery.viewInsetsOf(context).bottom + 18),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Row(children: [
+            const Icon(Icons.search_rounded),
+            const SizedBox(width: 10),
+            Expanded(child: Text('Rechercher dans le document', style: Theme.of(context).textTheme.titleMedium)),
+          ]),
+          const SizedBox(height: 14),
+          TextField(
+            controller: searchController,
+            autofocus: true,
+            textInputAction: TextInputAction.search,
+            decoration: const InputDecoration(hintText: 'Mot ou expression…'),
+            onSubmitted: (value) {
+              if (value.trim().isEmpty) return;
+              searcher.startTextSearch(value.trim(), searchImmediately: true);
+              update(() {});
+            },
+          ),
+          const SizedBox(height: 12),
+          Row(children: [
+            Expanded(child: Text(
+              searcher.isSearching
                   ? 'Recherche en cours…'
                   : searcher.matches.isEmpty
                       ? 'Saisissez un terme puis lancez la recherche.'
-                      : '${searcher.matches.length} résultat(s)', style: const TextStyle(fontSize: 12, color: AppColors.muted))),
-              IconButton(onPressed: searcher.hasMatches ? () async { await searcher.goToPrevMatch(); update(() {}); } : null, icon: const Icon(Icons.keyboard_arrow_up_rounded)),
-              IconButton(onPressed: searcher.hasMatches ? () async { await searcher.goToNextMatch(); update(() {}); } : null, icon: const Icon(Icons.keyboard_arrow_down_rounded)),
-            ]),
+                      : '${searcher.matches.length} résultat(s)',
+              style: const TextStyle(fontSize: 12, color: AppColors.muted),
+            )),
+            IconButton(onPressed: searcher.hasMatches ? () async { await searcher.goToPrevMatch(); update(() {}); } : null, icon: const Icon(Icons.keyboard_arrow_up_rounded)),
+            IconButton(onPressed: searcher.hasMatches ? () async { await searcher.goToNextMatch(); update(() {}); } : null, icon: const Icon(Icons.keyboard_arrow_down_rounded)),
           ]),
-        );
-      }),
+        ]),
+      )),
     );
   }
 
   Future<void> _showOutline() async {
     if (outline.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ce document ne contient pas de sommaire intégré.')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ce document ne contient pas de sommaire intégré.')));
       return;
     }
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      builder: (context) => DraggableScrollableSheet(
+      builder: (sheetContext) => DraggableScrollableSheet(
         expand: false,
         initialChildSize: .68,
         maxChildSize: .92,
@@ -211,8 +202,8 @@ class _PdfReaderScreenState extends State<PdfReaderScreen> {
           controller: scrollController,
           padding: const EdgeInsets.fromLTRB(12, 8, 12, 24),
           children: [
-            Padding(padding: const EdgeInsets.all(10), child: Text('Sommaire', style: Theme.of(context).textTheme.titleLarge)),
-            ..._outlineTiles(outline, context),
+            Padding(padding: const EdgeInsets.all(10), child: Text('Sommaire', style: Theme.of(sheetContext).textTheme.titleLarge)),
+            ..._outlineTiles(outline, sheetContext),
           ],
         ),
       ),
@@ -239,10 +230,10 @@ class _PdfReaderScreenState extends State<PdfReaderScreen> {
     await showModalBottomSheet<void>(
       context: context,
       useSafeArea: true,
-      builder: (context) => StatefulBuilder(builder: (context, update) => Padding(
+      builder: (sheetContext) => StatefulBuilder(builder: (context, update) => Padding(
         padding: const EdgeInsets.fromLTRB(18, 8, 18, 22),
         child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('Confort de lecture', style: Theme.of(context).textTheme.titleLarge),
+          Text('Confort de lecture', style: Theme.of(sheetContext).textTheme.titleLarge),
           const SizedBox(height: 16),
           SegmentedButton<_ReadingMode>(
             segments: const [
@@ -254,7 +245,7 @@ class _PdfReaderScreenState extends State<PdfReaderScreen> {
             onSelectionChanged: (value) { setState(() => mode = value.first); update(() {}); },
           ),
           const SizedBox(height: 20),
-          Row(children: [const Icon(Icons.speed_rounded, size: 20), const SizedBox(width: 9), Text('Vitesse audio ×${(speechRate * 2).toStringAsFixed(1)}')]),
+          Row(children: [const Icon(Icons.speed_rounded, size: 20), const SizedBox(width: 9), Text('Vitesse audio ${(speechRate * 2).toStringAsFixed(1)}×')]),
           Slider(
             min: .25,
             max: .85,
@@ -279,7 +270,11 @@ class _PdfReaderScreenState extends State<PdfReaderScreen> {
       initialPageNumber: page,
       params: PdfViewerParams(
         margin: 10,
-        backgroundColor: mode == _ReadingMode.dark ? const Color(0xFF0A1020) : mode == _ReadingMode.comfort ? const Color(0xFFE9DFC9) : const Color(0xFFE9EDF5),
+        backgroundColor: mode == _ReadingMode.dark
+            ? const Color(0xFF0A1020)
+            : mode == _ReadingMode.comfort
+                ? const Color(0xFFE9DFC9)
+                : const Color(0xFFE9EDF5),
         pageDropShadow: const BoxShadow(color: Color(0x33000000), blurRadius: 8, offset: Offset(0, 4)),
         matchTextColor: const Color(0x80FFD54F),
         activeMatchTextColor: const Color(0xB3FFB300),
@@ -294,13 +289,11 @@ class _PdfReaderScreenState extends State<PdfReaderScreen> {
             outline = loadedOutline;
             pageCount = controller.pageCount;
           });
-          if (id.isNotEmpty && widget.state != null) {
-            await widget.state!.saveReadingPosition(id, page, pageCount, title: widget.title);
-          }
+          await appState?.saveReadingPosition(id, page, pageCount, title: widget.title);
         },
-        onGeneralTap: (_) {
+        onGeneralTap: (_, __, ___) {
           setState(() => controlsVisible = !controlsVisible);
-          return true;
+          return false;
         },
       ),
     );
@@ -371,7 +364,18 @@ class _PdfReaderScreenState extends State<PdfReaderScreen> {
 }
 
 class _ReaderTopBar extends StatelessWidget {
-  const _ReaderTopBar({required this.title, required this.page, required this.pageCount, required this.bookmarked, required this.onBack, required this.onBookmark, required this.onSearch, required this.onOutline, required this.onSettings});
+  const _ReaderTopBar({
+    required this.title,
+    required this.page,
+    required this.pageCount,
+    required this.bookmarked,
+    required this.onBack,
+    required this.onBookmark,
+    required this.onSearch,
+    required this.onOutline,
+    required this.onSettings,
+  });
+
   final String title;
   final int page;
   final int pageCount;
@@ -407,7 +411,18 @@ class _ReaderTopBar extends StatelessWidget {
 }
 
 class _ReaderBottomBar extends StatelessWidget {
-  const _ReaderBottomBar({required this.page, required this.pageCount, required this.progress, required this.speaking, required this.paused, required this.onAudio, required this.onStop, required this.onPrevious, required this.onNext});
+  const _ReaderBottomBar({
+    required this.page,
+    required this.pageCount,
+    required this.progress,
+    required this.speaking,
+    required this.paused,
+    required this.onAudio,
+    required this.onStop,
+    required this.onPrevious,
+    required this.onNext,
+  });
+
   final int page;
   final int pageCount;
   final double progress;
@@ -432,7 +447,7 @@ class _ReaderBottomBar extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(child: ClipRRect(borderRadius: BorderRadius.circular(99), child: LinearProgressIndicator(value: progress, minHeight: 4, backgroundColor: const Color(0xFF263A61), color: const Color(0xFF6D9CFF)))),
           const SizedBox(width: 10),
-          Text('$page/$pageCount', style: const TextStyle(fontSize: 10, color: Color(0xFFAFC5F1))),
+          Text(pageCount > 0 ? '$page/$pageCount' : '$page', style: const TextStyle(fontSize: 10, color: Color(0xFFAFC5F1))),
         ]),
         const SizedBox(height: 8),
         Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
@@ -443,8 +458,10 @@ class _ReaderBottomBar extends StatelessWidget {
             icon: Icon(speaking ? Icons.pause_rounded : Icons.headphones_rounded),
             label: Text(speaking ? 'Pause' : paused ? 'Reprendre' : 'Écouter'),
           ),
-          if (speaking || paused) IconButton(onPressed: onStop, tooltip: 'Arrêter', icon: const Icon(Icons.stop_circle_outlined, color: Colors.white))
-          else const SizedBox(width: 48),
+          if (speaking || paused)
+            IconButton(onPressed: onStop, tooltip: 'Arrêter', icon: const Icon(Icons.stop_circle_outlined, color: Colors.white))
+          else
+            const SizedBox(width: 48),
           IconButton(onPressed: onNext, icon: const Icon(Icons.chevron_right_rounded, color: Colors.white, size: 29)),
         ]),
       ]),
