@@ -24,37 +24,19 @@ class _LibraryScreenState extends State<LibraryScreen> {
     final total = widget.state.favorites.length + widget.state.later.length + widget.state.purchased.length;
 
     return CustomScrollView(slivers: [
-      SliverToBoxAdapter(child: _LibraryHero(
-        total: total,
+      SliverToBoxAdapter(child: _LibraryHeader(total: total)),
+      SliverToBoxAdapter(child: _SegmentedLibrary(
+        section: section,
         favorites: widget.state.favorites.length,
         later: widget.state.later.length,
         purchased: widget.state.purchased.length,
+        onChanged: (value) => setState(() => section = value),
       )),
       SliverToBoxAdapter(child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
-        child: Container(
-          padding: const EdgeInsets.all(5),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: .55)),
-            boxShadow: const [BoxShadow(color: Color(0x110F172A), blurRadius: 14, offset: Offset(0, 6))],
-          ),
-          child: Row(children: [
-            _LibraryTab(label: 'Favoris', icon: AppIcons.heart, count: widget.state.favorites.length, selected: section == 0, onTap: () => setState(() => section = 0)),
-            _LibraryTab(label: 'À lire', icon: AppIcons.bookmark, count: widget.state.later.length, selected: section == 1, onTap: () => setState(() => section = 1)),
-            _LibraryTab(label: 'Achats', icon: AppIcons.shoppingBag, count: widget.state.purchased.length, selected: section == 2, onTap: () => setState(() => section = 2)),
-          ]),
-        ),
-      )),
-      SliverToBoxAdapter(child: Padding(
-        padding: const EdgeInsets.fromLTRB(18, 4, 18, 8),
+        padding: const EdgeInsets.fromLTRB(18, 18, 18, 8),
         child: Row(children: [
-          Expanded(child: Text(
-            section == 0 ? 'Vos favoris' : section == 1 ? 'À lire plus tard' : 'Vos achats Premium',
-            style: Theme.of(context).textTheme.titleLarge,
-          )),
-          Text('${books.length}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: AppColors.blue)),
+          Expanded(child: Text(section == 0 ? 'Mes favoris' : section == 1 ? 'À lire plus tard' : 'Mes achats', style: Theme.of(context).textTheme.titleLarge)),
+          Text('${books.length}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: AppColors.blueDeep)),
         ]),
       )),
       SliverToBoxAdapter(
@@ -80,71 +62,81 @@ class _LibraryScreenState extends State<LibraryScreen> {
   }
 }
 
-class _LibraryHero extends StatelessWidget {
-  const _LibraryHero({required this.total, required this.favorites, required this.later, required this.purchased});
+class _LibraryHeader extends StatelessWidget {
+  const _LibraryHeader({required this.total});
   final int total;
-  final int favorites;
-  final int later;
-  final int purchased;
 
   @override
   Widget build(BuildContext context) => Container(
-    margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-    padding: const EdgeInsets.all(20),
+    margin: const EdgeInsets.fromLTRB(14, 10, 14, 0),
+    height: 158,
+    clipBehavior: Clip.antiAlias,
     decoration: BoxDecoration(
-      gradient: const LinearGradient(colors: [AppColors.ink, AppColors.blueDeep], begin: Alignment.topLeft, end: Alignment.bottomRight),
+      gradient: const LinearGradient(colors: [Color(0xFF071A38), Color(0xFF0B3FB9), Color(0xFF1764E8)], begin: Alignment.topLeft, end: Alignment.bottomRight),
       borderRadius: BorderRadius.circular(28),
-      boxShadow: const [BoxShadow(color: Color(0x2A0B3FB9), blurRadius: 24, offset: Offset(0, 12))],
+      boxShadow: const [BoxShadow(color: Color(0x2310379D), blurRadius: 22, offset: Offset(0, 10))],
     ),
-    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Row(children: [
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('Votre espace de lecture.', style: AppTypography.display(size: 23, weight: FontWeight.w900, color: Colors.white)),
-          const SizedBox(height: 7),
-          const Text('Tout ce que vous aimez, sauvegardez ou achetez, au même endroit.', style: TextStyle(fontSize: 12, height: 1.45, color: Color(0xFFD8E3FF))),
-        ])),
-        Container(
-          width: 52,
-          height: 52,
-          decoration: BoxDecoration(color: const Color(0x22FFFFFF), borderRadius: BorderRadius.circular(17)),
-          child: const Icon(AppIcons.library, color: Colors.white, size: 25),
-        ),
-      ]),
-      const SizedBox(height: 18),
-      Row(children: [
-        _Metric(value: '$total', label: 'Enregistrés'),
-        const SizedBox(width: 9),
-        _Metric(value: '$favorites', label: 'Favoris'),
-        const SizedBox(width: 9),
-        _Metric(value: '$purchased', label: 'Achats'),
-      ]),
+    child: Stack(children: [
+      const Positioned.fill(child: CustomPaint(painter: _LibraryPatternPainter())),
+      Padding(
+        padding: const EdgeInsets.all(20),
+        child: Row(children: [
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
+            const Text('MA BIBLIOTHÈQUE', style: TextStyle(fontSize: 9, letterSpacing: 1.5, fontWeight: FontWeight.w900, color: Color(0xFFBFD2FF))),
+            const SizedBox(height: 8),
+            Text('Tout ce que vous\navez gardé.', style: AppTypography.display(size: 24, weight: FontWeight.w900, color: Colors.white)),
+            const SizedBox(height: 8),
+            Text('$total document(s) dans votre espace', style: const TextStyle(fontSize: 10.5, color: Color(0xFFD9E5FF))),
+          ])),
+          Container(width: 62, height: 62, decoration: BoxDecoration(color: const Color(0x18FFFFFF), borderRadius: BorderRadius.circular(20)), child: const Icon(AppIcons.library, color: Colors.white, size: 28)),
+        ]),
+      ),
     ]),
   );
 }
 
-class _Metric extends StatelessWidget {
-  const _Metric({required this.value, required this.label});
-  final String value;
-  final String label;
+class _LibraryPatternPainter extends CustomPainter {
+  const _LibraryPatternPainter();
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..color = Colors.white.withValues(alpha: .05)..style = PaintingStyle.stroke..strokeWidth = 1.3;
+    for (double y = -18; y < size.height + 20; y += 36) {
+      for (double x = -18; x < size.width + 20; x += 36) {
+        canvas.drawRect(Rect.fromCenter(center: Offset(x + 12, y + 12), width: 15, height: 15), paint);
+        canvas.drawCircle(Offset(x + 12, y + 12), 3, paint);
+      }
+    }
+  }
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class _SegmentedLibrary extends StatelessWidget {
+  const _SegmentedLibrary({required this.section, required this.favorites, required this.later, required this.purchased, required this.onChanged});
+  final int section;
+  final int favorites;
+  final int later;
+  final int purchased;
+  final ValueChanged<int> onChanged;
 
   @override
-  Widget build(BuildContext context) => Expanded(
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
     child: Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 11),
-      decoration: BoxDecoration(color: const Color(0x14FFFFFF), borderRadius: BorderRadius.circular(15), border: Border.all(color: const Color(0x18FFFFFF))),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(value, style: AppTypography.display(size: 18, weight: FontWeight.w900, color: Colors.white)),
-        const SizedBox(height: 2),
-        Text(label, style: const TextStyle(fontSize: 9.5, color: Color(0xFFD8E3FF))),
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: .45))),
+      child: Row(children: [
+        _LibraryTab(label: 'Favoris', count: favorites, selected: section == 0, onTap: () => onChanged(0)),
+        _LibraryTab(label: 'À lire', count: later, selected: section == 1, onTap: () => onChanged(1)),
+        _LibraryTab(label: 'Achats', count: purchased, selected: section == 2, onTap: () => onChanged(2)),
       ]),
     ),
   );
 }
 
 class _LibraryTab extends StatelessWidget {
-  const _LibraryTab({required this.label, required this.icon, required this.count, required this.selected, required this.onTap});
+  const _LibraryTab({required this.label, required this.count, required this.selected, required this.onTap});
   final String label;
-  final IconData icon;
   final int count;
   final bool selected;
   final VoidCallback onTap;
@@ -153,19 +145,12 @@ class _LibraryTab extends StatelessWidget {
   Widget build(BuildContext context) => Expanded(
     child: InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(12),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
-        decoration: BoxDecoration(
-          color: selected ? AppColors.blue : Colors.transparent,
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Column(children: [
-          Icon(icon, size: 18, color: selected ? Colors.white : AppColors.muted),
-          const SizedBox(height: 4),
-          Text('$label ($count)', maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: selected ? Colors.white : AppColors.muted)),
-        ]),
+        duration: const Duration(milliseconds: 170),
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+        decoration: BoxDecoration(color: selected ? AppColors.blueDeep : Colors.transparent, borderRadius: BorderRadius.circular(12)),
+        child: Text('$label  $count', textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: selected ? Colors.white : AppColors.muted)),
       ),
     ),
   );
