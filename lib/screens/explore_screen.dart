@@ -92,9 +92,13 @@ class _ExploreHero extends StatelessWidget {
     margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
     padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
     decoration: BoxDecoration(
-      gradient: const LinearGradient(colors: [AppColors.blueDeep, AppColors.blue], begin: Alignment.topLeft, end: Alignment.bottomRight),
+      gradient: const LinearGradient(
+        colors: [Color(0xFF0A1D3D), Color(0xFF123F8C), AppColors.blueDeep],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
       borderRadius: BorderRadius.circular(28),
-      boxShadow: const [BoxShadow(color: Color(0x331860F0), blurRadius: 26, offset: Offset(0, 14))],
+      boxShadow: const [BoxShadow(color: Color(0x2B0B3FB9), blurRadius: 26, offset: Offset(0, 14))],
     ),
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Row(children: [
