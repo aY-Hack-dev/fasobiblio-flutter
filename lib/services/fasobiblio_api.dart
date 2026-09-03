@@ -152,34 +152,19 @@ class FasobiblioApi {
   Future<void> submitReview(String documentId, int stars, String comment) async {
     final auth = await ensureSession();
     if (auth.anonymous || auth.idToken.isEmpty) throw Exception('Connectez-vous avec votre compte pour publier un avis.');
-    await _request(
-      Uri.parse('$database/document_reviews/${Uri.encodeComponent(documentId)}/${Uri.encodeComponent(auth.uid)}.json?auth=${Uri.encodeQueryComponent(auth.idToken)}'),
-      method: 'PUT',
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'stars': stars, 'comment': comment.trim(), 'name': auth.pseudo, 'ts': DateTime.now().millisecondsSinceEpoch, 'status': 'pending'}),
-    );
+    await _request(Uri.parse('$database/document_reviews/${Uri.encodeComponent(documentId)}/${Uri.encodeComponent(auth.uid)}.json?auth=${Uri.encodeQueryComponent(auth.idToken)}'), method: 'PUT', headers: {'Content-Type': 'application/json'}, body: jsonEncode({'stars': stars, 'comment': comment.trim(), 'name': auth.pseudo, 'ts': DateTime.now().millisecondsSinceEpoch, 'status': 'pending'}));
   }
 
   Future<void> sendSupportMessage({required String type, required String message}) async {
     final auth = await ensureSession();
     if (auth.idToken.isEmpty) throw Exception('Connexion Internet requise.');
-    await _request(
-      Uri.parse('$database/messages_soutien.json?auth=${Uri.encodeQueryComponent(auth.idToken)}'),
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'nom': auth.anonymous ? 'Lecteur invité' : auth.pseudo, 'message': message.trim(), 'type': type, 'deviceId': auth.uid, 'lu': false, 'createdAt': DateTime.now().millisecondsSinceEpoch}),
-    );
+    await _request(Uri.parse('$database/messages_soutien.json?auth=${Uri.encodeQueryComponent(auth.idToken)}'), method: 'POST', headers: {'Content-Type': 'application/json'}, body: jsonEncode({'nom': auth.anonymous ? 'Lecteur invité' : auth.pseudo, 'message': message.trim(), 'type': type, 'deviceId': auth.uid, 'lu': false, 'createdAt': DateTime.now().millisecondsSinceEpoch}));
   }
 
   Future<void> sendSuggestion({required String title, required String subject, required String level, required String details}) async {
     final auth = await ensureSession();
     if (auth.idToken.isEmpty) throw Exception('Connexion Internet requise.');
-    await _request(
-      Uri.parse('$database/suggestions.json?auth=${Uri.encodeQueryComponent(auth.idToken)}'),
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'name': auth.anonymous ? 'Lecteur invité' : auth.pseudo, 'title': title.trim(), 'subject': subject.trim(), 'level': level.trim(), 'details': details.trim(), 'status': 'pending', 'createdAt': DateTime.now().millisecondsSinceEpoch}),
-    );
+    await _request(Uri.parse('$database/suggestions.json?auth=${Uri.encodeQueryComponent(auth.idToken)}'), method: 'POST', headers: {'Content-Type': 'application/json'}, body: jsonEncode({'name': auth.anonymous ? 'Lecteur invité' : auth.pseudo, 'title': title.trim(), 'subject': subject.trim(), 'level': level.trim(), 'details': details.trim(), 'status': 'pending', 'createdAt': DateTime.now().millisecondsSinceEpoch}));
   }
 
   Future<Map<String, String>> documentFile(String id, String mode) async {
@@ -193,20 +178,21 @@ class FasobiblioApi {
   }
 
   Future<Map<String, String>> startDocumentPayment({required String docId, required String phone, required String pseudo}) async {
-    final data = await authenticated('/api/pay', method: 'POST', body: {
-      'docId': docId,
-      'numeroSend': phone.replaceAll(RegExp(r'\D'), ''),
-      'nomclient': pseudo,
-      'pseudo': pseudo,
-    });
+    final data = await authenticated('/api/pay', method: 'POST', body: {'docId': docId, 'numeroSend': phone.replaceAll(RegExp(r'\D'), ''), 'nomclient': pseudo, 'pseudo': pseudo});
     return {'token': '${data['token'] ?? ''}', 'url': '${data['url'] ?? ''}'};
   }
 
   Future<Map<String, String>> startSubscriptionPayment({required String planId, required String phone, required String pseudo}) async {
-    final data = await authenticated('/api/pay-subscription', method: 'POST', body: {
-      'planId': planId,
-      'numeroSend': phone.replaceAll(RegExp(r'\D'), ''),
+    final data = await authenticated('/api/pay-subscription', method: 'POST', body: {'planId': planId, 'numeroSend': phone.replaceAll(RegExp(r'\D'), ''), 'pseudo': pseudo});
+    return {'token': '${data['token'] ?? ''}', 'url': '${data['url'] ?? ''}'};
+  }
+
+  Future<Map<String, String>> startDonationPayment({required int amount, required String phone, required String pseudo}) async {
+    final data = await authenticated('/api/donate', method: 'POST', body: {
       'pseudo': pseudo,
+      'montant': amount,
+      'numeroSend': phone.replaceAll(RegExp(r'\D'), ''),
+      'nomclient': pseudo,
     });
     return {'token': '${data['token'] ?? ''}', 'url': '${data['url'] ?? ''}'};
   }
