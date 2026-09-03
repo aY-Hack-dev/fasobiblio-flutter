@@ -4,7 +4,6 @@ import '../models/book.dart';
 import '../services/app_state.dart';
 import '../widgets/book_card.dart';
 import '../widgets/document_cover.dart';
-import '../widgets/section.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key, required this.state, required this.onExplore, required this.onBook});
@@ -17,66 +16,167 @@ class HomeScreen extends StatelessWidget {
     final popular = [...state.books]..sort((a, b) => b.views.compareTo(a.views));
     final recent = [...state.books]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     final premium = state.books.where((book) => book.isPremium).toList();
-    final categories = state.books.map((book) => book.category).where((value) => value.isNotEmpty).toSet().take(10).toList();
+    final categories = state.books.map((book) => book.category).where((value) => value.isNotEmpty).toSet().take(8).toList();
     final featured = popular.isEmpty ? null : popular.first;
 
     return CustomScrollView(slivers: [
-      SliverToBoxAdapter(child: _WelcomeBlock(count: state.books.length, onExplore: onExplore)),
-      if (featured != null) SliverToBoxAdapter(child: _Featured(book: featured, onTap: () => onBook(featured))),
-      if (state.books.isEmpty) const SliverToBoxAdapter(child: _FirstOfflineWelcome()),
-      if (categories.isNotEmpty) ...[
-        const SliverToBoxAdapter(child: SectionTitle('Explorer les rayons')),
-        SliverToBoxAdapter(child: _Categories(values: categories, onExplore: onExplore)),
-      ],
-      if (popular.isNotEmpty) SliverToBoxAdapter(child: _Shelf(title: 'Populaires maintenant', subtitle: 'Les documents les plus consultés', books: popular.take(10).toList(), state: state, onBook: onBook)),
-      if (recent.isNotEmpty) SliverToBoxAdapter(child: _Shelf(title: 'Nouveautés', subtitle: 'Les dernières ressources ajoutées', books: recent.take(10).toList(), state: state, onBook: onBook)),
-      if (premium.isNotEmpty) SliverToBoxAdapter(child: _Shelf(title: 'Sélection Premium', subtitle: 'Des contenus à forte valeur ajoutée', books: premium.take(10).toList(), state: state, onBook: onBook, premium: true)),
-      SliverToBoxAdapter(child: _StudyCard(onTap: onExplore)),
+      SliverToBoxAdapter(child: _LandingHeader(count: state.books.length, onExplore: onExplore)),
+      if (categories.isNotEmpty) SliverToBoxAdapter(child: _CategoryTabs(values: categories, onTap: onExplore)),
+      if (featured != null) SliverToBoxAdapter(child: _FeaturedRow(book: featured, onTap: () => onBook(featured))),
+      if (recent.isNotEmpty) SliverToBoxAdapter(child: _CoverShelf(title: 'Continuer à découvrir', books: recent.take(10).toList(), state: state, onBook: onBook)),
+      if (popular.isNotEmpty) SliverToBoxAdapter(child: _CoverShelf(title: 'Les plus populaires', books: popular.take(10).toList(), state: state, onBook: onBook)),
+      if (premium.isNotEmpty) SliverToBoxAdapter(child: _CoverShelf(title: 'Sélection Premium', books: premium.take(10).toList(), state: state, onBook: onBook, premium: true)),
+      if (state.books.isEmpty) const SliverToBoxAdapter(child: _OfflineState()),
+      SliverToBoxAdapter(child: _AssistantBanner(onTap: onExplore)),
       const SliverToBoxAdapter(child: SizedBox(height: 34)),
     ]);
   }
 }
 
-class _WelcomeBlock extends StatelessWidget {
-  const _WelcomeBlock({required this.count, required this.onExplore});
+class _LandingHeader extends StatelessWidget {
+  const _LandingHeader({required this.count, required this.onExplore});
   final int count;
   final VoidCallback onExplore;
 
   @override
+  Widget build(BuildContext context) => Container(
+    margin: const EdgeInsets.fromLTRB(14, 10, 14, 0),
+    height: 230,
+    clipBehavior: Clip.antiAlias,
+    decoration: BoxDecoration(
+      gradient: const LinearGradient(colors: [Color(0xFF071A38), Color(0xFF0B3FB9), Color(0xFF1764E8)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+      borderRadius: BorderRadius.circular(28),
+      boxShadow: const [BoxShadow(color: Color(0x2610379D), blurRadius: 24, offset: Offset(0, 12))],
+    ),
+    child: Stack(children: [
+      const Positioned.fill(child: CustomPaint(painter: _MotifPainter())),
+      Positioned(right: 18, top: 16, child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(color: const Color(0x18FFFFFF), borderRadius: BorderRadius.circular(99)),
+        child: Text('$count documents', style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.w800, color: Colors.white)),
+      )),
+      Padding(
+        padding: const EdgeInsets.fromLTRB(20, 26, 20, 20),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const Text('FASOBIBLIO', style: TextStyle(fontSize: 9, letterSpacing: 1.8, fontWeight: FontWeight.w900, color: Color(0xFFBFD2FF))),
+          const SizedBox(height: 10),
+          Text('Lis. Apprends.\nGrandis.', style: AppTypography.display(size: 29, weight: FontWeight.w900, color: Colors.white)),
+          const Spacer(),
+          Material(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(17),
+            child: InkWell(
+              onTap: onExplore,
+              borderRadius: BorderRadius.circular(17),
+              child: const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 15, vertical: 13),
+                child: Row(children: [
+                  Icon(AppIcons.search, size: 20, color: AppColors.blueDeep),
+                  SizedBox(width: 10),
+                  Expanded(child: Text('Rechercher un livre, un cours…', style: TextStyle(fontSize: 11.5, color: AppColors.muted))),
+                  Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(color: Color(0xFFEAF1FF), shape: BoxShape.circle),
+                    child: Icon(AppIcons.arrowRight, size: 17, color: AppColors.blueDeep),
+                  ),
+                ]),
+              ),
+            ),
+          ),
+        ]),
+      ),
+    ]),
+  );
+}
+
+class _MotifPainter extends CustomPainter {
+  const _MotifPainter();
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..color = Colors.white.withValues(alpha: .055)..style = PaintingStyle.stroke..strokeWidth = 1.4;
+    const step = 38.0;
+    for (double y = -20; y < size.height + 20; y += step) {
+      for (double x = -20; x < size.width + 20; x += step) {
+        final path = Path()..moveTo(x, y + 10)..lineTo(x + 10, y)..lineTo(x + 20, y + 10)..lineTo(x + 10, y + 20)..close();
+        canvas.drawPath(path, paint);
+      }
+    }
+    final glow = Paint()..color = const Color(0x18FFFFFF);
+    canvas.drawCircle(Offset(size.width * .92, size.height * .17), 74, glow);
+    canvas.drawCircle(Offset(size.width * .78, size.height * .12), 34, glow);
+  }
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class _CategoryTabs extends StatelessWidget {
+  const _CategoryTabs({required this.values, required this.onTap});
+  final List<String> values;
+  final VoidCallback onTap;
+  static const colors = [Color(0xFFEAF1FF), Color(0xFFFFF0E7), Color(0xFFEAF8F1), Color(0xFFF3ECFF), Color(0xFFFFF5D9), Color(0xFFFFEAF0)];
+
+  @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.fromLTRB(18, 14, 18, 14),
+    padding: const EdgeInsets.only(top: 17),
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Row(children: [
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('BIBLIOTHÈQUE NUMÉRIQUE', style: TextStyle(fontSize: 9.5, letterSpacing: 1.2, fontWeight: FontWeight.w900, color: AppColors.blue)),
-          const SizedBox(height: 5),
-          Text('Le savoir qui vous accompagne partout.', style: Theme.of(context).textTheme.headlineLarge),
-        ])),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-          decoration: BoxDecoration(color: AppColors.sky, borderRadius: BorderRadius.circular(13)),
-          child: Text('$count docs', style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w900, color: AppColors.blue)),
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 18),
+        child: Row(children: [Expanded(child: Text('Catégories', style: Theme.of(context).textTheme.titleLarge)), TextButton(onPressed: onTap, child: const Text('Voir tout'))]),
+      ),
+      SizedBox(
+        height: 44,
+        child: ListView.separated(
+          padding: const EdgeInsets.symmetric(horizontal: 18),
+          scrollDirection: Axis.horizontal,
+          itemCount: values.length,
+          separatorBuilder: (_, __) => const SizedBox(width: 8),
+          itemBuilder: (_, index) => ActionChip(
+            onPressed: onTap,
+            backgroundColor: colors[index % colors.length],
+            side: BorderSide.none,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            avatar: const Icon(AppIcons.bookOpen, size: 14, color: AppColors.blueDeep),
+            label: Text(categoryLabel(values[index]), style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: AppColors.ink)),
+          ),
         ),
-      ]),
-      const SizedBox(height: 8),
-      const Text('Cours, livres, mémoires et ressources pédagogiques réunis dans une expérience simple et moderne.', style: TextStyle(fontSize: 12, height: 1.5, color: AppColors.muted)),
-      const SizedBox(height: 16),
+      ),
+    ]),
+  );
+}
+
+class _FeaturedRow extends StatelessWidget {
+  const _FeaturedRow({required this.book, required this.onTap});
+  final Book book;
+  final VoidCallback onTap;
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.fromLTRB(18, 24, 18, 0),
+    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text('Lecture du moment', style: Theme.of(context).textTheme.titleLarge),
+      const SizedBox(height: 11),
       Material(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        elevation: 3,
-        shadowColor: const Color(0x141860F0),
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
         child: InkWell(
-          onTap: onExplore,
-          borderRadius: BorderRadius.circular(18),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            decoration: BoxDecoration(border: Border.all(color: AppColors.blue.withValues(alpha: .12)), borderRadius: BorderRadius.circular(18)),
-            child: const Row(children: [
-              CircleAvatar(radius: 18, backgroundColor: AppColors.sky, child: Icon(AppIcons.search, color: AppColors.blue, size: 18)),
-              SizedBox(width: 12),
-              Expanded(child: Text('Rechercher un livre, un cours, une matière…', style: TextStyle(fontSize: 12, color: AppColors.muted))),
-              Icon(AppIcons.arrowRight, size: 19, color: AppColors.blue),
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(20),
+          child: Padding(
+            padding: const EdgeInsets.all(11),
+            child: Row(children: [
+              ClipRRect(borderRadius: BorderRadius.circular(13), child: DocumentCover(imageUrl: book.image, width: 76, height: 108)),
+              const SizedBox(width: 13),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(book.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: AppTypography.bookTitle(size: 15, weight: FontWeight.w900)),
+                const SizedBox(height: 5),
+                Text(book.author.isEmpty ? 'Auteur non renseigné' : book.author, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 10.5, color: AppColors.muted)),
+                const SizedBox(height: 10),
+                Row(children: [
+                  Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5), decoration: BoxDecoration(color: const Color(0xFFEAF1FF), borderRadius: BorderRadius.circular(9)), child: const Text('Voir le document', style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w800, color: AppColors.blueDeep))),
+                  const Spacer(),
+                  Icon(AppIcons.arrowRight, size: 19, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: .55)),
+                ]),
+              ])),
             ]),
           ),
         ),
@@ -85,160 +185,70 @@ class _WelcomeBlock extends StatelessWidget {
   );
 }
 
-class _Featured extends StatelessWidget {
-  const _Featured({required this.book, required this.onTap});
-  final Book book;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) => Container(
-    height: 240,
-    margin: const EdgeInsets.symmetric(horizontal: 16),
-    clipBehavior: Clip.antiAlias,
-    decoration: BoxDecoration(
-      gradient: const LinearGradient(colors: [Color(0xFF07142B), AppColors.blueDeep, AppColors.blue], begin: Alignment.topLeft, end: Alignment.bottomRight),
-      borderRadius: BorderRadius.circular(28),
-      boxShadow: const [BoxShadow(color: Color(0x331860F0), blurRadius: 28, offset: Offset(0, 15))],
-    ),
-    child: Stack(children: [
-      Positioned(right: -60, top: -50, child: Container(width: 210, height: 210, decoration: const BoxDecoration(color: Color(0x16FFFFFF), shape: BoxShape.circle))),
-      Positioned(right: 18, bottom: -16, child: Transform.rotate(angle: .055, child: Container(
-        decoration: BoxDecoration(borderRadius: BorderRadius.circular(18), boxShadow: const [BoxShadow(color: Color(0x44000000), blurRadius: 20, offset: Offset(0, 10))]),
-        child: ClipRRect(borderRadius: BorderRadius.circular(18), child: DocumentCover(imageUrl: book.image, width: 132, height: 190)),
-      ))),
-      Padding(
-        padding: const EdgeInsets.all(22),
-        child: SizedBox(width: MediaQuery.sizeOf(context).width * .54, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-            decoration: BoxDecoration(color: const Color(0x22FFFFFF), borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0x18FFFFFF))),
-            child: const Text('À DÉCOUVRIR', style: TextStyle(fontSize: 8.5, letterSpacing: .9, fontWeight: FontWeight.w900, color: Colors.white)),
-          ),
-          const SizedBox(height: 13),
-          Text(book.title, maxLines: 3, overflow: TextOverflow.ellipsis, style: AppTypography.display(size: 22, weight: FontWeight.w900, color: Colors.white)),
-          const SizedBox(height: 7),
-          Text(book.author, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11.5, color: Color(0xFFDCE6FF))),
-          const Spacer(),
-          FilledButton.icon(
-            onPressed: onTap,
-            style: FilledButton.styleFrom(backgroundColor: Colors.white, foregroundColor: AppColors.blue, minimumSize: const Size(0, 42)),
-            icon: const Icon(AppIcons.bookOpen, size: 18),
-            label: const Text('Voir le document'),
-          ),
-        ])),
-      ),
-    ]),
-  );
-}
-
-class _FirstOfflineWelcome extends StatelessWidget {
-  const _FirstOfflineWelcome();
-  @override
-  Widget build(BuildContext context) => Container(
-    margin: const EdgeInsets.fromLTRB(16, 18, 16, 0),
-    padding: const EdgeInsets.all(20),
-    decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: .5)), borderRadius: BorderRadius.circular(22)),
-    child: const Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      CircleAvatar(backgroundColor: AppColors.sky, child: Icon(AppIcons.bookOpen, color: AppColors.blue)),
-      SizedBox(width: 13),
-      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('Votre bibliothèque reste accessible', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
-        SizedBox(height: 6),
-        Text('Dès que la connexion revient, le catalogue se synchronise automatiquement. Vos documents déjà enregistrés restent lisibles sans Internet.', style: TextStyle(fontSize: 12, height: 1.5, color: AppColors.muted)),
-      ])),
-    ]),
-  );
-}
-
-class _Categories extends StatelessWidget {
-  const _Categories({required this.values, required this.onExplore});
-  final List<String> values;
-  final VoidCallback onExplore;
-
-  @override
-  Widget build(BuildContext context) => SizedBox(
-    height: 48,
-    child: ListView.separated(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      scrollDirection: Axis.horizontal,
-      itemCount: values.length,
-      separatorBuilder: (_, __) => const SizedBox(width: 8),
-      itemBuilder: (_, i) => ActionChip(
-        onPressed: onExplore,
-        avatar: const Icon(AppIcons.grid, size: 15, color: AppColors.blue),
-        label: Text(categoryLabel(values[i]), maxLines: 1, overflow: TextOverflow.ellipsis),
-        side: BorderSide(color: AppColors.blue.withValues(alpha: .12)),
-        backgroundColor: Colors.white,
-        labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 11),
-      ),
-    ),
-  );
-}
-
-class _Shelf extends StatelessWidget {
-  const _Shelf({required this.title, required this.subtitle, required this.books, required this.state, required this.onBook, this.premium = false});
+class _CoverShelf extends StatelessWidget {
+  const _CoverShelf({required this.title, required this.books, required this.state, required this.onBook, this.premium = false});
   final String title;
-  final String subtitle;
   final List<Book> books;
   final AppState state;
   final ValueChanged<Book> onBook;
   final bool premium;
 
   @override
-  Widget build(BuildContext context) => Column(children: [
-    Padding(
-      padding: const EdgeInsets.fromLTRB(18, 24, 18, 10),
-      child: Row(children: [
-        Container(width: 4, height: 36, decoration: BoxDecoration(color: premium ? AppColors.gold : AppColors.blue, borderRadius: BorderRadius.circular(99))),
-        const SizedBox(width: 10),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(title, style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: 2),
-          Text(subtitle, style: const TextStyle(fontSize: 10.5, color: AppColors.muted)),
-        ])),
-        const Text('Voir tout', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: AppColors.blue)),
-      ]),
-    ),
-    SizedBox(
-      height: 318,
-      child: ListView.separated(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        scrollDirection: Axis.horizontal,
-        itemCount: books.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 12),
-        itemBuilder: (_, i) => BookCard(
-          book: books[i],
-          favorite: state.favorites.contains(books[i].id),
-          onTap: () => onBook(books[i]),
-          onFavorite: () => state.toggleFavorite(books[i].id),
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(top: 24),
+    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 18),
+        child: Row(children: [
+          Expanded(child: Text(title, style: Theme.of(context).textTheme.titleLarge)),
+          if (premium) const Icon(AppIcons.premium, color: AppColors.gold, size: 19),
+        ]),
+      ),
+      const SizedBox(height: 12),
+      SizedBox(
+        height: 286,
+        child: ListView.separated(
+          padding: const EdgeInsets.symmetric(horizontal: 18),
+          scrollDirection: Axis.horizontal,
+          itemCount: books.length,
+          separatorBuilder: (_, __) => const SizedBox(width: 14),
+          itemBuilder: (_, i) => BookCard(
+            book: books[i],
+            favorite: state.favorites.contains(books[i].id),
+            onTap: () => onBook(books[i]),
+            onFavorite: () => state.toggleFavorite(books[i].id),
+            width: 142,
+          ),
         ),
       ),
-    ),
-  ]);
+    ]),
+  );
 }
 
-class _StudyCard extends StatelessWidget {
-  const _StudyCard({required this.onTap});
+class _AssistantBanner extends StatelessWidget {
+  const _AssistantBanner({required this.onTap});
   final VoidCallback onTap;
-
   @override
   Widget build(BuildContext context) => Container(
-    margin: const EdgeInsets.fromLTRB(16, 28, 16, 0),
-    padding: const EdgeInsets.all(18),
-    decoration: BoxDecoration(
-      gradient: const LinearGradient(colors: [AppColors.blueDeep, AppColors.blue]),
-      borderRadius: BorderRadius.circular(24),
-      boxShadow: const [BoxShadow(color: Color(0x261860F0), blurRadius: 20, offset: Offset(0, 10))],
-    ),
+    margin: const EdgeInsets.fromLTRB(18, 26, 18, 0),
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(color: const Color(0xFFFFF0E7), borderRadius: BorderRadius.circular(20)),
     child: Row(children: [
-      Container(width: 52, height: 52, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)), child: const Icon(AppIcons.brain, color: AppColors.blue)),
-      const SizedBox(width: 14),
-      const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('Besoin d’un coup de pouce ?', style: TextStyle(fontWeight: FontWeight.w900, color: Colors.white)),
-        SizedBox(height: 4),
-        Text('L’assistant Fasobiblio vous guide dans vos recherches.', style: TextStyle(fontSize: 11, height: 1.4, color: Color(0xFFDDE8FF))),
-      ])),
-      IconButton(onPressed: onTap, style: IconButton.styleFrom(backgroundColor: const Color(0x18FFFFFF)), icon: const Icon(AppIcons.arrowRight, color: Colors.white)),
+      Container(width: 46, height: 46, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14)), child: const Icon(AppIcons.brain, color: Color(0xFFE56B2F))),
+      const SizedBox(width: 12),
+      const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('Besoin d’aide pour choisir ?', style: TextStyle(fontWeight: FontWeight.w900)), SizedBox(height: 3), Text('L’assistant Fasobiblio peut vous guider.', style: TextStyle(fontSize: 10.5, color: AppColors.muted))])),
+      IconButton(onPressed: onTap, icon: const Icon(AppIcons.arrowRight, color: Color(0xFFE56B2F))),
     ]),
+  );
+}
+
+class _OfflineState extends StatelessWidget {
+  const _OfflineState();
+  @override
+  Widget build(BuildContext context) => Container(
+    margin: const EdgeInsets.fromLTRB(18, 22, 18, 0),
+    padding: const EdgeInsets.all(18),
+    decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(18)),
+    child: const Text('Le catalogue apparaîtra après la première synchronisation. Vos documents déjà enregistrés restent disponibles hors connexion.', style: TextStyle(fontSize: 11, height: 1.5, color: AppColors.muted)),
   );
 }
