@@ -17,7 +17,14 @@ class ProfileScreen extends StatelessWidget {
 
   Future<void> _support(BuildContext context) async {
     if (!requireInternet(context, state)) return;
-    final result = await showModalBottomSheet<(String, String)>(context: context, isScrollControlled: true, useSafeArea: true, showDragHandle: true, builder: (_) => const _SupportSheet());
+    final result = await showModalBottomSheet<(String, String)>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: .48),
+      builder: (_) => const _SheetFrame(child: _SupportSheet()),
+    );
     if (result == null || !context.mounted) return;
     try {
       await state.api.sendSupportMessage(type: result.$1, message: result.$2);
@@ -29,7 +36,14 @@ class ProfileScreen extends StatelessWidget {
 
   Future<void> _suggest(BuildContext context) async {
     if (!requireInternet(context, state)) return;
-    final result = await showModalBottomSheet<(String, String, String, String)>(context: context, isScrollControlled: true, useSafeArea: true, showDragHandle: true, builder: (_) => const _SuggestionSheet());
+    final result = await showModalBottomSheet<(String, String, String, String)>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: .48),
+      builder: (_) => const _SheetFrame(child: _SuggestionSheet()),
+    );
     if (result == null || !context.mounted) return;
     try {
       await state.api.sendSuggestion(title: result.$1, subject: result.$2, level: result.$3, details: result.$4);
@@ -194,6 +208,35 @@ class _Menu extends StatelessWidget {
   );
 }
 
+class _SheetFrame extends StatelessWidget {
+  const _SheetFrame({required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    return SafeArea(
+      top: false,
+      child: Material(
+        color: dark ? const Color(0xFF111B2C) : Colors.white,
+        elevation: 20,
+        shadowColor: Colors.black.withValues(alpha: .2),
+        clipBehavior: Clip.antiAlias,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 10),
+            Container(width: 42, height: 5, decoration: BoxDecoration(color: dark ? const Color(0xFF43516A) : const Color(0xFFD4DDEA), borderRadius: BorderRadius.circular(10))),
+            Flexible(child: child),
+            SizedBox(height: MediaQuery.viewPaddingOf(context).bottom == 0 ? 10 : 4),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _SupportSheet extends StatefulWidget {
   const _SupportSheet();
   @override
@@ -213,7 +256,7 @@ class _SupportSheetState extends State<_SupportSheet> {
   void dispose() { controller.dispose(); super.dispose(); }
   @override
   Widget build(BuildContext context) => SingleChildScrollView(
-    padding: EdgeInsets.fromLTRB(20, 14, 20, MediaQuery.viewInsetsOf(context).bottom + 20),
+    padding: EdgeInsets.fromLTRB(20, 10, 20, MediaQuery.viewInsetsOf(context).bottom + 22),
     child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
       Row(children: [Expanded(child: Text('Contacter Fasobiblio', style: Theme.of(context).textTheme.titleLarge)), IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(AppIcons.close))]),
       const SizedBox(height: 5),
@@ -245,5 +288,20 @@ class _SuggestionSheetState extends State<_SuggestionSheet> {
   @override
   void dispose() { title.dispose(); subject.dispose(); level.dispose(); details.dispose(); super.dispose(); }
   @override
-  Widget build(BuildContext context) => SingleChildScrollView(padding: EdgeInsets.fromLTRB(20, 4, 20, MediaQuery.viewInsetsOf(context).bottom + 20), child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [Row(children: [Expanded(child: Text('Suggérer un document', style: Theme.of(context).textTheme.titleLarge)), IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(AppIcons.close))]), const SizedBox(height: 12), TextField(controller: title, onChanged: (_) => setState(() {}), decoration: const InputDecoration(labelText: 'Titre du document')), const SizedBox(height: 10), TextField(controller: subject, decoration: const InputDecoration(labelText: 'Matière ou thème')), const SizedBox(height: 10), TextField(controller: level, decoration: const InputDecoration(labelText: 'Niveau')), const SizedBox(height: 10), TextField(controller: details, minLines: 3, maxLines: 5, decoration: const InputDecoration(labelText: 'Précisions')), const SizedBox(height: 14), SizedBox(width: double.infinity, child: FilledButton.icon(onPressed: title.text.trim().length < 2 ? null : () => Navigator.pop(context, (title.text.trim(), subject.text.trim(), level.text.trim(), details.text.trim())), icon: const Icon(AppIcons.send), label: const Text('Envoyer la suggestion')))]));
+  Widget build(BuildContext context) => SingleChildScrollView(
+    padding: EdgeInsets.fromLTRB(20, 8, 20, MediaQuery.viewInsetsOf(context).bottom + 22),
+    child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Row(children: [Expanded(child: Text('Suggérer un document', style: Theme.of(context).textTheme.titleLarge)), IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(AppIcons.close))]),
+      const SizedBox(height: 12),
+      TextField(controller: title, onChanged: (_) => setState(() {}), decoration: const InputDecoration(labelText: 'Titre du document')),
+      const SizedBox(height: 10),
+      TextField(controller: subject, decoration: const InputDecoration(labelText: 'Matière ou thème')),
+      const SizedBox(height: 10),
+      TextField(controller: level, decoration: const InputDecoration(labelText: 'Niveau')),
+      const SizedBox(height: 10),
+      TextField(controller: details, minLines: 3, maxLines: 5, decoration: const InputDecoration(labelText: 'Précisions')),
+      const SizedBox(height: 14),
+      SizedBox(width: double.infinity, child: FilledButton.icon(onPressed: title.text.trim().length < 2 ? null : () => Navigator.pop(context, (title.text.trim(), subject.text.trim(), level.text.trim(), details.text.trim())), icon: const Icon(AppIcons.send), label: const Text('Envoyer la suggestion'))),
+    ]),
+  );
 }
