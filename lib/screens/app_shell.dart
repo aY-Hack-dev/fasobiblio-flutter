@@ -112,37 +112,51 @@ class _StandardBottomNav extends StatelessWidget {
       const _NavItemData('Profil', AppIcons.user),
     ];
 
+    final navColor = dark ? const Color(0xFF111B2C) : const Color(0xFFF4F7FF);
+
     return Material(
-      color: dark ? const Color(0xFF101827) : Colors.white,
-      elevation: 10,
-      shadowColor: Colors.black.withValues(alpha: .08),
-      child: SafeArea(
-        top: false,
-        child: Container(
-          height: 64,
-          decoration: BoxDecoration(
-            border: Border(
-              top: BorderSide(color: dark ? Colors.white.withValues(alpha: .07) : AppColors.line),
+      color: navColor,
+      elevation: 14,
+      shadowColor: Colors.black.withValues(alpha: .13),
+      child: Container(
+        decoration: BoxDecoration(
+          color: navColor,
+          border: Border(
+            top: BorderSide(
+              color: dark ? const Color(0xFF29426D) : const Color(0xFFB9CFFF),
+              width: 1.4,
             ),
           ),
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              IgnorePointer(child: CustomPaint(painter: _BottomPatternPainter(dark: dark))),
-              Row(
-                children: List.generate(
-                  items.length,
-                  (itemIndex) => Expanded(
-                    child: _BottomNavItem(
-                      data: items[itemIndex],
-                      selected: selectedIndex == itemIndex,
-                      dark: dark,
-                      onTap: () => onSelected(itemIndex),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Container(
+            height: 66,
+            decoration: BoxDecoration(
+              color: navColor,
+              boxShadow: const [
+                BoxShadow(color: Color(0x141860F0), blurRadius: 18, offset: Offset(0, -6)),
+              ],
+            ),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                IgnorePointer(child: CustomPaint(painter: _BottomPatternPainter(dark: dark))),
+                Row(
+                  children: List.generate(
+                    items.length,
+                    (itemIndex) => Expanded(
+                      child: _BottomNavItem(
+                        data: items[itemIndex],
+                        selected: selectedIndex == itemIndex,
+                        dark: dark,
+                        onTap: () => onSelected(itemIndex),
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -235,13 +249,16 @@ class _BottomPatternPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = AppColors.blue.withValues(alpha: dark ? .04 : .025)
+      ..color = AppColors.blue.withValues(alpha: dark ? .075 : .065)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1;
 
-    for (double x = 22; x < size.width; x += 86) {
-      canvas.drawCircle(Offset(x, 12), 11, paint);
+    for (double x = 20; x < size.width; x += 78) {
+      canvas.drawCircle(Offset(x, 12), 10, paint);
       canvas.drawLine(Offset(x - 8, 52), Offset(x + 10, 52), paint);
+      final rect = Rect.fromLTWH(x + 25, 22, 17, 12);
+      canvas.drawRRect(RRect.fromRectAndRadius(rect, const Radius.circular(3)), paint);
+      canvas.drawLine(Offset(x + 33.5, 22), Offset(x + 33.5, 34), paint);
     }
   }
 
