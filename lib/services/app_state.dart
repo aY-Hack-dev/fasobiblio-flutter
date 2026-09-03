@@ -8,7 +8,9 @@ import 'fasobiblio_api.dart';
 import 'local_store.dart';
 
 class AppState extends ChangeNotifier {
-  AppState(this.api, this.store);
+  AppState(this.api, this.store) { current = this; }
+  static AppState? current;
+
   final FasobiblioApi api;
   final LocalStore store;
   List<Book> books = [];
@@ -121,6 +123,7 @@ class AppState extends ChangeNotifier {
 
   int readingPage(String id) => (readingFor(id)['page'] as num?)?.toInt() ?? 1;
   int readingPageCount(String id) => (readingFor(id)['pageCount'] as num?)?.toInt() ?? 0;
+
   double readingProgress(String id) {
     final data = readingFor(id);
     final page = (data['page'] as num?)?.toInt() ?? 0;
@@ -210,6 +213,7 @@ class AppState extends ChangeNotifier {
   @override
   void dispose() {
     _connectivitySubscription?.cancel();
+    if (identical(current, this)) current = null;
     super.dispose();
   }
 }
