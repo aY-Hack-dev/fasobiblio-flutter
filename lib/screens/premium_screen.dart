@@ -94,7 +94,7 @@ class _BenefitChip extends StatelessWidget {
   final String label;
   @override
   Widget build(BuildContext context) => Container(
-    minHeight: 44,
+    constraints: const BoxConstraints(minHeight: 44),
     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
     decoration: BoxDecoration(color: Colors.white.withValues(alpha: .09), borderRadius: BorderRadius.circular(12)),
     child: Row(children: [Icon(icon, size: 14, color: const Color(0xFFFFD166)), const SizedBox(width: 7), Expanded(child: Text(label, maxLines: 2, style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: Colors.white)))]),
