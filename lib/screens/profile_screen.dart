@@ -223,6 +223,7 @@ class _SupportSheetState extends State<_SupportSheet> {
       await widget.state.api.sendSupportMessage(type: type, message: controller.text.trim());
       if (!mounted) return;
       await Future<void>.delayed(const Duration(milliseconds: 300));
+      if (!mounted) return;
       final messengerContext = context;
       Navigator.pop(context);
       if (messengerContext.mounted) showToast(messengerContext, 'Votre message a bien été envoyé à Fasobiblio.', success: true);
@@ -269,6 +270,7 @@ class _SuggestionSheetState extends State<_SuggestionSheet> {
       await widget.state.api.sendSuggestion(title: title.text.trim(), subject: subject.text.trim(), level: level.text.trim(), details: details.text.trim());
       if (!mounted) return;
       await Future<void>.delayed(const Duration(milliseconds: 300));
+      if (!mounted) return;
       final messengerContext = context;
       Navigator.pop(context);
       if (messengerContext.mounted) showToast(messengerContext, 'Suggestion envoyée. Merci de contribuer au catalogue !', success: true);
