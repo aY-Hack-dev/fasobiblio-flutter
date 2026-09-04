@@ -12,6 +12,7 @@ class LocalStore {
   static const notificationsKey = 'fasobiblio.flutter.notifications';
   static const notificationReadsKey = 'fasobiblio.flutter.notificationReads';
   static const welcomeSeenKey = 'fasobiblio.flutter.welcomeSeen';
+  static const lastOpenedDocumentKey = 'fasobiblio.flutter.lastOpenedDocument';
 
   Future<Set<String>> load(String key) async => (await SharedPreferences.getInstance()).getStringList(key)?.toSet() ?? <String>{};
   Future<void> save(String key, Set<String> values) async => (await SharedPreferences.getInstance()).setStringList(key, values.toList());
