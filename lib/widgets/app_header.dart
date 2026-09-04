@@ -10,24 +10,36 @@ class AppHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
+    final unread = state.unreadNotifications;
     return Material(
       color: Colors.transparent,
       elevation: 0,
-      child: SizedBox(
-        height: 58,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 18),
-          child: Row(children: [
-            Expanded(child: RichText(maxLines: 1, overflow: TextOverflow.ellipsis, text: TextSpan(children: [
-              TextSpan(text: 'FASO', style: AppTypography.display(size: 19, weight: FontWeight.w900, color: dark ? Colors.white : AppColors.ink).copyWith(letterSpacing: .2)),
-              TextSpan(text: 'BIBLIO', style: AppTypography.display(size: 19, weight: FontWeight.w900, color: AppColors.blueDeep).copyWith(letterSpacing: .2)),
-            ]))),
-            Stack(clipBehavior: Clip.none, children: [
-              IconButton(onPressed: onNotifications, tooltip: 'Notifications', visualDensity: VisualDensity.compact, icon: Icon(AppIcons.bell, size: 22, color: dark ? Colors.white : AppColors.ink)),
-              if (state.unreadNotifications > 0) const Positioned(right: 6, top: 5, child: SizedBox(width: 8, height: 8, child: DecoratedBox(decoration: BoxDecoration(color: Color(0xFFE5484D), shape: BoxShape.circle)))),
-            ]),
-          ]),
+      child: Container(
+        height: 62,
+        decoration: BoxDecoration(
+          border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor.withValues(alpha: .32), width: .7)),
         ),
+        padding: const EdgeInsets.symmetric(horizontal: 18),
+        child: Row(children: [
+          Expanded(child: RichText(maxLines: 1, overflow: TextOverflow.ellipsis, text: TextSpan(children: [
+            TextSpan(text: 'FASO', style: AppTypography.display(size: 22, weight: FontWeight.w900, color: dark ? Colors.white : AppColors.ink).copyWith(letterSpacing: .2)),
+            TextSpan(text: 'BIBLIO', style: AppTypography.display(size: 22, weight: FontWeight.w900, color: AppColors.blueDeep).copyWith(letterSpacing: .2)),
+          ]))),
+          Stack(clipBehavior: Clip.none, children: [
+            IconButton(onPressed: onNotifications, tooltip: 'Notifications', visualDensity: VisualDensity.compact, icon: Icon(AppIcons.bell, size: 23, color: dark ? Colors.white : AppColors.ink)),
+            if (unread > 0) Positioned(
+              right: 1,
+              top: 1,
+              child: Container(
+                constraints: const BoxConstraints(minWidth: 17, minHeight: 17),
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                alignment: Alignment.center,
+                decoration: BoxDecoration(color: const Color(0xFFE5484D), borderRadius: BorderRadius.circular(99), border: Border.all(color: Theme.of(context).scaffoldBackgroundColor, width: 1.5)),
+                child: Text(unread > 99 ? '99+' : '$unread', style: const TextStyle(fontSize: 8, height: 1, fontWeight: FontWeight.w900, color: Colors.white)),
+              ),
+            ),
+          ]),
+        ]),
       ),
     );
   }
