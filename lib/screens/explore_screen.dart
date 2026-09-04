@@ -3,6 +3,7 @@ import '../core/theme.dart';
 import '../models/book.dart';
 import '../services/app_state.dart';
 import '../widgets/book_card.dart';
+import '../widgets/document_skeleton.dart';
 
 class ExploreScreen extends StatefulWidget { const ExploreScreen({super.key,required this.state,required this.onBook,required this.onAssistant}); final AppState state; final ValueChanged<Book> onBook; final VoidCallback onAssistant; @override State<ExploreScreen> createState()=>_ExploreScreenState(); }
 class _ExploreScreenState extends State<ExploreScreen>{ String query=''; String category='';
@@ -12,7 +13,7 @@ class _ExploreScreenState extends State<ExploreScreen>{ String query=''; String 
   SliverToBoxAdapter(child:Padding(padding:const EdgeInsets.fromLTRB(18,15,18,8),child:Text('Parcourir les rayons',style:AppTypography.display(size:16,weight:FontWeight.w900)))),
   SliverToBoxAdapter(child:SizedBox(height:45,child:ListView(padding:const EdgeInsets.symmetric(horizontal:16),scrollDirection:Axis.horizontal,children:[_Pill(label:'Tous',selected:category.isEmpty,onTap:()=>setState(()=>category='')),const SizedBox(width:7),...categories.map((c)=>Padding(padding:const EdgeInsets.only(right:7),child:_Pill(label:categoryLabel(c),selected:category==c,onTap:()=>setState(()=>category=c))))]))),
   const SliverToBoxAdapter(child:SizedBox(height:10)),
-  SliverToBoxAdapter(child:results.isEmpty?const _Empty():BookGrid(books:results.take(150).toList(),favorites:widget.state.favorites,onBook:widget.onBook,onFavorite:(b)=>widget.state.toggleFavorite(b.id))),const SliverToBoxAdapter(child:SizedBox(height:32))]); }
+  SliverToBoxAdapter(child:widget.state.catalogPending?DocumentSkeleton(state:widget.state):results.isEmpty?const _Empty():BookGrid(books:results.take(150).toList(),favorites:widget.state.favorites,onBook:widget.onBook,onFavorite:(b)=>widget.state.toggleFavorite(b.id))),const SliverToBoxAdapter(child:SizedBox(height:32))]); }
 }
 class _Pill extends StatelessWidget{const _Pill({required this.label,required this.selected,required this.onTap});final String label;final bool selected;final VoidCallback onTap;@override Widget build(BuildContext context)=>Material(color:selected?AppColors.blue:Theme.of(context).colorScheme.surface,borderRadius:BorderRadius.circular(13),child:InkWell(onTap:onTap,borderRadius:BorderRadius.circular(13),child:Container(padding:const EdgeInsets.symmetric(horizontal:13,vertical:9),decoration:BoxDecoration(borderRadius:BorderRadius.circular(13),border:Border.all(color:selected?AppColors.blue:Theme.of(context).dividerColor.withValues(alpha:.65))),child:Text(label,style:TextStyle(fontSize:10,fontWeight:FontWeight.w800,color:selected?Colors.white:AppColors.muted)))));}
 class _Empty extends StatelessWidget{const _Empty();@override Widget build(BuildContext context)=>Padding(padding:const EdgeInsets.all(30),child:Column(children:[const Icon(AppIcons.search,size:32,color:AppColors.blue),const SizedBox(height:10),Text('Aucun document trouvé',style:AppTypography.display(size:15,weight:FontWeight.w900)),const SizedBox(height:5),const Text('Essayez un autre mot-clé ou une autre catégorie.',textAlign:TextAlign.center,style:TextStyle(fontSize:10.5,color:AppColors.muted))]));}

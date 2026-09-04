@@ -108,7 +108,7 @@ class FasobiblioApi {
   }
 
   Future<List<Book>> catalog() async {
-    final data = await _request(Uri.parse('$database/documents.json'), timeout: const Duration(seconds: 12));
+    final data = await _request(Uri.parse('$database/documents.json'), timeout: const Duration(seconds: 30));
     if (data is! Map) return [];
     return data.entries.where((entry) {
       final value = entry.value;

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fasobiblio/models/app_notification.dart';
 import 'package:fasobiblio/screens/auth_sheet.dart';
+import 'package:fasobiblio/screens/app_shell.dart';
+import 'package:fasobiblio/widgets/document_skeleton.dart';
 import 'package:fasobiblio/screens/notifications_screen.dart';
 import 'package:fasobiblio/screens/profile_screen.dart';
 import 'package:fasobiblio/services/app_state.dart';
@@ -20,6 +22,18 @@ class TestState extends AppState {
 }
 
 void main() {
+  testWidgets('First offline launch retains navigation and guest profile', (tester) async {
+    final state = TestState()..offline = true;
+    await tester.pumpWidget(MaterialApp(home: StartupScreen(state: state)));
+    expect(find.byType(DocumentSkeleton), findsWidgets);
+    expect(find.text('Que voulez-vous lire aujourd’hui ?'), findsOneWidget);
+    await tester.tap(find.text('Profil'));
+    await tester.pumpAndSettle();
+    expect(find.text('Lecteur invité'), findsOneWidget);
+    expect(find.byType(DocumentSkeleton), findsNothing);
+    expect(find.text('Apparence'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
   testWidgets('Profile exposes all three appearance modes', (tester) async {
     final state = TestState();
     await tester.pumpWidget(MaterialApp(home: Scaffold(body: ProfileScreen(

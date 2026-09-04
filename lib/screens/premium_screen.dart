@@ -3,6 +3,7 @@ import '../core/theme.dart';
 import '../models/book.dart';
 import '../services/app_state.dart';
 import '../widgets/book_card.dart';
+import '../widgets/document_skeleton.dart';
 import '../widgets/section.dart';
 import 'payment_flow.dart';
 
@@ -72,7 +73,7 @@ class PremiumScreen extends StatelessWidget {
           ),
         ),
         SliverToBoxAdapter(
-          child: books.isEmpty
+          child: state.catalogPending ? DocumentSkeleton(state: state) : books.isEmpty
               ? const EmptyState(
                   title: 'La collection arrive',
                   message: 'Les ouvrages Premium seront bientôt disponibles.',
