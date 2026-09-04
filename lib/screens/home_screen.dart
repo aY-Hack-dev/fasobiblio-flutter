@@ -4,344 +4,495 @@ import '../models/book.dart';
 import '../services/app_state.dart';
 import '../widgets/book_card.dart';
 import '../widgets/document_cover.dart';
+import '../widgets/section.dart';
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key, required this.state, required this.onExplore, required this.onBook, required this.onNotifications});
+class HomeScreen extends StatelessWidget {
+  const HomeScreen({
+    super.key,
+    required this.state,
+    required this.onExplore,
+    required this.onBook,
+    required this.onNotifications,
+  });
+
   final AppState state;
   final VoidCallback onExplore;
   final ValueChanged<Book> onBook;
   final VoidCallback onNotifications;
 
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
-  String query = '';
-
   Book? get dailyBook {
-    if (widget.state.books.isEmpty) return null;
+    if (state.books.isEmpty) return null;
     final now = DateTime.now();
     final day = DateTime(now.year, now.month, now.day).millisecondsSinceEpoch ~/ Duration.millisecondsPerDay;
-    return widget.state.books[day % widget.state.books.length];
-  }
-
-  List<Book> get searchResults {
-    final q = query.trim().toLowerCase();
-    if (q.isEmpty) return const [];
-    return widget.state.books.where((book) {
-      final haystack = [book.title, book.author, book.description, book.category, book.level, book.year, book.language].join(' ').toLowerCase();
-      return haystack.contains(q);
-    }).take(30).toList();
+    return state.books[day % state.books.length];
   }
 
   @override
   Widget build(BuildContext context) {
-    final recent = [...widget.state.books]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    final popular = [...widget.state.books]..sort((a, b) => b.views.compareTo(a.views));
-    final categories = <String, int>{};
-    for (final book in widget.state.books) {
-      if (book.category.isNotEmpty) categories[book.category] = (categories[book.category] ?? 0) + 1;
-    }
-    final categoryEntries = categories.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
-    final results = searchResults;
-    final lastOpened = widget.state.lastOpenedBook;
+    final popular = [...state.books]..sort((a, b) => b.views.compareTo(a.views));
+    final recent = [...state.books]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    final premium = state.books.where((book) => book.isPremium).toList();
+    final categories = state.books.map((book) => book.category).where((value) => value.isNotEmpty).toSet().take(8).toList();
+    final featured = dailyBook;
 
     return CustomScrollView(
       slivers: [
-        SliverToBoxAdapter(child: _SearchBox(onChanged: (v) => setState(() => query = v), onAdvanced: widget.onExplore)),
-        if (query.trim().isNotEmpty) ...[
-          SliverToBoxAdapter(child: _SectionHeader(title: 'Résultats', trailing: '${results.length}')),
+        SliverToBoxAdapter(child: _WelcomeBlock(count: state.books.length, onExplore: onExplore)),
+        if (featured != null)
           SliverToBoxAdapter(
-            child: results.isEmpty
-                ? const _EmptySearch()
-                : BookGrid(
-                    books: results,
-                    favorites: widget.state.favorites,
-                    onBook: widget.onBook,
-                    onFavorite: (book) => widget.state.toggleFavorite(book.id),
-                  ),
+            child: _Featured(
+              book: featured,
+              onTap: () => onBook(featured),
+            ),
           ),
-        ] else ...[
-          if (dailyBook != null) SliverToBoxAdapter(child: _DailyDocument(book: dailyBook!, onTap: () => widget.onBook(dailyBook!))),
-          if (lastOpened != null) SliverToBoxAdapter(child: _ContinueReading(book: lastOpened, onTap: () => widget.onBook(lastOpened))),
-          if (categoryEntries.isNotEmpty) SliverToBoxAdapter(child: _Categories(entries: categoryEntries.take(6).toList(), onExplore: widget.onExplore)),
-          if (recent.isNotEmpty) SliverToBoxAdapter(child: _Shelf(title: 'Nouveautés', books: recent.take(10).toList(), state: widget.state, onBook: widget.onBook)),
-          if (popular.isNotEmpty) SliverToBoxAdapter(child: _Shelf(title: 'Les plus consultés', books: popular.take(10).toList(), state: widget.state, onBook: widget.onBook)),
-          if (widget.state.books.isEmpty) const SliverToBoxAdapter(child: _Offline()),
+        if (state.books.isEmpty) const SliverToBoxAdapter(child: _FirstOfflineWelcome()),
+        if (categories.isNotEmpty) ...[
+          const SliverToBoxAdapter(child: SectionTitle('Explorer les rayons')),
+          SliverToBoxAdapter(child: _Categories(values: categories, onExplore: onExplore)),
         ],
-        const SliverToBoxAdapter(child: SizedBox(height: 28)),
+        if (popular.isNotEmpty)
+          SliverToBoxAdapter(
+            child: _Shelf(
+              title: 'Populaires maintenant',
+              subtitle: 'Les documents les plus consultés',
+              books: popular.take(10).toList(),
+              state: state,
+              onBook: onBook,
+            ),
+          ),
+        if (recent.isNotEmpty)
+          SliverToBoxAdapter(
+            child: _Shelf(
+              title: 'Nouveautés',
+              subtitle: 'Les dernières ressources ajoutées',
+              books: recent.take(10).toList(),
+              state: state,
+              onBook: onBook,
+            ),
+          ),
+        if (premium.isNotEmpty)
+          SliverToBoxAdapter(
+            child: _Shelf(
+              title: 'Sélection Premium',
+              subtitle: 'Des contenus à forte valeur ajoutée',
+              books: premium.take(10).toList(),
+              state: state,
+              onBook: onBook,
+              premium: true,
+            ),
+          ),
+        SliverToBoxAdapter(child: _StudyCard(onTap: onExplore)),
+        const SliverToBoxAdapter(child: SizedBox(height: 34)),
       ],
     );
   }
 }
 
-class _SearchBox extends StatelessWidget {
-  const _SearchBox({required this.onChanged, required this.onAdvanced});
-  final ValueChanged<String> onChanged;
-  final VoidCallback onAdvanced;
+class _WelcomeBlock extends StatelessWidget {
+  const _WelcomeBlock({required this.count, required this.onExplore});
+  final int count;
+  final VoidCallback onExplore;
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.fromLTRB(18, 8, 18, 10),
-        child: TextField(
-          onChanged: onChanged,
-          textInputAction: TextInputAction.search,
-          style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700),
-          decoration: InputDecoration(
-            hintText: 'Titre, auteur, matière, niveau…',
-            hintStyle: const TextStyle(fontSize: 11, color: AppColors.muted, fontWeight: FontWeight.w500),
-            prefixIcon: const Icon(AppIcons.search, size: 19),
-            suffixIcon: IconButton(onPressed: onAdvanced, tooltip: 'Recherche avancée', icon: const Icon(AppIcons.filters, size: 18)),
-            filled: true,
-            fillColor: Theme.of(context).colorScheme.surface,
-            contentPadding: const EdgeInsets.symmetric(vertical: 11),
-            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide(color: Theme.of(context).dividerColor.withValues(alpha: .55))),
-            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: const BorderSide(color: AppColors.blue, width: 1.2)),
-          ),
+        padding: const EdgeInsets.fromLTRB(18, 12, 18, 14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'BIBLIOTHÈQUE NUMÉRIQUE',
+                        style: TextStyle(
+                          fontSize: 9,
+                          letterSpacing: 1.15,
+                          fontWeight: FontWeight.w900,
+                          color: AppColors.blue,
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        'Le savoir qui vous accompagne partout.',
+                        style: AppTypography.display(
+                          size: 24,
+                          weight: FontWeight.w900,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ).copyWith(height: 1.12),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                  decoration: BoxDecoration(
+                    color: AppColors.sky,
+                    borderRadius: BorderRadius.circular(13),
+                  ),
+                  child: Text(
+                    '$count docs',
+                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: AppColors.blue),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Cours, livres, mémoires et ressources pédagogiques réunis dans une expérience simple et moderne.',
+              style: TextStyle(fontSize: 11, height: 1.45, color: AppColors.muted, fontWeight: FontWeight.w500),
+            ),
+            const SizedBox(height: 15),
+            Material(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: BorderRadius.circular(18),
+              elevation: 2,
+              shadowColor: const Color(0x121860F0),
+              child: InkWell(
+                onTap: onExplore,
+                borderRadius: BorderRadius.circular(18),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 13),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: AppColors.blue.withValues(alpha: .10)),
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: const Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 17,
+                        backgroundColor: AppColors.sky,
+                        child: Icon(AppIcons.search, color: AppColors.blue, size: 17),
+                      ),
+                      SizedBox(width: 11),
+                      Expanded(
+                        child: Text(
+                          'Rechercher un livre, un cours, une matière…',
+                          style: TextStyle(fontSize: 11, color: AppColors.muted, fontWeight: FontWeight.w500),
+                        ),
+                      ),
+                      Icon(AppIcons.arrowRight, size: 18, color: AppColors.blue),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       );
 }
 
-class _SectionBlock extends StatelessWidget {
-  const _SectionBlock({required this.child});
-  final Widget child;
-  @override
-  Widget build(BuildContext context) => Container(
-        margin: const EdgeInsets.only(top: 10),
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface.withValues(alpha: .72),
-          borderRadius: BorderRadius.circular(22),
-        ),
-        child: child,
-      );
-}
-
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({required this.title, this.onTap, this.trailing});
-  final String title;
-  final VoidCallback? onTap;
-  final String? trailing;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.fromLTRB(18, 0, 18, 10),
-        child: Row(children: [
-          Expanded(
-            child: Text(
-              title,
-              style: AppTypography.display(size: 14, weight: FontWeight.w900, color: Theme.of(context).colorScheme.onSurface),
-            ),
-          ),
-          if (trailing != null) Text(trailing!, style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.w800, color: AppColors.muted)),
-          if (onTap != null)
-            TextButton(
-              onPressed: onTap,
-              style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 4), minimumSize: const Size(0, 28)),
-              child: const Text('Voir tout', style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w900)),
-            ),
-        ]),
-      );
-}
-
-class _DailyDocument extends StatelessWidget {
-  const _DailyDocument({required this.book, required this.onTap});
+class _Featured extends StatelessWidget {
+  const _Featured({required this.book, required this.onTap});
   final Book book;
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => _SectionBlock(
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const _SectionHeader(title: 'Document du jour'),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 18),
-            child: Material(
-              color: Colors.transparent,
-              borderRadius: BorderRadius.circular(18),
-              clipBehavior: Clip.antiAlias,
-              child: InkWell(
-                onTap: onTap,
-                child: Ink(
-                  height: 172,
+  Widget build(BuildContext context) => Container(
+        height: 238,
+        margin: const EdgeInsets.symmetric(horizontal: 16),
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF07142B), AppColors.blueDeep, AppColors.blue],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(28),
+          boxShadow: const [
+            BoxShadow(color: Color(0x281860F0), blurRadius: 24, offset: Offset(0, 12)),
+          ],
+        ),
+        child: Stack(
+          children: [
+            Positioned(
+              right: -60,
+              top: -50,
+              child: Container(
+                width: 210,
+                height: 210,
+                decoration: const BoxDecoration(color: Color(0x16FFFFFF), shape: BoxShape.circle),
+              ),
+            ),
+            const Positioned.fill(child: CustomPaint(painter: _FeaturedMotifPainter())),
+            Positioned(
+              right: 18,
+              bottom: -16,
+              child: Transform.rotate(
+                angle: .055,
+                child: Container(
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(colors: [Color(0xFFEAF2FF), Color(0xFFF7F9FF)], begin: Alignment.topLeft, end: Alignment.bottomRight),
                     borderRadius: BorderRadius.circular(18),
+                    boxShadow: const [
+                      BoxShadow(color: Color(0x44000000), blurRadius: 20, offset: Offset(0, 10)),
+                    ],
                   ),
-                  child: Stack(children: [
-                    const Positioned.fill(child: CustomPaint(painter: _BookMotifPainter())),
-                    Padding(
-                      padding: const EdgeInsets.all(14),
-                      child: Row(children: [
-                        ClipRRect(borderRadius: BorderRadius.circular(11), child: DocumentCover(imageUrl: book.image, width: 98, height: 142)),
-                        const SizedBox(width: 15),
-                        Expanded(
-                          child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
-                            Text(book.title, maxLines: 3, overflow: TextOverflow.ellipsis, style: AppTypography.bookTitle(size: 14, weight: FontWeight.w900, color: AppColors.ink)),
-                            const SizedBox(height: 5),
-                            Text(book.author.isEmpty ? 'Auteur non renseigné' : book.author, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 9.5, color: AppColors.muted, fontWeight: FontWeight.w600)),
-                            const SizedBox(height: 13),
-                            const Row(children: [
-                              Text('Voir le document', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: AppColors.blueDeep)),
-                              SizedBox(width: 5),
-                              Icon(AppIcons.arrowRight, size: 15, color: AppColors.blueDeep),
-                            ]),
-                          ]),
-                        ),
-                      ]),
-                    ),
-                  ]),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(18),
+                    child: DocumentCover(imageUrl: book.image, width: 132, height: 190),
+                  ),
                 ),
               ),
             ),
-          ),
-        ]),
+            Padding(
+              padding: const EdgeInsets.all(22),
+              child: SizedBox(
+                width: MediaQuery.sizeOf(context).width * .54,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: const Color(0x22FFFFFF),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0x18FFFFFF)),
+                      ),
+                      child: const Text(
+                        'DOCUMENT DU JOUR',
+                        style: TextStyle(
+                          fontSize: 8,
+                          letterSpacing: .75,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      book.title,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTypography.display(size: 21, weight: FontWeight.w900, color: Colors.white).copyWith(height: 1.08),
+                    ),
+                    const SizedBox(height: 7),
+                    Text(
+                      book.author.isEmpty ? 'Auteur non renseigné' : book.author,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 11, color: Color(0xFFDCE6FF), fontWeight: FontWeight.w500),
+                    ),
+                    const Spacer(),
+                    FilledButton.icon(
+                      onPressed: onTap,
+                      style: FilledButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: AppColors.blue,
+                        minimumSize: const Size(0, 40),
+                        padding: const EdgeInsets.symmetric(horizontal: 13),
+                      ),
+                      icon: const Icon(AppIcons.bookOpen, size: 17),
+                      label: const Text('Voir le document', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900)),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       );
 }
 
-class _BookMotifPainter extends CustomPainter {
-  const _BookMotifPainter();
+class _FeaturedMotifPainter extends CustomPainter {
+  const _FeaturedMotifPainter();
+
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = AppColors.blue.withValues(alpha: .05)..style = PaintingStyle.stroke..strokeWidth = 1.1;
-    for (double x = size.width * .55; x < size.width + 24; x += 38) {
-      for (double y = -8; y < size.height + 20; y += 38) {
-        final rect = Rect.fromLTWH(x, y, 22, 17);
+    final paint = Paint()
+      ..color = Colors.white.withValues(alpha: .045)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2;
+    for (double x = size.width * .60; x < size.width + 24; x += 42) {
+      for (double y = 22; y < size.height; y += 44) {
+        final rect = Rect.fromLTWH(x, y, 25, 18);
         canvas.drawRRect(RRect.fromRectAndRadius(rect, const Radius.circular(3)), paint);
-        canvas.drawLine(Offset(x + 11, y), Offset(x + 11, y + 17), paint);
+        canvas.drawLine(Offset(x + 12.5, y), Offset(x + 12.5, y + 18), paint);
       }
     }
   }
+
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-class _ContinueReading extends StatelessWidget {
-  const _ContinueReading({required this.book, required this.onTap});
-  final Book book;
-  final VoidCallback onTap;
+class _FirstOfflineWelcome extends StatelessWidget {
+  const _FirstOfflineWelcome();
 
   @override
-  Widget build(BuildContext context) => _SectionBlock(
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const _SectionHeader(title: 'Continuer la lecture'),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 18),
-            child: Material(
-              color: Theme.of(context).colorScheme.surface,
-              borderRadius: BorderRadius.circular(16),
-              child: InkWell(
-                onTap: onTap,
-                borderRadius: BorderRadius.circular(16),
-                child: Padding(
-                  padding: const EdgeInsets.all(10),
-                  child: Row(children: [
-                    ClipRRect(borderRadius: BorderRadius.circular(9), child: DocumentCover(imageUrl: book.image, width: 66, height: 92)),
-                    const SizedBox(width: 12),
-                    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text(book.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: AppTypography.bookTitle(size: 12.5, weight: FontWeight.w900)),
-                      const SizedBox(height: 4),
-                      Text(book.author.isEmpty ? 'Auteur non renseigné' : book.author, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 9.5, color: AppColors.muted)),
-                      const SizedBox(height: 9),
-                      const Text('Reprendre', style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w900, color: AppColors.blue)),
-                    ])),
-                    const Icon(AppIcons.chevronRight, size: 18, color: AppColors.muted),
-                  ]),
-                ),
+  Widget build(BuildContext context) => Container(
+        margin: const EdgeInsets.fromLTRB(16, 18, 16, 0),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: .5)),
+          borderRadius: BorderRadius.circular(22),
+        ),
+        child: const Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            CircleAvatar(backgroundColor: AppColors.sky, child: Icon(AppIcons.bookOpen, color: AppColors.blue)),
+            SizedBox(width: 13),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Votre bibliothèque reste accessible', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900)),
+                  SizedBox(height: 6),
+                  Text(
+                    'Dès que la connexion revient, le catalogue se synchronise automatiquement. Vos documents déjà enregistrés restent lisibles sans Internet.',
+                    style: TextStyle(fontSize: 10.5, height: 1.45, color: AppColors.muted),
+                  ),
+                ],
               ),
             ),
-          ),
-        ]),
+          ],
+        ),
       );
 }
 
 class _Categories extends StatelessWidget {
-  const _Categories({required this.entries, required this.onExplore});
-  final List<MapEntry<String, int>> entries;
+  const _Categories({required this.values, required this.onExplore});
+  final List<String> values;
   final VoidCallback onExplore;
 
   @override
-  Widget build(BuildContext context) => _SectionBlock(
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          _SectionHeader(title: 'Catégories', onTap: onExplore),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 18),
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: entries.map((entry) => InkWell(
-                onTap: onExplore,
-                borderRadius: BorderRadius.circular(99),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surface,
-                    borderRadius: BorderRadius.circular(99),
-                    border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: .5)),
-                  ),
-                  child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    const Icon(AppIcons.bookOpen, size: 14, color: AppColors.blueDeep),
-                    const SizedBox(width: 6),
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 130),
-                      child: Text(categoryLabel(entry.key), maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.w800)),
-                    ),
-                    const SizedBox(width: 5),
-                    Text('${entry.value}', style: const TextStyle(fontSize: 8.5, fontWeight: FontWeight.w800, color: AppColors.muted)),
-                  ]),
-                ),
-              )).toList(),
-            ),
+  Widget build(BuildContext context) => SizedBox(
+        height: 48,
+        child: ListView.separated(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          scrollDirection: Axis.horizontal,
+          itemCount: values.length,
+          separatorBuilder: (_, __) => const SizedBox(width: 8),
+          itemBuilder: (_, i) => ActionChip(
+            onPressed: onExplore,
+            avatar: const Icon(AppIcons.grid, size: 14, color: AppColors.blue),
+            label: Text(categoryLabel(values[i]), maxLines: 1, overflow: TextOverflow.ellipsis),
+            side: BorderSide(color: AppColors.blue.withValues(alpha: .12)),
+            backgroundColor: Theme.of(context).colorScheme.surface,
+            labelStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 10.5),
           ),
-        ]),
+        ),
       );
 }
 
 class _Shelf extends StatelessWidget {
-  const _Shelf({required this.title, required this.books, required this.state, required this.onBook});
+  const _Shelf({
+    required this.title,
+    required this.subtitle,
+    required this.books,
+    required this.state,
+    required this.onBook,
+    this.premium = false,
+  });
+
   final String title;
+  final String subtitle;
   final List<Book> books;
   final AppState state;
   final ValueChanged<Book> onBook;
+  final bool premium;
 
   @override
-  Widget build(BuildContext context) => _SectionBlock(
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          _SectionHeader(title: title),
+  Widget build(BuildContext context) => Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 24, 18, 10),
+            child: Row(
+              children: [
+                Container(
+                  width: 4,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: premium ? AppColors.gold : AppColors.blue,
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: AppTypography.display(
+                          size: 16,
+                          weight: FontWeight.w900,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(subtitle, style: const TextStyle(fontSize: 9.5, color: AppColors.muted)),
+                    ],
+                  ),
+                ),
+                const Text('Voir tout', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: AppColors.blue)),
+              ],
+            ),
+          ),
           SizedBox(
-            height: 300,
+            height: 318,
             child: ListView.separated(
-              padding: const EdgeInsets.symmetric(horizontal: 18),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               scrollDirection: Axis.horizontal,
               itemCount: books.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 14),
+              separatorBuilder: (_, __) => const SizedBox(width: 12),
               itemBuilder: (_, i) => BookCard(
                 book: books[i],
                 favorite: state.favorites.contains(books[i].id),
                 onTap: () => onBook(books[i]),
                 onFavorite: () => state.toggleFavorite(books[i].id),
-                width: 184,
               ),
             ),
           ),
-        ]),
+        ],
       );
 }
 
-class _EmptySearch extends StatelessWidget {
-  const _EmptySearch();
-  @override
-  Widget build(BuildContext context) => const Padding(
-        padding: EdgeInsets.fromLTRB(18, 24, 18, 36),
-        child: Center(child: Text('Aucun document trouvé.', style: TextStyle(fontSize: 11, color: AppColors.muted, fontWeight: FontWeight.w700))),
-      );
-}
+class _StudyCard extends StatelessWidget {
+  const _StudyCard({required this.onTap});
+  final VoidCallback onTap;
 
-class _Offline extends StatelessWidget {
-  const _Offline();
   @override
-  Widget build(BuildContext context) => const Padding(
-        padding: EdgeInsets.all(24),
-        child: Center(child: Text('Le catalogue apparaîtra dès que la connexion sera disponible.', textAlign: TextAlign.center, style: TextStyle(fontSize: 11, color: AppColors.muted))),
+  Widget build(BuildContext context) => Container(
+        margin: const EdgeInsets.fromLTRB(16, 28, 16, 0),
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(colors: [AppColors.blueDeep, AppColors.blue]),
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: const [BoxShadow(color: Color(0x261860F0), blurRadius: 20, offset: Offset(0, 10))],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+              child: const Icon(AppIcons.brain, color: AppColors.blue),
+            ),
+            const SizedBox(width: 14),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Besoin d’un coup de pouce ?', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: Colors.white)),
+                  SizedBox(height: 4),
+                  Text(
+                    'L’assistant Fasobiblio vous guide dans vos recherches.',
+                    style: TextStyle(fontSize: 10, height: 1.4, color: Color(0xFFDDE8FF)),
+                  ),
+                ],
+              ),
+            ),
+            IconButton(
+              onPressed: onTap,
+              style: IconButton.styleFrom(backgroundColor: const Color(0x18FFFFFF)),
+              icon: const Icon(AppIcons.arrowRight, color: Colors.white),
+            ),
+          ],
+        ),
       );
 }
