@@ -18,8 +18,8 @@ class DocumentCover extends StatelessWidget {
       width: width,
       height: height,
       fit: fit,
-      fadeInDuration: const Duration(milliseconds: 280),
-      fadeOutDuration: const Duration(milliseconds: 140),
+      fadeInDuration: const Duration(milliseconds: 240),
+      fadeOutDuration: const Duration(milliseconds: 120),
       placeholder: (_, __) => placeholder,
       errorWidget: (_, __, ___) => placeholder,
     );
@@ -33,35 +33,72 @@ class _DocumentPlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SizedBox(
-    width: width,
-    height: height,
-    child: DecoratedBox(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(colors: [Color(0xFFF2F6FF), Color(0xFFE4EDFF)], begin: Alignment.topLeft, end: Alignment.bottomRight),
-      ),
-      child: Stack(fit: StackFit.expand, children: [
-        Positioned(right: -24, top: -20, child: Container(width: 100, height: 100, decoration: BoxDecoration(color: AppColors.blue.withValues(alpha: .06), shape: BoxShape.circle))),
-        Positioned(left: -28, bottom: -38, child: Container(width: 120, height: 120, decoration: BoxDecoration(color: AppColors.blueDeep.withValues(alpha: .05), shape: BoxShape.circle))),
-        Center(
-          child: Container(
-            margin: const EdgeInsets.all(18),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: .88),
-              borderRadius: BorderRadius.circular(22),
-              border: Border.all(color: const Color(0xFFD6E2FB)),
-              boxShadow: const [BoxShadow(color: Color(0x150B3FB9), blurRadius: 18, offset: Offset(0, 8))],
+        width: width,
+        height: height,
+        child: DecoratedBox(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFFF5F7FB), Color(0xFFE9EEF7)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
-            child: Column(mainAxisSize: MainAxisSize.min, children: [
-              Container(width: 48, height: 48, decoration: BoxDecoration(gradient: const LinearGradient(colors: [AppColors.blue, AppColors.blueDeep]), borderRadius: BorderRadius.circular(15)), child: const Icon(AppIcons.bookOpen, color: Colors.white, size: 24)),
-              const SizedBox(height: 12),
-              const Text('FASOBIBLIO', style: TextStyle(fontSize: 11, letterSpacing: .7, fontWeight: FontWeight.w900, color: AppColors.ink)),
-              const SizedBox(height: 4),
-              const Text('Couverture indisponible', textAlign: TextAlign.center, style: TextStyle(fontSize: 9.5, height: 1.3, fontWeight: FontWeight.w700, color: AppColors.muted)),
-            ]),
+          ),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Positioned(
+                right: -18,
+                top: -18,
+                child: Container(
+                  width: 74,
+                  height: 74,
+                  decoration: BoxDecoration(color: AppColors.blue.withValues(alpha: .045), shape: BoxShape.circle),
+                ),
+              ),
+              Positioned(
+                left: 14,
+                right: 14,
+                top: 22,
+                child: Container(
+                  height: 4,
+                  decoration: BoxDecoration(color: AppColors.ink.withValues(alpha: .10), borderRadius: BorderRadius.circular(99)),
+                ),
+              ),
+              Positioned(
+                left: 14,
+                right: 30,
+                top: 34,
+                child: Container(
+                  height: 4,
+                  decoration: BoxDecoration(color: AppColors.ink.withValues(alpha: .07), borderRadius: BorderRadius.circular(99)),
+                ),
+              ),
+              Center(
+                child: Container(
+                  width: 44,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: .92),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFFDCE4F0)),
+                  ),
+                  child: const Icon(AppIcons.bookOpen, size: 21, color: AppColors.blueDeep),
+                ),
+              ),
+              Positioned(
+                left: 14,
+                right: 14,
+                bottom: 18,
+                child: Row(
+                  children: [
+                    Expanded(child: Container(height: 3, decoration: BoxDecoration(color: AppColors.blue.withValues(alpha: .12), borderRadius: BorderRadius.circular(99)))),
+                    const SizedBox(width: 7),
+                    Container(width: 20, height: 3, decoration: BoxDecoration(color: AppColors.ink.withValues(alpha: .08), borderRadius: BorderRadius.circular(99))),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
-      ]),
-    ),
-  );
+      );
 }
