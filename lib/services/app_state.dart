@@ -20,6 +20,7 @@ class AppState extends ChangeNotifier {
   Set<String> purchased = {};
   List<AppNotification> notifications = [];
   Set<String> notificationReads = {};
+  String? lastOpenedBookId;
   bool loading = true;
   bool refreshing = false;
   bool offline = false;
@@ -31,6 +32,15 @@ class AppState extends ChangeNotifier {
   StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
 
   int get unreadNotifications => notifications.where((item) => !notificationReads.contains(item.id)).length;
+
+  Book? get lastOpenedBook {
+    final id = lastOpenedBookId;
+    if (id == null || id.isEmpty) return null;
+    for (final book in books) {
+      if (book.id == id) return book;
+    }
+    return null;
+  }
 
   Future<void> startConnectivityMonitoring() async {
     final connectivity = Connectivity();
@@ -50,7 +60,18 @@ class AppState extends ChangeNotifier {
     error = null;
     notifyListeners();
     if (!_hydrated) {
-      final local = await Future.wait([store.loadCatalog(), store.load(LocalStore.favoritesKey), store.load(LocalStore.laterKey), store.lastSync(), store.loadAccountAccess(), store.loadDarkMode(), store.loadJson(LocalStore.notificationsKey), store.load(LocalStore.notificationReadsKey), store.loadWelcomeSeen()]);
+      final local = await Future.wait([
+        store.loadCatalog(),
+        store.load(LocalStore.favoritesKey),
+        store.load(LocalStore.laterKey),
+        store.lastSync(),
+        store.loadAccountAccess(),
+        store.loadDarkMode(),
+        store.loadJson(LocalStore.notificationsKey),
+        store.load(LocalStore.notificationReadsKey),
+        store.loadWelcomeSeen(),
+        store.loadJson(LocalStore.lastOpenedDocumentKey),
+      ]);
       books = local[0] as List<Book>;
       favorites = local[1] as Set<String>;
       later = local[2] as Set<String>;
@@ -63,6 +84,8 @@ class AppState extends ChangeNotifier {
       if (cachedNotifications is List) notifications = cachedNotifications.whereType<Map>().map((item) => AppNotification.fromJson('${item['id'] ?? ''}', Map<String, dynamic>.from(item))).where((item) => item.id.isNotEmpty).toList();
       notificationReads = local[7] as Set<String>;
       welcomeSeen = local[8] as bool;
+      final lastOpened = local[9];
+      if (lastOpened is Map) lastOpenedBookId = '${lastOpened['id'] ?? ''}'.trim();
       session ??= UserSession.offlineGuest();
       _hydrated = true;
       loading = false;
@@ -94,11 +117,20 @@ class AppState extends ChangeNotifier {
     notifyListeners();
     await store.save(LocalStore.favoritesKey, favorites);
   }
+
   Future<void> toggleLater(String id) async {
     later.contains(id) ? later.remove(id) : later.add(id);
     notifyListeners();
     await store.save(LocalStore.laterKey, later);
   }
+
+  Future<void> markDocumentOpened(String id) async {
+    if (id.isEmpty) return;
+    lastOpenedBookId = id;
+    notifyListeners();
+    await store.saveJson(LocalStore.lastOpenedDocumentKey, {'id': id, 'openedAt': DateTime.now().toIso8601String()});
+  }
+
   Future<void> toggleDarkMode(bool value) async { darkMode = value; notifyListeners(); await store.saveDarkMode(value); }
   Future<void> completeWelcome() async { welcomeSeen = true; notifyListeners(); await store.saveWelcomeSeen(); }
 
@@ -115,6 +147,7 @@ class AppState extends ChangeNotifier {
     await store.save(LocalStore.notificationReadsKey, notificationReads);
     if (!offline) await api.markAllNotificationsRead(notifications.map((item) => item.id));
   }
+
   bool hasAccess(Book book) => !book.isPremium || purchased.contains(book.id) || subscription != null;
 
   Future<void> _refreshAccount({bool notify = true}) async {
