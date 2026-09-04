@@ -80,7 +80,7 @@ class _AppShellState extends State<AppShell> {
             bottom: false,
             child: Column(
               children: [
-                if (index != 0) AppHeader(state: widget.state, onNotifications: notifications),
+                AppHeader(state: widget.state, onNotifications: notifications),
                 Expanded(
                   child: Center(
                     child: ConstrainedBox(
@@ -105,7 +105,6 @@ class _AppShellState extends State<AppShell> {
 
 class _StandardBottomNav extends StatelessWidget {
   const _StandardBottomNav({required this.selectedIndex, required this.libraryCount, required this.onSelected});
-
   final int selectedIndex;
   final int libraryCount;
   final ValueChanged<int> onSelected;
@@ -120,7 +119,6 @@ class _StandardBottomNav extends StatelessWidget {
       _NavItemData('Bibliothèque', AppIcons.library, badge: libraryCount),
       const _NavItemData('Profil', AppIcons.user),
     ];
-
     final navColor = dark ? const Color(0xFF111B2C) : const Color(0xFFF4F7FF);
 
     return Material(
@@ -130,23 +128,13 @@ class _StandardBottomNav extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: navColor,
-          border: Border(
-            top: BorderSide(
-              color: dark ? const Color(0xFF29426D) : const Color(0xFFB9CFFF),
-              width: 1.4,
-            ),
-          ),
+          border: Border(top: BorderSide(color: dark ? const Color(0xFF29426D) : const Color(0xFFB9CFFF), width: 1.4)),
         ),
         child: SafeArea(
           top: false,
           child: Container(
             height: 66,
-            decoration: BoxDecoration(
-              color: navColor,
-              boxShadow: const [
-                BoxShadow(color: Color(0x141860F0), blurRadius: 18, offset: Offset(0, -6)),
-              ],
-            ),
+            decoration: BoxDecoration(color: navColor, boxShadow: const [BoxShadow(color: Color(0x141860F0), blurRadius: 18, offset: Offset(0, -6))]),
             child: Stack(
               fit: StackFit.expand,
               children: [
@@ -183,7 +171,6 @@ class _NavItemData {
 
 class _BottomNavItem extends StatelessWidget {
   const _BottomNavItem({required this.data, required this.selected, required this.dark, required this.onTap});
-
   final _NavItemData data;
   final bool selected;
   final bool dark;
@@ -194,7 +181,6 @@ class _BottomNavItem extends StatelessWidget {
     final selectedColor = data.premium ? const Color(0xFFB7791F) : AppColors.blue;
     final idleColor = dark ? const Color(0xFF9AA8BC) : AppColors.muted;
     final color = selected ? selectedColor : idleColor;
-
     return Semantics(
       button: true,
       selected: selected,
@@ -226,22 +212,14 @@ class _BottomNavItem extends StatelessWidget {
                 data.label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 9,
-                  height: 1,
-                  fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
-                  color: color,
-                ),
+                style: TextStyle(fontSize: 9, height: 1, fontWeight: selected ? FontWeight.w800 : FontWeight.w600, color: color),
               ),
               const SizedBox(height: 3),
               AnimatedContainer(
                 duration: const Duration(milliseconds: 180),
                 width: selected ? 18 : 0,
                 height: 2,
-                decoration: BoxDecoration(
-                  color: selectedColor,
-                  borderRadius: BorderRadius.circular(2),
-                ),
+                decoration: BoxDecoration(color: selectedColor, borderRadius: BorderRadius.circular(2)),
               ),
             ],
           ),
@@ -257,11 +235,7 @@ class _BottomPatternPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = AppColors.blue.withValues(alpha: dark ? .075 : .065)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1;
-
+    final paint = Paint()..color = AppColors.blue.withValues(alpha: dark ? .075 : .065)..style = PaintingStyle.stroke..strokeWidth = 1;
     for (double x = 20; x < size.width; x += 78) {
       canvas.drawCircle(Offset(x, 12), 10, paint);
       canvas.drawLine(Offset(x - 8, 52), Offset(x + 10, 52), paint);
@@ -316,11 +290,7 @@ class _LibraryLoadingScreenState extends State<_LibraryLoadingScreen> with Singl
               Positioned.fill(
                 child: DecoratedBox(
                   decoration: const BoxDecoration(
-                    gradient: RadialGradient(
-                      center: Alignment(-.2, -.25),
-                      radius: 1.1,
-                      colors: [Color(0xFF1758CF), AppColors.navy],
-                    ),
+                    gradient: RadialGradient(center: Alignment(-.2, -.25), radius: 1.1, colors: [Color(0xFF1758CF), AppColors.navy]),
                   ),
                 ),
               ),
@@ -357,10 +327,7 @@ class _LibraryLoadingScreenState extends State<_LibraryLoadingScreen> with Singl
                               width: index == 2 ? 15 : 11,
                               height: (22 + (index % 3) * 7).toDouble(),
                               margin: const EdgeInsets.symmetric(horizontal: 3),
-                              decoration: BoxDecoration(
-                                color: index.isEven ? Colors.white : const Color(0xFF7FA7FF),
-                                borderRadius: BorderRadius.circular(3),
-                              ),
+                              decoration: BoxDecoration(color: index.isEven ? Colors.white : const Color(0xFF7FA7FF), borderRadius: BorderRadius.circular(3)),
                             ),
                           );
                         }),
