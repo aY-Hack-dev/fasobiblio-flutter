@@ -26,7 +26,11 @@ class _AppShellState extends State<AppShell> {
   int index = 0;
   DateTime? lastBackPress;
 
-  void book(Book value) => Navigator.push(context, MaterialPageRoute(builder: (_) => BookDetailScreen(book: value, state: widget.state)));
+  void book(Book value) {
+    widget.state.markDocumentOpened(value.id);
+    Navigator.push(context, MaterialPageRoute(builder: (_) => BookDetailScreen(book: value, state: widget.state)));
+  }
+
   void assistant() => Navigator.push(context, MaterialPageRoute(builder: (_) => AssistantScreen(state: widget.state)));
   void notifications() => Navigator.push(context, MaterialPageRoute(builder: (_) => NotificationsScreen(state: widget.state)));
 
@@ -47,7 +51,12 @@ class _AppShellState extends State<AppShell> {
   @override
   Widget build(BuildContext context) {
     final pages = [
-      HomeScreen(state: widget.state, onExplore: () => setState(() => index = 2), onBook: book),
+      HomeScreen(
+        state: widget.state,
+        onExplore: () => setState(() => index = 2),
+        onBook: book,
+        onNotifications: notifications,
+      ),
       PremiumScreen(state: widget.state, onBook: book),
       ExploreScreen(state: widget.state, onBook: book, onAssistant: assistant),
       LibraryScreen(state: widget.state, onBook: book),
@@ -71,7 +80,7 @@ class _AppShellState extends State<AppShell> {
             bottom: false,
             child: Column(
               children: [
-                AppHeader(state: widget.state, onNotifications: notifications),
+                if (index != 0) AppHeader(state: widget.state, onNotifications: notifications),
                 Expanded(
                   child: Center(
                     child: ConstrainedBox(
