@@ -71,7 +71,25 @@ class ProfileScreen extends StatelessWidget {
           _RowItem(icon: AppIcons.scale, title: 'Mentions légales et contact', onTap: () => information(context, InformationKind.legal)),
         ]),
         const SizedBox(height: 18),
-        const Text('Fasobiblio Mobile • version 3.4.0', textAlign: TextAlign.center, style: TextStyle(fontSize: 9.5, color: AppColors.muted)),
+        if (connected) TextButton.icon(
+          icon: const Icon(AppIcons.logout),
+          label: const Text('Se déconnecter'),
+          onPressed: () async {
+            final confirmed = await showDialog<bool>(context: context, builder: (context) => AlertDialog(
+              title: const Text('Se déconnecter ?'),
+              content: const Text('Vous pourrez vous reconnecter pour retrouver vos accès.'),
+              actions: [
+                TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Annuler')),
+                FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Se déconnecter')),
+              ],
+            ));
+            if (confirmed != true) return;
+            try { await state.logout(); } catch (error) {
+              if (context.mounted) showToast(context, friendlyFailure(error, action: 'vous déconnecter'));
+            }
+          },
+        ),
+        const Text('Fasobiblio Mobile • version 3.5.0', textAlign: TextAlign.center, style: TextStyle(fontSize: 10.5, color: AppColors.muted)),
       ],
     );
   }
@@ -84,54 +102,53 @@ class _ProfileHeader extends StatelessWidget {
   final String name;
 
   @override
-  Widget build(BuildContext context) => Container(
-    height: connected ? 176 : 206,
-    clipBehavior: Clip.antiAlias,
-    decoration: BoxDecoration(
-      gradient: const LinearGradient(colors: [Color(0xFF071A38), Color(0xFF0B3FB9), Color(0xFF1764E8)], begin: Alignment.topLeft, end: Alignment.bottomRight),
-      borderRadius: BorderRadius.circular(24),
-      boxShadow: const [BoxShadow(color: Color(0x2410379D), blurRadius: 20, offset: Offset(0, 10))],
-    ),
-    child: Stack(children: [
-      const Positioned.fill(child: CustomPaint(painter: _ProfilePatternPainter())),
-      Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(children: [
-          Row(children: [
-            Container(
-              width: 62,
-              height: 62,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(19)),
-              child: Text(name.isNotEmpty ? name[0].toUpperCase() : 'F', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: AppColors.blueDeep)),
-            ),
-            const SizedBox(width: 12),
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTypography.display(size: 20, weight: FontWeight.w900, color: Colors.white)),
-              const SizedBox(height: 4),
-              Text(connected ? 'Compte Fasobiblio' : 'Mode invité', style: const TextStyle(fontSize: 10.5, color: Color(0xFFD6E3FF))),
-            ])),
-            if (connected) IconButton(onPressed: state.logout, tooltip: 'Se déconnecter', style: IconButton.styleFrom(backgroundColor: const Color(0x18FFFFFF)), icon: const Icon(AppIcons.logout, color: Colors.white, size: 19)),
-          ]),
-          const Spacer(),
-          if (connected)
-            Row(children: [
-              _HeaderStat(value: '${state.favorites.length}', label: 'Favoris'),
-              const SizedBox(width: 8),
-              _HeaderStat(value: '${state.later.length}', label: 'À lire'),
-              const SizedBox(width: 8),
-              _HeaderStat(value: '${state.purchased.length}', label: 'Achats'),
-            ])
-          else
-            Row(children: [
-              Expanded(child: FilledButton(onPressed: () => showAuthSheet(context, state, signup: false), style: FilledButton.styleFrom(backgroundColor: Colors.white, foregroundColor: AppColors.blueDeep), child: const Text('Connexion'))),
-              const SizedBox(width: 9),
-              Expanded(child: OutlinedButton(onPressed: () => showAuthSheet(context, state, signup: true), style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white)), child: const Text('Créer un compte', textAlign: TextAlign.center))),
-            ]),
-        ]),
+  Widget build(BuildContext context) => Column(children: [
+    Container(
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(colors: [Color(0xFF071A38), Color(0xFF124ED8), Color(0xFF3385FF)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: const [BoxShadow(color: Color(0x2010379D), blurRadius: 18, offset: Offset(0, 8))],
       ),
-    ]),
-  );
+      child: Column(children: [
+        SizedBox(height: 96, child: Stack(children: [
+          const Positioned.fill(child: CustomPaint(painter: _ProfilePatternPainter())),
+          Positioned(left: 16, top: 16, child: Container(
+            width: 64, height: 64, alignment: Alignment.center,
+            decoration: BoxDecoration(color: const Color(0xEEFFFFFF), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.white, width: 2)),
+            child: Text(name.isNotEmpty ? name[0].toUpperCase() : 'F', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: AppColors.blueDeep)),
+          )),
+          Positioned(right: 14, top: 14, child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(color: const Color(0x24FFFFFF), borderRadius: BorderRadius.circular(99)),
+            child: Text(!connected ? 'Mode invité' : state.subscription != null ? 'Premium' : 'Compte gratuit', style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
+          )),
+        ])),
+        Container(width: double.infinity, padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          color: const Color(0xDD071A38),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(name, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800, color: Colors.white)),
+            const SizedBox(height: 3),
+            Text(connected ? '@${state.session!.pseudo}' : 'Votre espace de lecture personnel', style: const TextStyle(fontSize: 11, color: Color(0xFFBBD1F6))),
+          ]),
+        ),
+      ]),
+    ),
+    const SizedBox(height: 12),
+    if (!connected) Row(children: [
+      Expanded(child: FilledButton(onPressed: () => showAuthSheet(context, state, signup: false), child: const Text('Connexion'))),
+      const SizedBox(width: 8),
+      Expanded(child: OutlinedButton(onPressed: () => showAuthSheet(context, state, signup: true), child: const Text('Créer un compte', textAlign: TextAlign.center))),
+    ]) else Container(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(16)),
+      child: Row(children: [
+        _HeaderStat(value: '${state.favorites.length}', label: 'Favoris'),
+        _HeaderStat(value: '${state.later.length}', label: 'À lire'),
+        _HeaderStat(value: '${state.purchased.length}', label: 'Achats'),
+      ]),
+    ),
+  ]);
 }
 
 class _HeaderStat extends StatelessWidget {
@@ -139,23 +156,23 @@ class _HeaderStat extends StatelessWidget {
   final String value;
   final String label;
   @override
-  Widget build(BuildContext context) => Expanded(child: Container(
-    padding: const EdgeInsets.symmetric(vertical: 8),
-    decoration: BoxDecoration(color: const Color(0x13FFFFFF), borderRadius: BorderRadius.circular(12)),
-    child: Column(children: [Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: Colors.white)), const SizedBox(height: 2), Text(label, style: const TextStyle(fontSize: 9, color: Color(0xFFD6E3FF)))]),
-  ));
+  Widget build(BuildContext context) => Expanded(child: Column(children: [
+    Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Theme.of(context).colorScheme.primary)),
+    const SizedBox(height: 3),
+    Text(label, style: const TextStyle(fontSize: 11, color: AppColors.muted)),
+  ]));
 }
 
 class _ProfilePatternPainter extends CustomPainter {
   const _ProfilePatternPainter();
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = Colors.white.withValues(alpha: .055)..style = PaintingStyle.stroke..strokeWidth = 1.3;
-    for (double x = -12; x < size.width + 20; x += 34) {
-      for (double y = -12; y < size.height + 20; y += 34) {
-        final path = Path()..moveTo(x, y + 9)..lineTo(x + 9, y)..lineTo(x + 18, y + 9)..lineTo(x + 9, y + 18)..close();
-        canvas.drawPath(path, paint);
-      }
+    for (var i = 0; i < 3; i++) {
+      final offset = i * 16.0;
+      final path = Path()..moveTo(size.width * .35, size.height)
+        ..cubicTo(size.width * .65, -offset, size.width * .8, size.height + offset, size.width, 16 + offset)
+        ..lineTo(size.width, size.height)..close();
+      canvas.drawPath(path, Paint()..color = Colors.white.withValues(alpha: .07 + i * .025));
     }
   }
   @override
@@ -173,9 +190,11 @@ class _AppearanceCard extends StatelessWidget {
       const Row(children: [Icon(AppIcons.sun, size: 18), SizedBox(width: 8), Text('Apparence', style: TextStyle(fontWeight: FontWeight.w900))]),
       const SizedBox(height: 11),
       Row(children: [
-        Expanded(child: _AppearanceChoice(icon: AppIcons.sun, label: 'Clair', selected: !state.darkMode, onTap: () => state.toggleDarkMode(false))),
+        Expanded(child: _AppearanceChoice(icon: AppIcons.sun, label: 'Clair', selected: state.themeMode == 'light', onTap: () => state.setThemeMode('light'))),
         const SizedBox(width: 8),
-        Expanded(child: _AppearanceChoice(icon: AppIcons.moon, label: 'Sombre', selected: state.darkMode, onTap: () => state.toggleDarkMode(true))),
+        Expanded(child: _AppearanceChoice(icon: AppIcons.moon, label: 'Sombre', selected: state.themeMode == 'dark', onTap: () => state.setThemeMode('dark'))),
+        const SizedBox(width: 8),
+        Expanded(child: _AppearanceChoice(icon: Icons.brightness_auto_outlined, label: 'Système', selected: state.themeMode == 'system', onTap: () => state.setThemeMode('system'))),
       ]),
     ]),
   );
