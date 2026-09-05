@@ -93,23 +93,25 @@ class _InformationScreenState extends State<InformationScreen> {
         ? const Center(child: CircularProgressIndicator())
         : sections.isEmpty
             ? _UnavailableContent(onRetry: () => _load(retry: true))
-            : ListView(
-                padding: const EdgeInsets.fromLTRB(18, 18, 18, 38),
-                children: sections.map((section) => Container(
-                  margin: const EdgeInsets.only(bottom: 13),
-                  padding: const EdgeInsets.all(19),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surface,
-                    border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: .5)),
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: const [BoxShadow(color: Color(0x0B0B3B78), blurRadius: 16, offset: Offset(0, 7))],
+            : SafeArea(
+                top: false,
+                child: ListView.separated(
+                  padding: const EdgeInsets.fromLTRB(22, 24, 22, 32),
+                  itemCount: sections.length,
+                  separatorBuilder: (context, index) => Divider(
+                    height: 36,
+                    thickness: .5,
+                    color: Theme.of(context).dividerColor,
                   ),
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    if (section.$1.isNotEmpty) Text(section.$1, style: AppTypography.display(size: 18, weight: FontWeight.w900, color: Theme.of(context).colorScheme.onSurface)),
-                    if (section.$1.isNotEmpty && section.$2.isNotEmpty) const SizedBox(height: 9),
-                    if (section.$2.isNotEmpty) Text(section.$2, style: const TextStyle(height: 1.62, color: AppColors.muted)),
-                  ]),
-                )).toList(),
+                  itemBuilder: (context, index) {
+                    final section = sections[index];
+                    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      if (section.$1.isNotEmpty) Text(section.$1, style: AppTypography.display(size: 18, weight: FontWeight.w900, color: Theme.of(context).colorScheme.onSurface)),
+                      if (section.$1.isNotEmpty && section.$2.isNotEmpty) const SizedBox(height: 10),
+                      if (section.$2.isNotEmpty) Text(section.$2, style: TextStyle(height: 1.62, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                    ]);
+                  },
+                ),
               ),
   );
 }
