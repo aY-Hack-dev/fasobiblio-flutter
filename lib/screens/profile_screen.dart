@@ -78,7 +78,7 @@ class ProfileScreen extends StatelessWidget {
           label: const Text('Se déconnecter'),
           onPressed: () async {
             final confirmed = await showDialog<bool>(context: context, builder: (context) => AlertDialog(
-              title: const Text('Se déconnecter ?'),
+              title: const Text('Se déconnecter ?', style: TextStyle(fontWeight: FontWeight.bold)),
               content: const Text('Vous pourrez vous reconnecter pour retrouver vos accès.'),
               actions: [
                 TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Annuler')),
