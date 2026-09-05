@@ -2,6 +2,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import '../core/theme.dart';
+import '../services/document_service.dart';
+import '../core/app_feedback.dart';
 import 'pdf_reader_screen.dart';
 
 class OfflineDocumentsScreen extends StatefulWidget {
@@ -53,7 +55,7 @@ class _OfflineDocumentsScreenState extends State<OfflineDocumentsScreen> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('Documents hors connexion')),
-    body: loading
+    body: Column(children: [ValueListenableBuilder<List<DownloadTask>>(valueListenable: DocumentService.tasks, builder: (context, tasks, _) => Column(children: tasks.where((t) => t.running || t.error != null).map((task) => ListTile(title: Text(task.key, maxLines: 1, overflow: TextOverflow.ellipsis), subtitle: task.running ? LinearProgressIndicator(value: task.progress) : Text(task.error!), trailing: task.running ? null : IconButton(tooltip: 'Relancer', icon: const Icon(Icons.refresh), onPressed: () async { try { await DocumentService().ensureLocal(task.url, task.key); await _load(); } catch (e) { if (context.mounted) showToast(context, 'Relance impossible. Ouvrez à nouveau la fiche du document.'); } }))).toList())), Expanded(child: loading
         ? const Center(child: CircularProgressIndicator())
         : files.isEmpty
             ? const _EmptyOffline()
@@ -80,9 +82,12 @@ class _OfflineDocumentsScreenState extends State<OfflineDocumentsScreen> {
                             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                               Text(_title(file), maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w900)),
                               const SizedBox(height: 6),
-                              Text('${_size(stat.size)} • disponible hors connexion', style: const TextStyle(fontSize: 10.5, color: AppColors.muted)),
+                              Text('${_size(stat.size)} • disponible hors connexion', style: const TextStyle(fontSize:12, color: AppColors.muted)),
                             ])),
-                            const Icon(AppIcons.chevronRight, color: AppColors.muted),
+                            IconButton(tooltip: 'Supprimer la copie hors connexion', icon: const Icon(Icons.delete_outline), onPressed: () async {
+                              final yes = await showDialog<bool>(context: context, builder: (context) => AlertDialog(title: const Text('Supprimer ce téléchargement ?'), content: const Text('La copie locale sera supprimée. Vous pourrez télécharger à nouveau le document.'), actions: [TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Annuler')), TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Supprimer'))]));
+                              if (yes == true) { try { await file.delete(); await _load(); } catch (e) { if (context.mounted) showToast(context, 'Suppression impossible.'); } }
+                            }),
                           ]),
                         ),
                       ),
@@ -90,6 +95,7 @@ class _OfflineDocumentsScreenState extends State<OfflineDocumentsScreen> {
                   },
                 ),
               ),
+    )]),
   );
 }
 

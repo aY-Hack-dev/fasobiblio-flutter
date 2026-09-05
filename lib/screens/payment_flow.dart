@@ -78,7 +78,7 @@ Future<String?> _askPhone(BuildContext context, {required String title, required
               Navigator.pop(sheetContext, phone);
             })),
             const SizedBox(height: 8),
-            const Text('Orange Money et Moov Money • paiement sécurisé par MoneyFusion', textAlign: TextAlign.center, style: TextStyle(fontSize: 10, color: AppColors.muted)),
+            const Text('Orange Money et Moov Money • paiement sécurisé par MoneyFusion', textAlign: TextAlign.center, style: TextStyle(fontSize:12, color: AppColors.muted)),
           ]),
         ),
       ),
@@ -203,7 +203,7 @@ Future<bool> makeDonation(BuildContext context, AppState state) async {
               Row(children: [
                 Container(width: 48, height: 48, decoration: BoxDecoration(color: const Color(0xFFFFEEF2), borderRadius: BorderRadius.circular(15)), child: const Icon(AppIcons.heart, color: Color(0xFFE11D48))),
                 const SizedBox(width: 12),
-                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('Faire un don', style: Theme.of(context).textTheme.titleLarge), const SizedBox(height: 3), const Text('Chaque contribution aide à maintenir Fasobiblio accessible.', style: TextStyle(fontSize: 11, color: AppColors.muted))])),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('Faire un don', style: Theme.of(context).textTheme.titleLarge), const SizedBox(height: 3), const Text('Chaque contribution aide à maintenir Fasobiblio accessible.', style: TextStyle(fontSize:12, color: AppColors.muted))])),
               ]),
               const SizedBox(height: 18),
               Wrap(spacing: 8, runSpacing: 8, children: [500, 1000, 2500].map((amount) => ChoiceChip(label: Text('$amount F'), selected: selected == amount, onSelected: busy ? null : (_) => setState(() { selected = amount; custom.clear(); error = null; }))).toList()),
@@ -211,7 +211,7 @@ Future<bool> makeDonation(BuildContext context, AppState state) async {
               TextField(controller: custom, enabled: !busy, keyboardType: TextInputType.number, onChanged: (v) { if (v.isNotEmpty) setState(() { selected = null; error = null; }); }, decoration: const InputDecoration(labelText: 'Ou montant libre (FCFA)', hintText: 'Ex : 750')),
               const SizedBox(height: 12),
               TextField(controller: phone, enabled: !busy, keyboardType: TextInputType.phone, onChanged: (_) { if (error != null) setState(() => error = null); }, decoration: const InputDecoration(labelText: 'Numéro Mobile Money', hintText: 'Ex : 70 12 34 56', prefixIcon: Icon(AppIcons.smartphone))),
-              if (error != null) Padding(padding: const EdgeInsets.only(top: 10), child: Text(error!, style: const TextStyle(color: Color(0xFFB91C1C), fontSize: 11.5, fontWeight: FontWeight.w700))),
+              if (error != null) Padding(padding: const EdgeInsets.only(top: 10), child: Text(error!, style: const TextStyle(color: Color(0xFFB91C1C), fontSize:12, fontWeight: FontWeight.w700))),
               const SizedBox(height: 18),
               SizedBox(width: double.infinity, child: FilledButton.icon(onPressed: busy ? null : submit, icon: busy ? const SizedBox(width: 17, height: 17, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Icon(AppIcons.heart), label: Text(busy ? 'Connexion au paiement…' : 'Continuer'))),
             ]),

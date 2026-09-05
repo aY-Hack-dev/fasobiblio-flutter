@@ -3,6 +3,7 @@ import '../core/app_feedback.dart';
 import '../core/theme.dart';
 import '../services/app_state.dart';
 import 'auth_sheet.dart';
+import 'collections_screen.dart';
 import 'information_screen.dart';
 import 'offline_documents_screen.dart';
 import 'payment_flow.dart';
@@ -53,6 +54,7 @@ class ProfileScreen extends StatelessWidget {
         const SizedBox(height: 14),
         _Group(children: [
           _RowItem(icon: AppIcons.library, title: 'Ma bibliothèque', onTap: onLibrary),
+          _RowItem(icon: Icons.folder_outlined, title: 'Mes collections', onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CollectionsScreen(state: state)))),
           _RowItem(icon: AppIcons.fileCheck, title: 'Documents hors connexion', onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const OfflineDocumentsScreen()))),
           _RowItem(icon: AppIcons.bell, title: 'Notifications', badge: state.unreadNotifications, onTap: onNotifications),
         ]),
@@ -89,7 +91,7 @@ class ProfileScreen extends StatelessWidget {
             }
           },
         ),
-        const Text('Fasobiblio Mobile • version 3.5.0', textAlign: TextAlign.center, style: TextStyle(fontSize: 10.5, color: AppColors.muted)),
+        const Text('Fasobiblio Mobile • version 3.6.0', textAlign: TextAlign.center, style: TextStyle(fontSize:12, color: AppColors.muted)),
       ],
     );
   }
@@ -121,7 +123,7 @@ class _ProfileHeader extends StatelessWidget {
           Positioned(right: 14, top: 14, child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(color: const Color(0x24FFFFFF), borderRadius: BorderRadius.circular(99)),
-            child: Text(!connected ? 'Mode invité' : state.subscription != null ? 'Premium' : 'Compte gratuit', style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
+            child: Text(!connected ? 'Mode invité' : state.subscription != null ? 'Premium' : 'Compte gratuit', style: const TextStyle(color: Colors.white, fontSize:12, fontWeight: FontWeight.w700)),
           )),
         ])),
         Container(width: double.infinity, padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -129,16 +131,16 @@ class _ProfileHeader extends StatelessWidget {
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(name, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800, color: Colors.white)),
             const SizedBox(height: 3),
-            Text(connected ? '@${state.session!.pseudo}' : 'Votre espace de lecture personnel', style: const TextStyle(fontSize: 11, color: Color(0xFFBBD1F6))),
+            Text(connected ? '@${state.session!.pseudo}' : 'Votre espace de lecture personnel', style: const TextStyle(fontSize:12, color: Color(0xFFBBD1F6))),
           ]),
         ),
       ]),
     ),
     const SizedBox(height: 12),
     if (!connected) Row(children: [
-      Expanded(child: FilledButton(onPressed: () => showAuthSheet(context, state, signup: false), child: const Text('Connexion'))),
+      Expanded(child: FilledButton(onPressed: () => showAuthSheet(context, state, signup: true), child: const Text('Créer un compte', textAlign: TextAlign.center))),
       const SizedBox(width: 8),
-      Expanded(child: OutlinedButton(onPressed: () => showAuthSheet(context, state, signup: true), child: const Text('Créer un compte', textAlign: TextAlign.center))),
+      Expanded(child: FilledButton(onPressed: () => showAuthSheet(context, state, signup: false), child: const Text('Connexion'))),
     ]) else Container(
       padding: const EdgeInsets.symmetric(vertical: 12),
       decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(16)),
@@ -159,7 +161,7 @@ class _HeaderStat extends StatelessWidget {
   Widget build(BuildContext context) => Expanded(child: Column(children: [
     Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Theme.of(context).colorScheme.primary)),
     const SizedBox(height: 3),
-    Text(label, style: const TextStyle(fontSize: 11, color: AppColors.muted)),
+    Text(label, style: const TextStyle(fontSize:12, color: AppColors.muted)),
   ]));
 }
 
@@ -214,7 +216,7 @@ class _AppearanceChoice extends StatelessWidget {
       duration: const Duration(milliseconds: 160),
       padding: const EdgeInsets.symmetric(vertical: 12),
       decoration: BoxDecoration(color: selected ? const Color(0xFFEAF1FF) : Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: .45), borderRadius: BorderRadius.circular(13), border: Border.all(color: selected ? AppColors.blueDeep.withValues(alpha: .35) : Colors.transparent)),
-      child: Column(children: [Icon(icon, size: 19, color: selected ? AppColors.blueDeep : AppColors.muted), const SizedBox(height: 5), Text(label, style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: selected ? AppColors.blueDeep : AppColors.muted))]),
+      child: Column(children: [Icon(icon, size: 19, color: selected ? AppColors.blueDeep : AppColors.muted), const SizedBox(height: 5), Text(label, style: TextStyle(fontSize:12, fontWeight: FontWeight.w800, color: selected ? AppColors.blueDeep : AppColors.muted))]),
     ),
   );
 }
@@ -245,7 +247,7 @@ class _RowItem extends StatelessWidget {
         Icon(icon, size: 20, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: .78)),
         const SizedBox(width: 12),
         Expanded(child: Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700))),
-        if (badge > 0) Container(padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3), decoration: BoxDecoration(color: const Color(0xFFEAF1FF), borderRadius: BorderRadius.circular(99)), child: Text(badge > 99 ? '99+' : '$badge', style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: AppColors.blueDeep))),
+        if (badge > 0) Container(padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3), decoration: BoxDecoration(color: const Color(0xFFEAF1FF), borderRadius: BorderRadius.circular(99)), child: Text(badge > 99 ? '99+' : '$badge', style: const TextStyle(fontSize:12, fontWeight: FontWeight.w900, color: AppColors.blueDeep))),
         const SizedBox(width: 5),
         const Icon(AppIcons.chevronRight, size: 17, color: AppColors.muted),
       ]),
@@ -316,7 +318,7 @@ class _SupportSheetState extends State<_SupportSheet> {
       Wrap(spacing: 9, runSpacing: 9, children: topics.map((topic) { final selected = type == topic.$1; return ChoiceChip(selected: selected, onSelected: busy ? null : (_) => setState(() => type = topic.$1), showCheckmark: false, avatar: Icon(topic.$2, size: 18, color: selected ? Colors.white : AppColors.blue), label: Text(topic.$1), labelStyle: TextStyle(fontWeight: FontWeight.w800, color: selected ? Colors.white : Theme.of(context).colorScheme.onSurface), selectedColor: AppColors.blue, backgroundColor: Theme.of(context).colorScheme.surface); }).toList()),
       const SizedBox(height: 15),
       TextField(controller: controller, enabled: !busy, onChanged: (_) => setState(() {}), minLines: 4, maxLines: 6, maxLength: 1000, decoration: const InputDecoration(labelText: 'Votre message', hintText: 'Décrivez votre demande…')),
-      if (error != null) Text(error!, style: const TextStyle(fontSize: 11.5, color: Color(0xFFB91C1C), fontWeight: FontWeight.w700)),
+      if (error != null) Text(error!, style: const TextStyle(fontSize:12, color: Color(0xFFB91C1C), fontWeight: FontWeight.w700)),
       const SizedBox(height: 10),
       SizedBox(width: double.infinity, child: FilledButton.icon(onPressed: busy || controller.text.trim().length < 4 ? null : submit, icon: busy ? const SizedBox(width: 17, height: 17, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Icon(AppIcons.send), label: Text(busy ? 'Envoi en cours…' : 'Envoyer'))),
     ]),
@@ -369,7 +371,7 @@ class _SuggestionSheetState extends State<_SuggestionSheet> {
       TextField(controller: level, enabled: !busy, decoration: const InputDecoration(labelText: 'Niveau')),
       const SizedBox(height: 10),
       TextField(controller: details, enabled: !busy, minLines: 3, maxLines: 5, decoration: const InputDecoration(labelText: 'Précisions')),
-      if (error != null) Padding(padding: const EdgeInsets.only(top: 10), child: Text(error!, style: const TextStyle(fontSize: 11.5, color: Color(0xFFB91C1C), fontWeight: FontWeight.w700))),
+      if (error != null) Padding(padding: const EdgeInsets.only(top: 10), child: Text(error!, style: const TextStyle(fontSize:12, color: Color(0xFFB91C1C), fontWeight: FontWeight.w700))),
       const SizedBox(height: 14),
       SizedBox(width: double.infinity, child: FilledButton.icon(onPressed: busy || title.text.trim().length < 2 ? null : submit, icon: busy ? const SizedBox(width: 17, height: 17, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Icon(AppIcons.send), label: Text(busy ? 'Envoi en cours…' : 'Envoyer la suggestion'))),
     ]),

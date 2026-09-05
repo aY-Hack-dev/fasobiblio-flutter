@@ -18,7 +18,7 @@ class LocalStore {
   Future<void> saveThemeMode(String value) async=>(await SharedPreferences.getInstance()).setString(themeModeKey,value);
   String assistantMemoryKey(String accountKey)=>'fasobiblio.flutter.assistant.${accountKey.replaceAll(RegExp(r'[^A-Za-z0-9_.-]'),'_')}';
   Future<List<Map<String,dynamic>>> loadAssistantMemory(String accountKey) async{final value=await loadJson(assistantMemoryKey(accountKey));if(value is! List)return[];return value.whereType<Map>().map((e)=>Map<String,dynamic>.from(e)).toList();}
-  Future<void> saveAssistantMemory(String accountKey,List<Map<String,dynamic>> messages) async=>saveJson(assistantMemoryKey(accountKey),messages.take(80).toList());
+  Future<void> saveAssistantMemory(String accountKey,List<Map<String,dynamic>> messages) async=>saveJson(assistantMemoryKey(accountKey),messages.skip(messages.length > 80 ? messages.length - 80 : 0).toList());
   Future<dynamic> loadJson(String key) async{final raw=(await SharedPreferences.getInstance()).getString(key);if(raw==null||raw.isEmpty)return null;try{return jsonDecode(raw);}catch(_){return null;}}
   Future<void> saveJson(String key,Object value) async=>(await SharedPreferences.getInstance()).setString(key,jsonEncode(value));
   Future<bool> loadWelcomeSeen() async=>(await SharedPreferences.getInstance()).getBool(welcomeSeenKey)??false;

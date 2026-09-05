@@ -47,6 +47,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
   }
 
   Future<void> open(String mode) async {
+    if (busy) return;
     final cacheKey = '${widget.book.id}-${widget.book.title}';
     final cached = await documents.cached(cacheKey);
     if (!mounted) return;
@@ -127,9 +128,9 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(color: surface, border: Border(top: BorderSide(color: Theme.of(context).dividerColor.withValues(alpha: .5)))),
           child: Row(children: [
-            Expanded(child: FilledButton.icon(style: FilledButton.styleFrom(backgroundColor: AppColors.blue, foregroundColor: Colors.white), onPressed: busy ? null : () => open('read'), icon: const Icon(AppIcons.bookOpen), label: Text(book.isPremium && !widget.state.hasAccess(book) ? 'Débloquer et lire' : 'Lire maintenant'))),
+            Expanded(child: FilledButton.icon(style: FilledButton.styleFrom(backgroundColor: AppColors.blue, foregroundColor: Colors.white), onPressed: busy ? null : () => open('read'), icon: const Icon(AppIcons.bookOpen, size: 18), label: const Text('Lire'))),
             const SizedBox(width: 9),
-            IconButton.filledTonal(onPressed: busy ? null : () => open('download'), icon: const Icon(AppIcons.download), tooltip: 'Enregistrer dans Download'),
+            Expanded(child: FilledButton.icon(onPressed: busy ? null : () => open('download'), icon: const Icon(AppIcons.download, size: 18), label: const Text('Télécharger'))),
           ]),
         ),
       ),
@@ -165,13 +166,13 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('À propos de cet ouvrage', style: AppTypography.display(size: 19, weight: FontWeight.w900, color: Theme.of(context).colorScheme.onSurface)),
+              Text('À propos de cet ouvrage', style: AppTypography.display(size: 18, weight: FontWeight.w900, color: Theme.of(context).colorScheme.onSurface)),
               const SizedBox(height: 10),
               Text(book.description.isEmpty ? 'La description de ce document sera bientôt disponible.' : book.description, style: const TextStyle(height: 1.6)),
               const SizedBox(height: 22),
-              Container(padding: const EdgeInsets.symmetric(horizontal: 15), decoration: BoxDecoration(color: surface, border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: .5)), borderRadius: BorderRadius.circular(17)), child: Column(children: [_Info('Rayon', categoryLabel(book.category)), _Info('Langue', book.language.toUpperCase()), _Info('Niveau', book.level.isEmpty ? 'Tous niveaux' : book.level), _Info('Année', book.year.isEmpty ? 'Non précisée' : book.year, last: true)])),
+              Padding(padding: const EdgeInsets.symmetric(horizontal: 0), child: Column(children: [_Info('Rayon', categoryLabel(book.category)), _Info('Langue', book.language.toUpperCase()), _Info('Niveau', book.level.isEmpty ? 'Tous niveaux' : book.level), _Info('Année', book.year.isEmpty ? 'Non précisée' : book.year, last: true)])),
               const SizedBox(height: 28),
-              Row(children: [const Expanded(child: Text('Avis des lecteurs', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900))), TextButton.icon(onPressed: _writeReview, icon: const Icon(AppIcons.review, size: 18), label: const Text('Donner mon avis'))]),
+              Wrap(alignment: WrapAlignment.spaceBetween, crossAxisAlignment: WrapCrossAlignment.center, spacing: 12, children: [Text('Avis des lecteurs', style: Theme.of(context).textTheme.titleLarge), TextButton.icon(onPressed: _writeReview, icon: const Icon(AppIcons.review, size: 18), label: const Text('Donner mon avis'))]),
               if (loadingReviews) const Padding(padding: EdgeInsets.symmetric(vertical: 20), child: Center(child: CircularProgressIndicator()))
               else if (reviews.isEmpty) const _NoReviews()
               else ...reviews.map((review) => _ReviewCard(review: review)),
@@ -204,7 +205,7 @@ class _Stat extends StatelessWidget {
   final String label;
   final Color color;
   @override
-  Widget build(BuildContext context) => Expanded(child: Column(children: [Icon(icon, size: 19, color: color), const SizedBox(height: 4), Text(value, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w900)), Text(label, style: const TextStyle(fontSize: 9, color: AppColors.muted))]));
+  Widget build(BuildContext context) => Expanded(child: Column(children: [Icon(icon, size: 19, color: color), const SizedBox(height: 4), Text(value, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w900)), Text(label, style: const TextStyle(fontSize:12, color: AppColors.muted))]));
 }
 
 class _Action extends StatelessWidget {
@@ -214,7 +215,7 @@ class _Action extends StatelessWidget {
   final VoidCallback onTap;
   final bool active;
   @override
-  Widget build(BuildContext context) => InkWell(onTap: onTap, borderRadius: BorderRadius.circular(30), child: Padding(padding: const EdgeInsets.all(7), child: Column(children: [CircleAvatar(backgroundColor: active ? AppColors.blue : AppColors.sky, foregroundColor: active ? Colors.white : AppColors.blue, child: Icon(icon, size: 20)), const SizedBox(height: 5), Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.muted))])));
+  Widget build(BuildContext context) => InkWell(onTap: onTap, borderRadius: BorderRadius.circular(30), child: Padding(padding: const EdgeInsets.all(7), child: Column(children: [CircleAvatar(backgroundColor: active ? AppColors.blue : AppColors.sky, foregroundColor: active ? Colors.white : AppColors.blue, child: Icon(icon, size: 20)), const SizedBox(height: 5), Text(label, style: const TextStyle(fontSize:12, fontWeight: FontWeight.w700, color: AppColors.muted))])));
 }
 
 class _Info extends StatelessWidget {
@@ -223,7 +224,7 @@ class _Info extends StatelessWidget {
   final String value;
   final bool last;
   @override
-  Widget build(BuildContext context) => Container(padding: const EdgeInsets.symmetric(vertical: 13), decoration: BoxDecoration(border: last ? null : Border(bottom: BorderSide(color: Theme.of(context).dividerColor.withValues(alpha: .45)))), child: Row(children: [Text(label, style: const TextStyle(color: AppColors.muted)), const Spacer(), Flexible(child: Text(value, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w800)))]));
+  Widget build(BuildContext context) => Container(padding: const EdgeInsets.symmetric(vertical: 13),  child: Row(children: [Text(label, style: const TextStyle(color: AppColors.muted)), const Spacer(), Flexible(child: Text(value, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w800)))]));
 }
 
 class _NoReviews extends StatelessWidget {
@@ -239,7 +240,7 @@ class _ReviewCard extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     margin: const EdgeInsets.only(bottom: 10),
     padding: const EdgeInsets.all(15),
-    decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(17), border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: .45))),
+    decoration: BoxDecoration(border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor))),
     child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
       CircleAvatar(backgroundColor: AppColors.sky, foregroundColor: AppColors.blue, child: Text(review.name.isEmpty ? 'L' : review.name[0].toUpperCase(), style: const TextStyle(fontWeight: FontWeight.w900))),
       const SizedBox(width: 12),
@@ -247,7 +248,7 @@ class _ReviewCard extends StatelessWidget {
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
             Expanded(child: Text(review.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w900))),
-            ...List.generate(5, (index) => Icon(index < review.stars ? AppIcons.star : AppIcons.star, size: 14, color: const Color(0xFFF4B740))),
+            ...List.generate(5, (index) => Icon(index < review.stars ? Icons.star_rounded : Icons.star_outline_rounded, size: 14, color: const Color(0xFFF4B740))),
           ]),
           if (review.comment.isNotEmpty) ...[
             const SizedBox(height: 6),

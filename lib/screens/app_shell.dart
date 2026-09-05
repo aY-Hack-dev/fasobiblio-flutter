@@ -236,7 +236,7 @@ class _BottomNavItem extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 9,
+                fontSize:12,
                 fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
                 color: color,
               ),

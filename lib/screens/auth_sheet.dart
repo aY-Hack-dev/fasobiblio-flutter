@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:country_picker/country_picker.dart';
+import 'recovery_sheet.dart';
 import 'package:flutter/services.dart';
 import '../core/theme.dart';
 import '../core/app_feedback.dart';
@@ -27,6 +29,7 @@ class _AuthFormState extends State<_AuthForm> {
   final _password = TextEditingController();
   final _phone = TextEditingController();
   late bool _signup = widget.signup;
+  Country _country = Country.parse('BF');
   bool _busy = false;
   bool _visible = false;
   String? _error;
@@ -50,7 +53,7 @@ class _AuthFormState extends State<_AuthForm> {
     setState(() { _busy = true; _error = null; });
     try {
       if (_signup) {
-        await widget.state.signup(_pseudo.text.trim(), _password.text, _phone.text);
+        await widget.state.signup(_pseudo.text.trim(), _password.text, '+${_country.phoneCode}${_phone.text}', phoneCountry: _country.countryCode);
       } else {
         await widget.state.login(_pseudo.text.trim(), _password.text);
       }
@@ -83,15 +86,15 @@ class _AuthFormState extends State<_AuthForm> {
               const SizedBox(width: 12),
               const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text('FASOBIBLIO', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
-                Text('Votre bibliothèque numérique', style: TextStyle(fontSize: 11, color: AppColors.muted)),
+                Text('Votre bibliothèque numérique', style: TextStyle(fontSize:12, color: AppColors.muted)),
               ])),
               IconButton(tooltip: 'Fermer', onPressed: _busy ? null : () => Navigator.pop(context), icon: const Icon(AppIcons.close)),
             ]),
             const SizedBox(height: 20),
             SegmentedButton<bool>(
               segments: const [
-                ButtonSegment(value: false, label: Text('Connexion')),
                 ButtonSegment(value: true, label: Text('Inscription')),
+                ButtonSegment(value: false, label: Text('Connexion')),
               ],
               selected: {_signup}, showSelectedIcon: false,
               onSelectionChanged: _busy ? null : (values) => _switch(values.first),
@@ -135,18 +138,47 @@ class _AuthFormState extends State<_AuthForm> {
                 return null;
               },
             ),
+            if (!_signup) Align(alignment: Alignment.centerRight, child: TextButton(onPressed: _busy ? null : () => showRecoverySheet(context, widget.state), child: const Text('Mot de passe oublié ?'))),
             if (_signup) ...[
               const SizedBox(height: 16),
               TextFormField(
                 controller: _phone, enabled: !_busy,
                 keyboardType: TextInputType.phone, textInputAction: TextInputAction.done,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(8)],
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(15)],
                 onFieldSubmitted: (_) => _submit(),
-                decoration: const InputDecoration(labelText: 'Numéro de récupération', prefixText: '🇧🇫 +226  ', hintText: '70 00 00 00', errorMaxLines: 2),
-                validator: (value) => RegExp(r'^\d{8}$').hasMatch(value ?? '') ? null : 'Saisissez les 8 chiffres du numéro burkinabè.',
+                decoration: InputDecoration(labelText: 'Numéro de récupération', hintText: 'Votre numéro', errorMaxLines: 2,
+                  prefixIcon: TextButton(onPressed: _busy ? null : () => showCountryPicker(context: context, showPhoneCode: true, onSelect: (country) => setState(() => _country = country)), child: Text('${_country.flagEmoji} +${_country.phoneCode} ▾'))),
+                validator: (value) => RegExp(r'^\d{4,14}.hasMatch(value ?? '') ? null : 'Saisissez votre numéro national, sans indicatif.',
               ),
               const SizedBox(height: 7),
-              const Text('Ce numéro sert à la récupération de votre compte.', style: TextStyle(fontSize: 11, color: AppColors.muted)),
+              const Text('Ce numéro sert à la récupération de votre compte.', style: TextStyle(fontSize:12, color: AppColors.muted)),
+            ],
+            if (_error != null) Padding(
+              padding: const EdgeInsets.only(top: 14),
+              child: Semantics(liveRegion: true, child: Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error, fontSize: 12))),
+            ),
+            const SizedBox(height: 22),
+            FilledButton(
+              onPressed: _busy ? null : _submit,
+              child: _busy
+                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                : Text(_signup ? 'Créer mon compte' : 'Se connecter'),
+            ),
+            TextButton(
+              onPressed: _busy ? null : () => _switch(!_signup),
+              child: Text(_signup ? 'Déjà inscrit ? Se connecter' : 'Nouveau ici ? Créer un compte'),
+            ),
+            TextButton(onPressed: _busy ? null : () => Navigator.pop(context), child: const Text('Continuer comme invité')),
+          ]),
+        )),
+      ),
+    )),
+  );
+}
+).hasMatch(value ?? '') ? null : 'Saisissez les 8 chiffres du numéro burkinabè.',
+              ),
+              const SizedBox(height: 7),
+              const Text('Ce numéro sert à la récupération de votre compte.', style: TextStyle(fontSize:12, color: AppColors.muted)),
             ],
             if (_error != null) Padding(
               padding: const EdgeInsets.only(top: 14),

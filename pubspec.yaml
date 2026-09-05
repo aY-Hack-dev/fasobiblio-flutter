@@ -1,7 +1,7 @@
 name: fasobiblio
 description: Application mobile native de la bibliothèque numérique Fasobiblio.
 publish_to: none
-version: 3.5.0+11
+version: 3.6.0+12
 
 environment:
   sdk: '>=3.4.0 <4.0.0'
@@ -19,7 +19,7 @@ dependencies:
   connectivity_plus: ^7.0.0
   cached_network_image: ^3.4.1
   flutter_markdown: ^0.7.7+1
-  google_fonts: ^6.2.1
+  country_picker: ^2.0.27
   flutter_svg: ^2.0.17
   lucide_icons_flutter: ^3.1.17
 
@@ -30,6 +30,10 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  fonts:
+    - family: Urbanist
+      fonts:
+        - asset: assets/fonts/Urbanist.ttf
   assets:
     - assets/branding/
     - assets/illustrations/

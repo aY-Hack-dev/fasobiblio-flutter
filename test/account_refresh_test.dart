@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:fasobiblio/models/app_notification.dart';
 import 'package:fasobiblio/screens/auth_sheet.dart';
 import 'package:fasobiblio/screens/app_shell.dart';
+import 'package:fasobiblio/screens/assistant_screen.dart';
 import 'package:fasobiblio/widgets/document_skeleton.dart';
 import 'package:fasobiblio/screens/notifications_screen.dart';
 import 'package:fasobiblio/screens/profile_screen.dart';
@@ -22,6 +23,13 @@ class TestState extends AppState {
 }
 
 void main() {
+  testWidgets('Assistant tables do not squeeze surrounding paragraphs', (tester) async {
+    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: SizedBox(width: 300, child: AssistantMessageBody(
+      text: 'Une réponse lisible.\n\n| Sujet | Explication |\n| --- | --- |\n| Lecture | Un contenu suffisamment long pour vérifier le retour à la ligne. |\n\nConclusion lisible.',
+    )))));
+    expect(find.text('Une réponse lisible.'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
   testWidgets('First offline launch retains navigation and guest profile', (tester) async {
     final state = TestState()..offline = true;
     await tester.pumpWidget(MaterialApp(home: StartupScreen(state: state)));

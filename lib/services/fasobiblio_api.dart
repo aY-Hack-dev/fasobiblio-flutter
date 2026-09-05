@@ -86,13 +86,25 @@ class FasobiblioApi {
     return _persist(_fromAuth(Map<String, dynamic>.from(data), pseudo: pseudo.trim(), anonymous: false));
   }
 
-  Future<UserSession> signup(String pseudo, String password, String phone) async {
+  Future<UserSession> signup(String pseudo, String password, String phone, {String phoneCountry = 'BF'}) async {
     final check = await _request(Uri.parse('$api/api/check-username?pseudo=${Uri.encodeQueryComponent(pseudo)}'));
     if (check['available'] != true) throw Exception('Ce pseudo est déjà utilisé.');
     final data = await _request(Uri.parse('https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=$firebaseKey'), method: 'POST', headers: {'Content-Type': 'application/json'}, body: jsonEncode({'email': _email(pseudo), 'password': password, 'returnSecureToken': true}));
     final next = await _persist(_fromAuth(Map<String, dynamic>.from(data), pseudo: pseudo.trim(), anonymous: false));
-    await authenticated('/api/register-recovery', method: 'POST', body: {'pseudo': pseudo, 'phone': phone.replaceAll(RegExp(r'\D'), ''), 'phoneCountry': 'BF'});
+    await authenticated('/api/register-recovery', method: 'POST', body: {'pseudo': pseudo, 'phone': phone, 'phoneCountry': phoneCountry});
     return next;
+  }
+
+  Future<String> recoverAccount(String pseudo, String phone, String country) async {
+    final data = await _request(Uri.parse('$api/api/recover-account'), method: 'POST',
+      headers: {'Content-Type': 'application/json'}, body: jsonEncode({'pseudo': pseudo.trim(), 'phone': phone, 'phoneCountry': country}));
+    final code = data['resetCode'];
+    if (code is! String || code.isEmpty) throw Exception('Récupération indisponible.');
+    return code;
+  }
+  Future<void> resetPassword(String code, String password) async {
+    await _request(Uri.parse('https://identitytoolkit.googleapis.com/v1/accounts:resetPassword?key=$firebaseKey'), method: 'POST',
+      headers: {'Content-Type': 'application/json'}, body: jsonEncode({'oobCode': code, 'newPassword': password}));
   }
 
   Future<UserSession> logout() async {

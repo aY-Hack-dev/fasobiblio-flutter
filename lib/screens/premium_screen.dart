@@ -135,7 +135,7 @@ class _PremiumIntro extends StatelessWidget {
                       const Text(
                         'Des ressources choisies pour aller plus loin.',
                         style: TextStyle(
-                          fontSize: 10.5,
+                          fontSize:12,
                           color: AppColors.muted,
                         ),
                       ),
@@ -152,7 +152,7 @@ class _PremiumIntro extends StatelessWidget {
                   child: Text(
                     active ? 'ACTIF' : '$count TITRES',
                     style: const TextStyle(
-                      fontSize: 9,
+                      fontSize:12,
                       fontWeight: FontWeight.w900,
                       color: AppColors.gold,
                     ),
@@ -204,7 +204,7 @@ class _Benefit extends StatelessWidget {
             Text(
               label,
               style: const TextStyle(
-                fontSize: 9.5,
+                fontSize:12,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -317,7 +317,7 @@ class _OfferCard extends StatelessWidget {
                       child: Text(
                         lifetime ? 'Accès à vie' : '$durationDays jours',
                         style: TextStyle(
-                          fontSize: 8.5,
+                          fontSize:12,
                           color: featured
                               ? const Color(0xFFCAD6EA)
                               : AppColors.muted,

@@ -1,9 +1,31 @@
 import 'dart:io';
+import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 
+class DownloadTask {
+  DownloadTask(this.url, this.key);
+  final String url, key;
+  double? progress;
+  String? error;
+  bool running = true;
+}
 class DocumentService {
+  static final tasks = ValueNotifier<List<DownloadTask>>([]);
+  static final Map<String, Future<String>> _pending = {};
+  static Future<void> _queue = Future.value();
+
+  Future<String> ensureLocal(String raw, String cacheKey, {void Function(double)? onProgress}) {
+    final pending = _pending[cacheKey];
+    if (pending != null) return pending;
+    final job = _queue.then((_) => _download(raw, cacheKey, onProgress: onProgress));
+    _pending[cacheKey] = job;
+    _queue = job.then<void>((_) {}, onError: (Object _, StackTrace __) {});
+    return job.whenComplete(() => _pending.remove(cacheKey));
+  }
+
   static const _downloads = MethodChannel('com.fasobiblio.app/downloads');
   static const allowedHosts = {'fasobiblio-api.onrender.com', 'fasobiblio.com', 'www.fasobiblio.com', 'repzbcmqtpjnqdbvlvgt.supabase.co'};
 
@@ -32,34 +54,55 @@ class DocumentService {
     return await file.exists() && await file.length() > 0 ? file.path : null;
   }
 
-  Future<String> ensureLocal(String raw, String cacheKey, {void Function(double)? onProgress}) async {
+  Future<String> _download(String raw, String cacheKey, {void Function(double)? onProgress}) async {
     final existing = await cached(cacheKey);
     if (existing != null) {
       onProgress?.call(1);
       return existing;
     }
-    final uri = validate(raw);
-    final request = http.Request('GET', uri);
-    final response = await request.send().timeout(const Duration(seconds: 45));
-    if (response.statusCode < 200 || response.statusCode >= 300) throw Exception('Téléchargement impossible (${response.statusCode}).');
-    final file = await _cacheFile(cacheKey);
-    final partial = File('${file.path}.part');
-    var received = 0;
+    final task = DownloadTask(raw, cacheKey);
+    tasks.value = [...tasks.value.where((t) => t.key != cacheKey).take(19), task];
+    final client = http.Client();
+    IOSink? sink;
+    File? partial;
     try {
-      final partialSink = partial.openWrite();
-      await for (final chunk in response.stream) {
+      final response = await client.send(http.Request('GET', validate(raw))).timeout(const Duration(seconds: 45));
+      if (response.statusCode < 200 || response.statusCode >= 300) throw Exception('Téléchargement impossible (${response.statusCode}).');
+      final file = await _cacheFile(cacheKey);
+      partial = File('${file.path}.part');
+      sink = partial.openWrite();
+      var received = 0;
+      var lastUpdate = DateTime.fromMillisecondsSinceEpoch(0);
+      await for (final chunk in response.stream.timeout(const Duration(seconds: 45))) {
         received += chunk.length;
-        partialSink.add(chunk);
-        if (response.contentLength != null && response.contentLength! > 0) onProgress?.call(received / response.contentLength!);
+        sink.add(chunk);
+        await sink.flush();
+        if (response.contentLength != null && response.contentLength! > 0) {
+          task.progress = (received / response.contentLength!).clamp(0.0, 1.0);
+          if (DateTime.now().difference(lastUpdate).inMilliseconds > 150) {
+            onProgress?.call(task.progress!); tasks.value = [...tasks.value]; lastUpdate = DateTime.now();
+          }
+        }
       }
-      await partialSink.close();
-      if (await file.exists()) await file.delete();
+      await sink.close(); sink = null;
+      if (received == 0 || (response.contentLength != null && received != response.contentLength)) throw Exception('Téléchargement incomplet. Réessayez.');
+      final header = await partial.open();
+      try {
+        final bytes = await header.read(5);
+        if (String.fromCharCodes(bytes) != '%PDF-') throw Exception('Le fichier reçu n’est pas un PDF valide.');
+      } finally { await header.close(); }
       await partial.rename(file.path);
-    } catch (_) {
-      if (await partial.exists()) await partial.delete();
+      task.progress = 1; onProgress?.call(1);
+      return file.path;
+    } catch (e) {
+      task.error = 'Téléchargement interrompu. Réessayez.';
       rethrow;
+    } finally {
+      await sink?.close();
+      client.close();
+      if (partial != null && await partial.exists()) await partial.delete();
+      task.running = false; tasks.value = [...tasks.value];
     }
-    return file.path;
   }
 
   Future<String> exportToDownloads(String localPath, String name) async {

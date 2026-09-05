@@ -7,7 +7,7 @@ class SectionTitle extends StatelessWidget {
   @override Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.fromLTRB(18, 25, 16, 11),
     child: Column(children: [
-      Row(children: [Expanded(child: Text(title, style: Theme.of(context).textTheme.titleLarge)), if (action != null) TextButton(onPressed: onAction, child: Text(action!, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.blue)))]),
+      Row(children: [Expanded(child: Text(title, style: Theme.of(context).textTheme.titleLarge)), if (action != null) TextButton(onPressed: onAction, child: Text(action!, style: const TextStyle(fontSize:12, fontWeight: FontWeight.w800, color: AppColors.blue)))]),
       const SizedBox(height: 7),
       Container(height: 1, decoration: const BoxDecoration(gradient: LinearGradient(colors: [AppColors.blue, AppColors.line, Colors.transparent], stops: [0, .22, 1]))),
     ]),

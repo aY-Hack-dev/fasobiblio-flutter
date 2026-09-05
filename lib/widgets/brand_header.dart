@@ -27,7 +27,7 @@ class BrandHeader extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: AppTypography.display(size: narrow ? 16 : 18, weight: FontWeight.w900),
           ),
-          const Text('Bibliothèque numérique', maxLines: 1, softWrap: false, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 11, color: AppColors.muted)),
+          const Text('Bibliothèque numérique', maxLines: 1, softWrap: false, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize:12, color: AppColors.muted)),
         ])),
         SizedBox(width: narrow ? 6 : 10),
         CircleAvatar(
