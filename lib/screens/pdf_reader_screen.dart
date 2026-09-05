@@ -3,14 +3,15 @@ import 'package:pdfrx/pdfrx.dart';
 import '../core/theme.dart';
 import '../services/local_store.dart';
 import '../widgets/app_scope.dart';
-import '../core/app_feedback.dart';
-import 'assistant_screen.dart';
+
+import 'document_assistant_sheet.dart';
 
 class PdfReaderScreen extends StatefulWidget {
-  const PdfReaderScreen({super.key, required this.path, required this.title});
+  const PdfReaderScreen({super.key, required this.path, required this.title, this.documentId});
 
   final String path;
   final String title;
+  final String? documentId;
 
   @override
   State<PdfReaderScreen> createState() => _PdfReaderScreenState();
@@ -19,38 +20,26 @@ class _PdfReaderScreenState extends State<PdfReaderScreen> {
   final viewer = PdfViewerController();
   late final Future<int> savedPage = _loadPage();
   int currentPage = 1;
-  bool extracting = false;
+
   String get path => widget.path;
   String get title => widget.title;
-  String get pageKey => 'reader.page.${path.split('/').last}';
+  String get pageKey => 'reader.page.${widget.documentId ?? path.split('/').last}';
   Future<int> _loadPage() async {
-    final value = await LocalStore().loadJson(pageKey);
-    return value is int && value > 0 ? value : 1;
+    try { final value = await LocalStore().loadJson(pageKey) ?? await LocalStore().loadJson('reader.page.${path.split('/').last}');
+      currentPage = value is int && value > 0 ? value : 1;
+    } catch (_) { currentPage=1; }
+    return currentPage;
   }
   Future<void> documentAssistant() async {
-    if (extracting || !viewer.isReady) return;
-    setState(() => extracting = true);
-    try {
-      final doc = viewer.document;
-      final buffer = StringBuffer();
-      // Limit extraction to the current page and neighbours on modest devices.
-      for (var number = currentPage > 1 ? currentPage - 1 : 1; number <= currentPage + 1 && number <= doc.pages.length; number++) {
-        final text = (await doc.pages[number - 1].loadText())?.fullText ?? '';
-        if (text.trim().isNotEmpty) buffer.writeln('Page $number:\n${text.length > 5000 ? text.substring(0, 5000) : text}');
-      }
-      if (!mounted) return;
-      if (buffer.isEmpty) { showToast(context, 'Ce PDF ne contient pas de texte extractible sur ces pages.'); return; }
-      await Navigator.push(context, MaterialPageRoute(builder: (_) => AssistantScreen(
-        state: AppScope.of(context), documentTitle: title, documentContext: buffer.toString())));
-    } catch (e) { if (mounted) showToast(context, friendlyFailure(e, action: 'préparer cet extrait')); }
-    finally { if (mounted) setState(() => extracting = false); }
+    await showModalBottomSheet<void>(context:context,isScrollControlled:true,useSafeArea:true,
+      builder:(_)=>SizedBox(height:MediaQuery.sizeOf(context).height*.88,child:DocumentAssistantSheet(path:path,title:title,id:widget.documentId??path.split('/').last,page:currentPage,state:AppScope.of(context))));
   }
   @override
   Widget build(BuildContext context) => Scaffold(
         backgroundColor: const Color(0xFF0B1630),
         appBar: AppBar(
           toolbarHeight: 72,
-          actions: [IconButton(tooltip: 'Interroger ces pages', onPressed: extracting ? null : documentAssistant, icon: const Icon(AppIcons.sparkles))],
+          actions: [IconButton(tooltip: 'Assistant du document', onPressed: documentAssistant, icon: const Icon(AppIcons.sparkles))],
           backgroundColor: const Color(0xFF0B1630),
           foregroundColor: Colors.white,
           titleSpacing: 4,

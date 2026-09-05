@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fasobiblio/models/app_notification.dart';
 import 'package:fasobiblio/screens/auth_sheet.dart';
@@ -23,6 +24,16 @@ class TestState extends AppState {
 }
 
 void main() {
+  testWidgets('Assistant restores legacy local history on reopening', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final state=TestState();
+    await state.store.saveAssistantMemory('guest',[{'text':'Mon historique conservé','fromUser':true}]);
+    await tester.pumpWidget(MaterialApp(home:AssistantScreen(state:state)));
+    await tester.pumpAndSettle();
+    expect(find.text('Mon historique conservé'),findsOneWidget);
+    expect(tester.takeException(),isNull);
+  });
+
   testWidgets('Assistant tables do not squeeze surrounding paragraphs', (tester) async {
     await tester.pumpWidget(const MaterialApp(home: Scaffold(body: SizedBox(width: 300, child: AssistantMessageBody(
       text: 'Une réponse lisible.\n\n| Sujet | Explication |\n| --- | --- |\n| Lecture | Un contenu suffisamment long pour vérifier le retour à la ligne. |\n\nConclusion lisible.',

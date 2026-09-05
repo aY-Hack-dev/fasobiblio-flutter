@@ -91,7 +91,7 @@ class ProfileScreen extends StatelessWidget {
             }
           },
         ),
-        const Text('Fasobiblio Mobile • version 3.6.0', textAlign: TextAlign.center, style: TextStyle(fontSize:12, color: AppColors.muted)),
+        const Text('Fasobiblio Mobile • version 3.7.0', textAlign: TextAlign.center, style: TextStyle(fontSize:12, color: AppColors.muted)),
       ],
     );
   }
@@ -284,18 +284,20 @@ class _SupportSheet extends StatefulWidget {
 
 class _SupportSheetState extends State<_SupportSheet> {
   final controller = TextEditingController();
+  final email = TextEditingController();
   String type = 'Assistance';
   bool busy = false;
   String? error;
   static const topics = <(String, IconData)>[('Assistance', AppIcons.support), ('Paiement', AppIcons.wallet), ('Document', AppIcons.bookOpen), ('Autre', AppIcons.more)];
   @override
-  void dispose() { controller.dispose(); super.dispose(); }
+  void dispose() { controller.dispose(); email.dispose(); super.dispose(); }
 
   Future<void> submit() async {
     if (controller.text.trim().length < 4) return;
+    if(!RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(email.text.trim())){setState(()=>error='Saisissez une adresse email valide.');return;}
     setState(() { busy = true; error = null; });
     try {
-      await widget.state.api.sendSupportMessage(type: type, message: controller.text.trim());
+      await widget.state.api.sendSupportMessage(type: type, message: controller.text.trim(), email:email.text.trim());
       if (!mounted) return;
       await Future<void>.delayed(const Duration(milliseconds: 300));
       if (!mounted) return;
@@ -317,6 +319,8 @@ class _SupportSheetState extends State<_SupportSheet> {
       const SizedBox(height: 15),
       Wrap(spacing: 9, runSpacing: 9, children: topics.map((topic) { final selected = type == topic.$1; return ChoiceChip(selected: selected, onSelected: busy ? null : (_) => setState(() => type = topic.$1), showCheckmark: false, avatar: Icon(topic.$2, size: 18, color: selected ? Colors.white : AppColors.blue), label: Text(topic.$1), labelStyle: TextStyle(fontWeight: FontWeight.w800, color: selected ? Colors.white : Theme.of(context).colorScheme.onSurface), selectedColor: AppColors.blue, backgroundColor: Theme.of(context).colorScheme.surface); }).toList()),
       const SizedBox(height: 15),
+      TextField(controller:email,enabled:!busy,keyboardType:TextInputType.emailAddress,decoration:const InputDecoration(labelText:'Votre email',helperText:'Nous vous répondrons à cette adresse.')),
+      const SizedBox(height:15),
       TextField(controller: controller, enabled: !busy, onChanged: (_) => setState(() {}), minLines: 4, maxLines: 6, maxLength: 1000, decoration: const InputDecoration(labelText: 'Votre message', hintText: 'Décrivez votre demande…')),
       if (error != null) Text(error!, style: const TextStyle(fontSize:12, color: Color(0xFFB91C1C), fontWeight: FontWeight.w700)),
       const SizedBox(height: 10),

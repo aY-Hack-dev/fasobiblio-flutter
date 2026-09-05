@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import '../services/document_metadata.dart';
 import 'package:share_plus/share_plus.dart';
 import '../core/app_feedback.dart';
 import '../core/theme.dart';
@@ -70,9 +72,12 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
         name = file['name'] ?? widget.book.title;
         path = await documents.ensureLocal(file['url']!, cacheKey, onProgress: (value) { if (mounted) setState(() => progress = value); });
       }
+      await DocumentMetadata.save(path, widget.book);
+      unawaited(DocumentMetadata.cover(path, widget.book.image));
+      await widget.state.markDocumentOpened(widget.book.id);
       if (!mounted) return;
       if (mode == 'read') {
-        await Navigator.of(context).push(MaterialPageRoute(builder: (_) => PdfReaderScreen(path: path, title: widget.book.title)));
+        await Navigator.of(context).push(MaterialPageRoute(builder: (_) => PdfReaderScreen(path: path, title: widget.book.title, documentId: widget.book.id)));
       } else {
         final destination = await documents.exportToDownloads(path, name);
         if (mounted) showToast(context, 'Document enregistré dans $destination.', success: true);
@@ -127,7 +132,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
         child: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(color: surface, border: Border(top: BorderSide(color: Theme.of(context).dividerColor.withValues(alpha: .5)))),
-          child: Row(children: [
+          child: book.isPremium && !widget.state.hasAccess(book) ? SizedBox(width: double.infinity, child: FilledButton(onPressed: busy ? null : () => open('read'), child: Text('Acheter ce document à ${book.price.toStringAsFixed(0)} F CFA'))) : Row(children: [
             Expanded(child: FilledButton.icon(style: FilledButton.styleFrom(backgroundColor: AppColors.blue, foregroundColor: Colors.white), onPressed: busy ? null : () => open('read'), icon: const Icon(AppIcons.bookOpen, size: 18), label: const Text('Lire'))),
             const SizedBox(width: 9),
             Expanded(child: FilledButton.icon(onPressed: busy ? null : () => open('download'), icon: const Icon(AppIcons.download, size: 18), label: const Text('Télécharger'))),

@@ -1,4 +1,7 @@
 import 'dart:io';
+import 'dart:async';
+import '../services/document_metadata.dart';
+import '../services/local_store.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import '../core/theme.dart';
@@ -16,6 +19,7 @@ class OfflineDocumentsScreen extends StatefulWidget {
 class _OfflineDocumentsScreenState extends State<OfflineDocumentsScreen> {
   List<File> files = const [];
   bool loading = true;
+  final metadata = <String,Map<String,dynamic>>{};
 
   @override
   void initState() {
@@ -36,6 +40,13 @@ class _OfflineDocumentsScreenState extends State<OfflineDocumentsScreen> {
         }
       }
     }
+    final catalog = await LocalStore().loadCatalog();
+    for(final file in found) {
+      var data=await DocumentMetadata.read(file.path);
+      if(data.isEmpty) { for(final book in catalog) { if(file.path.endsWith('/${DocumentService().safeName('${book.id}-${book.title}')}')) { await DocumentMetadata.save(file.path,book);data=await DocumentMetadata.read(file.path);break; } } }
+      metadata[file.path]=data;
+      if(data['image'] is String)unawaited(DocumentMetadata.cover(file.path,data['image']));
+    }
     found.sort((a, b) {
       try { return b.lastModifiedSync().compareTo(a.lastModifiedSync()); } catch (_) { return 0; }
     });
@@ -43,6 +54,7 @@ class _OfflineDocumentsScreenState extends State<OfflineDocumentsScreen> {
   }
 
   String _title(File file) {
+    final saved=metadata[file.path]?['title'];if(saved is String && saved.isNotEmpty)return saved;
     final name = file.path.split(Platform.pathSeparator).last;
     return name.replaceFirst(RegExp(r'\.pdf$', caseSensitive: false), '');
   }
@@ -73,11 +85,11 @@ class _OfflineDocumentsScreenState extends State<OfflineDocumentsScreen> {
                       borderRadius: BorderRadius.circular(19),
                       child: InkWell(
                         borderRadius: BorderRadius.circular(19),
-                        onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => PdfReaderScreen(path: file.path, title: _title(file)))),
+                        onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => PdfReaderScreen(path: file.path, title: _title(file), documentId: metadata[file.path]?['id']))),
                         child: Padding(
                           padding: const EdgeInsets.all(14),
                           child: Row(children: [
-                            Container(width: 52, height: 64, decoration: BoxDecoration(gradient: const LinearGradient(colors: [AppColors.blueDeep, AppColors.blue]), borderRadius: BorderRadius.circular(14)), child: const Icon(AppIcons.bookOpen, color: Colors.white)),
+                            Container(width: 52, height: 64, decoration: BoxDecoration(gradient: const LinearGradient(colors: [AppColors.blueDeep, AppColors.blue]), borderRadius: BorderRadius.circular(14)), child: File('${file.path}.cover').existsSync() ? ClipRRect(borderRadius:BorderRadius.circular(14),child:Image.file(File('${file.path}.cover'),fit:BoxFit.cover,cacheWidth:156,errorBuilder:(_,__,___)=>const Icon(AppIcons.bookOpen,color:Colors.white))) : const Icon(AppIcons.bookOpen, color: Colors.white)),
                             const SizedBox(width: 13),
                             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                               Text(_title(file), maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w900)),
