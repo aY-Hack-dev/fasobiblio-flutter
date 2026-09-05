@@ -84,7 +84,7 @@ class _CollectionsScreenState extends State<CollectionsScreen> {
             ]),
             ...widget.state.books.where((b) => entry.value.contains(b.id)).map((b) => ListTile(
               title: Text(b.title, maxLines: 2, overflow: TextOverflow.ellipsis),
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => BookDetailScreen(book: b, state: widget.state)))) ,
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => BookDetailScreen(book: b, state: widget.state))))) ,
           ],
         )).toList()),
   );

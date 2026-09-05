@@ -148,34 +148,7 @@ class _AuthFormState extends State<_AuthForm> {
                 onFieldSubmitted: (_) => _submit(),
                 decoration: InputDecoration(labelText: 'Numéro de récupération', hintText: 'Votre numéro', errorMaxLines: 2,
                   prefixIcon: TextButton(onPressed: _busy ? null : () => showCountryPicker(context: context, showPhoneCode: true, onSelect: (country) => setState(() => _country = country)), child: Text('${_country.flagEmoji} +${_country.phoneCode} ▾'))),
-                validator: (value) => RegExp(r'^\d{4,14}.hasMatch(value ?? '') ? null : 'Saisissez votre numéro national, sans indicatif.',
-              ),
-              const SizedBox(height: 7),
-              const Text('Ce numéro sert à la récupération de votre compte.', style: TextStyle(fontSize:12, color: AppColors.muted)),
-            ],
-            if (_error != null) Padding(
-              padding: const EdgeInsets.only(top: 14),
-              child: Semantics(liveRegion: true, child: Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error, fontSize: 12))),
-            ),
-            const SizedBox(height: 22),
-            FilledButton(
-              onPressed: _busy ? null : _submit,
-              child: _busy
-                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                : Text(_signup ? 'Créer mon compte' : 'Se connecter'),
-            ),
-            TextButton(
-              onPressed: _busy ? null : () => _switch(!_signup),
-              child: Text(_signup ? 'Déjà inscrit ? Se connecter' : 'Nouveau ici ? Créer un compte'),
-            ),
-            TextButton(onPressed: _busy ? null : () => Navigator.pop(context), child: const Text('Continuer comme invité')),
-          ]),
-        )),
-      ),
-    )),
-  );
-}
-).hasMatch(value ?? '') ? null : 'Saisissez les 8 chiffres du numéro burkinabè.',
+                validator: (value) => RegExp(r'^\d{6,14}$').hasMatch(value ?? '') ? null : 'Saisissez votre numéro national, sans indicatif.',
               ),
               const SizedBox(height: 7),
               const Text('Ce numéro sert à la récupération de votre compte.', style: TextStyle(fontSize:12, color: AppColors.muted)),
