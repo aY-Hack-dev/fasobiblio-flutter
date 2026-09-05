@@ -86,13 +86,25 @@ class FasobiblioApi {
     return _persist(_fromAuth(Map<String, dynamic>.from(data), pseudo: pseudo.trim(), anonymous: false));
   }
 
-  Future<UserSession> signup(String pseudo, String password, String phone) async {
+  Future<UserSession> signup(String pseudo, String password, String phone, {String phoneCountry = 'BF'}) async {
     final check = await _request(Uri.parse('$api/api/check-username?pseudo=${Uri.encodeQueryComponent(pseudo)}'));
     if (check['available'] != true) throw Exception('Ce pseudo est déjà utilisé.');
     final data = await _request(Uri.parse('https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=$firebaseKey'), method: 'POST', headers: {'Content-Type': 'application/json'}, body: jsonEncode({'email': _email(pseudo), 'password': password, 'returnSecureToken': true}));
     final next = await _persist(_fromAuth(Map<String, dynamic>.from(data), pseudo: pseudo.trim(), anonymous: false));
-    await authenticated('/api/register-recovery', method: 'POST', body: {'pseudo': pseudo, 'phone': phone.replaceAll(RegExp(r'\D'), ''), 'phoneCountry': 'BF'});
+    await authenticated('/api/register-recovery', method: 'POST', body: {'pseudo': pseudo, 'phone': phone, 'phoneCountry': phoneCountry});
     return next;
+  }
+
+  Future<String> recoverAccount(String pseudo, String phone, String country) async {
+    final data = await _request(Uri.parse('$api/api/recover-account'), method: 'POST',
+      headers: {'Content-Type': 'application/json'}, body: jsonEncode({'pseudo': pseudo.trim(), 'phone': phone, 'phoneCountry': country}));
+    final code = data['resetCode'];
+    if (code is! String || code.isEmpty) throw Exception('Récupération indisponible.');
+    return code;
+  }
+  Future<void> resetPassword(String code, String password) async {
+    await _request(Uri.parse('https://identitytoolkit.googleapis.com/v1/accounts:resetPassword?key=$firebaseKey'), method: 'POST',
+      headers: {'Content-Type': 'application/json'}, body: jsonEncode({'oobCode': code, 'newPassword': password}));
   }
 
   Future<UserSession> logout() async {
@@ -108,7 +120,7 @@ class FasobiblioApi {
   }
 
   Future<List<Book>> catalog() async {
-    final data = await _request(Uri.parse('$database/documents.json'), timeout: const Duration(seconds: 12));
+    final data = await _request(Uri.parse('$database/documents.json'), timeout: const Duration(seconds: 30));
     if (data is! Map) return [];
     return data.entries.where((entry) {
       final value = entry.value;
@@ -155,10 +167,10 @@ class FasobiblioApi {
     await _request(Uri.parse('$database/document_reviews/${Uri.encodeComponent(documentId)}/${Uri.encodeComponent(auth.uid)}.json?auth=${Uri.encodeQueryComponent(auth.idToken)}'), method: 'PUT', headers: {'Content-Type': 'application/json'}, body: jsonEncode({'stars': stars, 'comment': comment.trim(), 'name': auth.pseudo, 'ts': DateTime.now().millisecondsSinceEpoch, 'status': 'pending'}));
   }
 
-  Future<void> sendSupportMessage({required String type, required String message}) async {
+  Future<void> sendSupportMessage({required String type, required String message, required String email}) async {
     final auth = await ensureSession();
     if (auth.idToken.isEmpty) throw Exception('Connexion Internet requise.');
-    await _request(Uri.parse('$database/messages_soutien.json?auth=${Uri.encodeQueryComponent(auth.idToken)}'), method: 'POST', headers: {'Content-Type': 'application/json'}, body: jsonEncode({'nom': auth.anonymous ? 'Lecteur invité' : auth.pseudo, 'message': message.trim(), 'type': type, 'deviceId': auth.uid, 'lu': false, 'createdAt': DateTime.now().millisecondsSinceEpoch}));
+    await authenticated('/api/contact', method: 'POST', body: {'nom':auth.anonymous?'Lecteur invité':auth.pseudo,'email':email.trim(),'message':message.trim(),'type':type});
   }
 
   Future<void> sendSuggestion({required String title, required String subject, required String level, required String details}) async {
@@ -212,8 +224,8 @@ class FasobiblioApi {
     return data is Map && data['subscription'] is Map ? Map<String, dynamic>.from(data['subscription']) : null;
   }
 
-  Future<String> assistant(String question) async {
-    final data = await _request(Uri.parse('$api/api/chat'), method: 'POST', headers: {'Content-Type': 'application/json'}, body: jsonEncode({'systemPrompt': 'Tu es l’assistant pédagogique de Fasobiblio. Réponds clairement en français. Utilise du Markdown propre pour structurer la réponse : titres, listes, gras, italique et liens si utile. Ne montre jamais les marqueurs Markdown sans raison.', 'userPrompt': question, 'max_completion_tokens': 700, 'temperature': .3}), timeout: const Duration(seconds: 50));
+  Future<String> assistant(String question, {String? documentContext, String task = 'question', int points = 5, List<Map<String,dynamic>> history = const []}) async {
+    final data = await _request(Uri.parse('$api/api/chat'), method: 'POST', headers: {'Content-Type': 'application/json'}, body: jsonEncode({'systemPrompt': 'Tu es l’assistant pédagogique de Fasobiblio. Réponds clairement en français. Utilise du Markdown propre pour structurer la réponse : titres, listes, gras, italique et liens si utile. Ne montre jamais les marqueurs Markdown sans raison.', 'userPrompt': question, 'documentContext': documentContext, 'task': task, 'points': points, 'history': history, 'max_completion_tokens': 1800, 'temperature': .3}), timeout: const Duration(seconds: 50));
     return '${data['text'] ?? data['answer'] ?? data['response'] ?? 'Réponse indisponible.'}';
   }
 }

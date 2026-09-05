@@ -35,7 +35,7 @@ class AppHeader extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 4),
                 alignment: Alignment.center,
                 decoration: BoxDecoration(color: const Color(0xFFE5484D), borderRadius: BorderRadius.circular(99), border: Border.all(color: Theme.of(context).scaffoldBackgroundColor, width: 1.5)),
-                child: Text(unread > 99 ? '99+' : '$unread', style: const TextStyle(fontSize: 8, height: 1, fontWeight: FontWeight.w900, color: Colors.white)),
+                child: Text(unread > 99 ? '99+' : '$unread', style: const TextStyle(fontSize:12, height: 1, fontWeight: FontWeight.w900, color: Colors.white)),
               ),
             ),
           ]),

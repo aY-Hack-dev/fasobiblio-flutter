@@ -3,6 +3,7 @@ import '../core/theme.dart';
 import '../models/book.dart';
 import '../services/app_state.dart';
 import '../widgets/book_card.dart';
+import '../widgets/document_skeleton.dart';
 import '../widgets/section.dart';
 import 'payment_flow.dart';
 
@@ -72,7 +73,7 @@ class PremiumScreen extends StatelessWidget {
           ),
         ),
         SliverToBoxAdapter(
-          child: books.isEmpty
+          child: state.catalogPending ? DocumentSkeleton(state: state) : books.isEmpty
               ? const EmptyState(
                   title: 'La collection arrive',
                   message: 'Les ouvrages Premium seront bientôt disponibles.',
@@ -134,7 +135,7 @@ class _PremiumIntro extends StatelessWidget {
                       const Text(
                         'Des ressources choisies pour aller plus loin.',
                         style: TextStyle(
-                          fontSize: 10.5,
+                          fontSize:12,
                           color: AppColors.muted,
                         ),
                       ),
@@ -151,7 +152,7 @@ class _PremiumIntro extends StatelessWidget {
                   child: Text(
                     active ? 'ACTIF' : '$count TITRES',
                     style: const TextStyle(
-                      fontSize: 9,
+                      fontSize:12,
                       fontWeight: FontWeight.w900,
                       color: AppColors.gold,
                     ),
@@ -203,7 +204,7 @@ class _Benefit extends StatelessWidget {
             Text(
               label,
               style: const TextStyle(
-                fontSize: 9.5,
+                fontSize:12,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -316,7 +317,7 @@ class _OfferCard extends StatelessWidget {
                       child: Text(
                         lifetime ? 'Accès à vie' : '$durationDays jours',
                         style: TextStyle(
-                          fontSize: 8.5,
+                          fontSize:12,
                           color: featured
                               ? const Color(0xFFCAD6EA)
                               : AppColors.muted,

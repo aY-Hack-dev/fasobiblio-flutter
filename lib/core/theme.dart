@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 abstract final class AppColors {
@@ -66,13 +65,13 @@ abstract final class AppIcons {
 
 abstract final class AppTypography {
   static TextStyle bookTitle({double size = 24, Color? color, FontWeight weight = FontWeight.w700}) =>
-      GoogleFonts.urbanist(fontSize: size, height: 1.18, fontWeight: weight, color: color, letterSpacing: -.2);
+      TextStyle(fontFamily: 'Urbanist', fontSize: size, height: 1.18, fontWeight: weight, color: color, letterSpacing: -.2);
 
   static TextStyle editorial({double size = 20, Color? color, FontWeight weight = FontWeight.w700}) =>
-      GoogleFonts.urbanist(fontSize: size, height: 1.2, fontWeight: weight, color: color, letterSpacing: -.2);
+      TextStyle(fontFamily: 'Urbanist', fontSize: size, height: 1.2, fontWeight: weight, color: color, letterSpacing: -.2);
 
   static TextStyle display({double size = 20, Color? color, FontWeight weight = FontWeight.w800}) =>
-      GoogleFonts.urbanist(fontSize: size, height: 1.15, fontWeight: weight, color: color, letterSpacing: -.25);
+      TextStyle(fontFamily: 'Urbanist', fontSize: size, height: 1.15, fontWeight: weight, color: color, letterSpacing: -.25);
 }
 
 ThemeData buildTheme({Brightness brightness = Brightness.light}) {
@@ -94,24 +93,24 @@ ThemeData buildTheme({Brightness brightness = Brightness.light}) {
   final surface = dark ? const Color(0xFF161B22) : Colors.white;
   final canvas = dark ? const Color(0xFF090F1D) : AppColors.canvas;
   final line = dark ? const Color(0xFF30363D) : AppColors.line;
-  final baseText = GoogleFonts.spaceGroteskTextTheme(ThemeData(brightness: brightness).textTheme).apply(
+  final baseText = ThemeData(brightness: brightness, fontFamily: 'Urbanist').textTheme.apply(
     bodyColor: textColor,
     displayColor: textColor,
   );
   final textTheme = baseText.copyWith(
-    headlineLarge: GoogleFonts.urbanist(fontSize: 25, height: 1.08, fontWeight: FontWeight.w900, color: textColor, letterSpacing: -.35),
-    headlineMedium: GoogleFonts.urbanist(fontSize: 20, height: 1.14, fontWeight: FontWeight.w900, color: textColor, letterSpacing: -.3),
-    titleLarge: GoogleFonts.urbanist(fontSize: 17, height: 1.2, fontWeight: FontWeight.w900, color: textColor, letterSpacing: -.2),
-    titleMedium: GoogleFonts.urbanist(fontSize: 13, fontWeight: FontWeight.w800, color: textColor),
-    bodyMedium: baseText.bodyMedium?.copyWith(fontSize: 12.5, height: 1.45),
-    bodySmall: baseText.bodySmall?.copyWith(fontSize: 10.5, height: 1.4),
+    headlineLarge: TextStyle(fontFamily: 'Urbanist', fontSize: 25, height: 1.08, fontWeight: FontWeight.w900, color: textColor, letterSpacing: -.35),
+    headlineMedium: TextStyle(fontFamily: 'Urbanist', fontSize: 20, height: 1.14, fontWeight: FontWeight.w900, color: textColor, letterSpacing: -.3),
+    titleLarge: TextStyle(fontFamily: 'Urbanist', fontSize: 18, height: 1.2, fontWeight: FontWeight.w900, color: textColor, letterSpacing: -.2),
+    titleMedium: TextStyle(fontFamily: 'Urbanist', fontSize: 16, fontWeight: FontWeight.w800, color: textColor),
+    bodyMedium: baseText.bodyMedium?.copyWith(fontSize: 14, height: 1.45),
+    bodySmall: baseText.bodySmall?.copyWith(fontSize: 12, height: 1.4),
   );
   return ThemeData(
     useMaterial3: true,
     colorScheme: scheme,
     brightness: brightness,
     scaffoldBackgroundColor: canvas,
-    fontFamily: GoogleFonts.spaceGrotesk().fontFamily,
+    fontFamily: 'Urbanist',
     textTheme: textTheme,
     appBarTheme: AppBarTheme(
       elevation: 0,
@@ -121,19 +120,21 @@ ThemeData buildTheme({Brightness brightness = Brightness.light}) {
       backgroundColor: surface,
       foregroundColor: textColor,
       surfaceTintColor: Colors.transparent,
-      titleTextStyle: GoogleFonts.urbanist(fontSize: 17, fontWeight: FontWeight.w800, color: textColor, letterSpacing: -.2),
+      titleTextStyle: TextStyle(fontFamily: 'Urbanist', fontSize: 20, fontWeight: FontWeight.w800, color: textColor, letterSpacing: -.2),
     ),
     navigationBarTheme: NavigationBarThemeData(
       height: 66,
       backgroundColor: surface,
       indicatorColor: AppColors.sky,
       labelTextStyle: WidgetStateProperty.resolveWith((states) => TextStyle(
-        fontSize: 10,
+        fontSize:12,
         fontWeight: states.contains(WidgetState.selected) ? FontWeight.w800 : FontWeight.w600,
         color: states.contains(WidgetState.selected) ? AppColors.blue : mutedColor,
       )),
     ),
     inputDecorationTheme: InputDecorationTheme(
+      hintStyle: TextStyle(fontFamily: 'Urbanist', fontSize: 13, color: mutedColor),
+      labelStyle: TextStyle(fontFamily: 'Urbanist', fontSize: 13, color: mutedColor),
       filled: true,
       fillColor: surface,
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
@@ -159,7 +160,7 @@ ThemeData buildTheme({Brightness brightness = Brightness.light}) {
         disabledForegroundColor: Colors.white70,
         minimumSize: const Size(0, 46),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        textStyle: GoogleFonts.spaceGrotesk(fontWeight: FontWeight.w700, fontSize: 13),
+        textStyle: TextStyle(fontFamily: 'Urbanist', fontWeight: FontWeight.w700, fontSize: 14),
       ),
     ),
   );

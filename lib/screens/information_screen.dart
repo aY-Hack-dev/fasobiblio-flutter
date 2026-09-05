@@ -38,7 +38,8 @@ class _InformationScreenState extends State<InformationScreen> {
   @override
   void initState() { super.initState(); _load(); }
 
-  Future<void> _load() async {
+  Future<void> _load({bool retry = false}) async {
+    if (mounted) setState(() => loading = sections.isEmpty);
     if (widget.kind == InformationKind.downloads) {
       setState(() {
         sections = const [
@@ -53,7 +54,7 @@ class _InformationScreenState extends State<InformationScreen> {
     final cached = await widget.state.store.loadJson(cacheKey);
     final cachedSections = _parseSections(cached);
     if (mounted && cachedSections.isNotEmpty) setState(() { sections = cachedSections; loading = false; });
-    if (!widget.state.offline && firebasePath != null) {
+    if ((!widget.state.offline || retry) && firebasePath != null) {
       try {
         final remote = await widget.state.api.setting(firebasePath!);
         final remoteSections = _parseSections(remote);
@@ -91,7 +92,7 @@ class _InformationScreenState extends State<InformationScreen> {
     body: loading
         ? const Center(child: CircularProgressIndicator())
         : sections.isEmpty
-            ? const _UnavailableContent()
+            ? _UnavailableContent(onRetry: () => _load(retry: true))
             : ListView(
                 padding: const EdgeInsets.fromLTRB(18, 18, 18, 38),
                 children: sections.map((section) => Container(
@@ -114,7 +115,8 @@ class _InformationScreenState extends State<InformationScreen> {
 }
 
 class _UnavailableContent extends StatelessWidget {
-  const _UnavailableContent();
+  const _UnavailableContent({required this.onRetry});
+  final VoidCallback onRetry;
   @override
   Widget build(BuildContext context) => Center(
     child: Padding(
@@ -122,9 +124,11 @@ class _UnavailableContent extends StatelessWidget {
       child: Column(mainAxisSize: MainAxisSize.min, children: [
         const CircleAvatar(radius: 30, backgroundColor: AppColors.sky, foregroundColor: AppColors.blue, child: Icon(AppIcons.cloudSync)),
         const SizedBox(height: 15),
-        Text('Contenu en cours de synchronisation', textAlign: TextAlign.center, style: AppTypography.display(size: 19, weight: FontWeight.w900, color: Theme.of(context).colorScheme.onSurface)),
+        Text('Chargement impossible', textAlign: TextAlign.center, style: AppTypography.display(size: 19, weight: FontWeight.w900, color: Theme.of(context).colorScheme.onSurface)),
         const SizedBox(height: 8),
-        const Text('Cette rubrique apparaîtra automatiquement dès que les informations du site seront disponibles.', textAlign: TextAlign.center, style: TextStyle(height: 1.5, color: AppColors.muted)),
+        const Text('Les informations sont indisponibles. Vérifiez votre connexion puis réessayez.', textAlign: TextAlign.center, style: TextStyle(height: 1.5, color: AppColors.muted)),
+        const SizedBox(height: 16),
+        FilledButton(onPressed: onRetry, child: const Text('Réessayer')),
       ]),
     ),
   );

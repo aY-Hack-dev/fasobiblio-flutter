@@ -25,11 +25,13 @@ jobs:
         run: flutter pub get
       - name: Vérifier le code
         run: flutter analyze
-      - name: Compiler les APK optimisés par architecture
-        run: flutter build apk --release --split-per-abi --tree-shake-icons
+      - name: Tester les parcours de compte
+        run: flutter test
+      - name: Compiler l’APK universel
+        run: flutter build apk --release --tree-shake-icons
       - name: Publier les APK optimisés
         uses: actions/upload-artifact@v4
         with:
-          name: Fasobiblio-Flutter-APK-Optimises
-          path: build/app/outputs/flutter-apk/app-*-release.apk
+          name: Fasobiblio-Android-Universel
+          path: build/app/outputs/flutter-apk/app-release.apk
           if-no-files-found: error

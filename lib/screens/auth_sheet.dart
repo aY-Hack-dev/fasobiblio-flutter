@@ -1,47 +1,177 @@
 import 'package:flutter/material.dart';
+import 'package:country_picker/country_picker.dart';
+import 'recovery_sheet.dart';
+import 'package:flutter/services.dart';
 import '../core/theme.dart';
 import '../core/app_feedback.dart';
 import '../services/app_state.dart';
 
 Future<void> showAuthSheet(BuildContext context, AppState state, {required bool signup}) async {
-  final pseudo = TextEditingController(), password = TextEditingController(), phone = TextEditingController();
-  String? error;
-  var busy = false;
-  var passwordVisible = false;
+  await showModalBottomSheet<void>(
+    context: context, isScrollControlled: true, useSafeArea: true,
+    backgroundColor: Colors.transparent,
+    barrierColor: Colors.black.withValues(alpha: .52),
+    builder: (_) => _AuthForm(state: state, signup: signup),
+  );
+}
 
-  String? validatePseudo(String value) {
-    final trimmed = value.trim();
-    if (trimmed.isEmpty) return 'Choisissez un nom d’utilisateur.';
-    if (trimmed.length < 3) return 'Ajoutez encore ${3 - trimmed.length} caractère${3 - trimmed.length > 1 ? 's' : ''} au pseudo.';
-    if (trimmed.length > 24) return 'Le pseudo ne peut pas dépasser 24 caractères.';
-    final invalid = RegExp(r'[^A-Za-z0-9_.-]').firstMatch(trimmed);
-    if (invalid != null) return 'Le caractère « ${invalid.group(0)} » n’est pas autorisé. Utilisez lettres, chiffres, point, tiret ou underscore.';
-    return null;
-  }
-  String? validatePassword(String value) {
-    if (value.isEmpty) return 'Saisissez votre mot de passe.';
-    if (value.length < 8) return 'Mot de passe trop court : ${value.length}/8 caractères. Ajoutez encore ${8 - value.length}.';
-    return null;
+class _AuthForm extends StatefulWidget {
+  const _AuthForm({required this.state, required this.signup});
+  final AppState state;
+  final bool signup;
+  @override
+  State<_AuthForm> createState() => _AuthFormState();
+}
+
+class _AuthFormState extends State<_AuthForm> {
+  final _form = GlobalKey<FormState>();
+  final _pseudo = TextEditingController();
+  final _password = TextEditingController();
+  final _phone = TextEditingController();
+  late bool _signup = widget.signup;
+  Country _country = Country.parse('BF');
+  bool _busy = false;
+  bool _visible = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _pseudo.dispose();
+    _password.dispose();
+    _phone.dispose();
+    super.dispose();
   }
 
-  await showModalBottomSheet<void>(context: context,isScrollControlled: true,useSafeArea: true,backgroundColor: Colors.transparent,barrierColor: Colors.black.withValues(alpha: .52),builder: (sheetContext) => StatefulBuilder(builder: (context, setModalState) {
-    Future<void> submit() async {
-      final pseudoError=validatePseudo(pseudo.text); if(pseudoError!=null){setModalState(()=>error=pseudoError);return;}
-      final passwordError=validatePassword(password.text); if(passwordError!=null){setModalState(()=>error=passwordError);return;}
-      if(signup){final digits=phone.text.replaceAll(RegExp(r'\D'),'');if(!RegExp(r'^\d{8,10}$').hasMatch(digits)){setModalState(()=>error='Numéro invalide : saisissez 8 à 10 chiffres pour le téléphone de récupération.');return;}}
-      setModalState((){busy=true;error=null;});
-      try{signup?await state.signup(pseudo.text.trim(),password.text,phone.text):await state.login(pseudo.text.trim(),password.text);if(!sheetContext.mounted)return;await Future<void>.delayed(const Duration(milliseconds:350));if(sheetContext.mounted)Navigator.pop(sheetContext);if(context.mounted)showToast(context,signup?'Compte créé et synchronisé.':'Connexion réussie.',success:true);}catch(e){if(sheetContext.mounted)setModalState(()=>error=friendlyFailure(e,action:signup?'créer votre compte':'vous connecter'));}finally{if(sheetContext.mounted)setModalState(()=>busy=false);}
+  void _switch(bool signup) {
+    if (_busy || signup == _signup) return;
+    setState(() { _signup = signup; _error = null; _visible = false; });
+  }
+
+  Future<void> _submit() async {
+    if (_busy || !_form.currentState!.validate()) return;
+    FocusScope.of(context).unfocus();
+    setState(() { _busy = true; _error = null; });
+    try {
+      if (_signup) {
+        await widget.state.signup(_pseudo.text.trim(), _password.text, '+${_country.phoneCode}${_phone.text}', phoneCountry: _country.countryCode);
+      } else {
+        await widget.state.login(_pseudo.text.trim(), _password.text);
+      }
+      if (!mounted) return;
+      TextInput.finishAutofillContext();
+      Navigator.pop(context);
+    } catch (error) {
+      if (mounted) setState(() => _error = friendlyFailure(error, action: _signup ? 'créer votre compte' : 'vous connecter'));
+    } finally {
+      if (mounted) setState(() => _busy = false);
     }
-    final dark=Theme.of(context).brightness==Brightness.dark;
-    return SafeArea(top:false,child:Material(color:dark?const Color(0xFF111B2C):Colors.white,borderRadius:const BorderRadius.vertical(top:Radius.circular(30)),clipBehavior:Clip.antiAlias,child:SingleChildScrollView(padding:EdgeInsets.fromLTRB(22,10,22,MediaQuery.viewInsetsOf(context).bottom+24),child:Column(mainAxisSize:MainAxisSize.min,children:[
-      Container(width:44,height:5,decoration:BoxDecoration(color:dark?const Color(0xFF43516A):const Color(0xFFD4DDEA),borderRadius:BorderRadius.circular(10))),const SizedBox(height:16),
-      Row(children:[Container(width:46,height:46,decoration:BoxDecoration(color:AppColors.sky,borderRadius:BorderRadius.circular(15)),child:const Icon(AppIcons.account,color:AppColors.blue)),const SizedBox(width:12),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text(signup?'Créer mon compte':'Se connecter',style:Theme.of(context).textTheme.headlineSmall),const SizedBox(height:2),Text(signup?'Synchronisez vos achats, favoris et accès Premium.':'Retrouvez votre bibliothèque Fasobiblio.',style:const TextStyle(fontSize:11.5,color:AppColors.muted))])),IconButton(onPressed:busy?null:()=>Navigator.pop(sheetContext),icon:const Icon(AppIcons.close))]),
-      const SizedBox(height:20),TextField(controller:pseudo,enabled:!busy,textInputAction:TextInputAction.next,autocorrect:false,onChanged:(_){if(error!=null)setModalState(()=>error=null);},decoration:const InputDecoration(labelText:'Nom d’utilisateur',hintText:'3 à 24 caractères',prefixIcon:Icon(AppIcons.user))),
-      const SizedBox(height:12),TextField(controller:password,enabled:!busy,obscureText:!passwordVisible,onChanged:(_){if(error!=null)setModalState(()=>error=null);},decoration:InputDecoration(labelText:'Mot de passe',hintText:'8 caractères minimum',prefixIcon:const Icon(AppIcons.lock),suffixIcon:IconButton(onPressed:busy?null:()=>setModalState(()=>passwordVisible=!passwordVisible),tooltip:passwordVisible?'Masquer le mot de passe':'Afficher le mot de passe',icon:Icon(passwordVisible?Icons.visibility_off_outlined:Icons.visibility_outlined)))),
-      if(signup)...[const SizedBox(height:12),TextField(controller:phone,enabled:!busy,keyboardType:TextInputType.phone,onChanged:(_){if(error!=null)setModalState(()=>error=null);},decoration:const InputDecoration(labelText:'Téléphone de récupération',hintText:'Ex : 70 12 34 56',prefixIcon:Icon(AppIcons.phone)))],
-      AnimatedSwitcher(duration:const Duration(milliseconds:180),child:error==null?const SizedBox(height:8):Container(key:ValueKey(error),width:double.infinity,margin:const EdgeInsets.only(top:12),padding:const EdgeInsets.all(12),decoration:BoxDecoration(color:const Color(0xFFFFF1F2),borderRadius:BorderRadius.circular(14),border:Border.all(color:const Color(0xFFFECACA))),child:Row(crossAxisAlignment:CrossAxisAlignment.start,children:[const Icon(Icons.error_outline_rounded,color:Color(0xFFDC2626),size:20),const SizedBox(width:9),Expanded(child:Text(error!,style:const TextStyle(fontSize:11.5,height:1.4,color:Color(0xFFB91C1C),fontWeight:FontWeight.w700)))]))),
-      const SizedBox(height:14),SizedBox(width:double.infinity,child:FilledButton(onPressed:busy?null:submit,child:AnimatedSwitcher(duration:const Duration(milliseconds:180),child:busy?const Row(key:ValueKey('busy'),mainAxisAlignment:MainAxisAlignment.center,children:[SizedBox(width:18,height:18,child:CircularProgressIndicator(strokeWidth:2.2,color:Colors.white)),SizedBox(width:10),Text('Veuillez patienter…')]):Text(key:const ValueKey('idle'),signup?'Créer le compte':'Connexion')))),
-    ]))));
-  }));
-  pseudo.dispose();password.dispose();phone.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => PopScope(
+    canPop: !_busy,
+    child: SafeArea(top: false, child: Material(
+      color: Theme.of(context).colorScheme.surface,
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+      clipBehavior: Clip.antiAlias,
+      child: SingleChildScrollView(
+        padding: EdgeInsets.fromLTRB(22, 12, 22, MediaQuery.viewInsetsOf(context).bottom + 20),
+        child: AutofillGroup(child: Form(
+          key: _form,
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Theme.of(context).dividerColor, borderRadius: BorderRadius.circular(8)))),
+            const SizedBox(height: 18),
+            Row(children: [
+              ClipRRect(borderRadius: BorderRadius.circular(12), child: Image.asset('assets/branding/icon.png', width: 44, height: 44)),
+              const SizedBox(width: 12),
+              const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('FASOBIBLIO', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+                Text('Votre bibliothèque numérique', style: TextStyle(fontSize:12, color: AppColors.muted)),
+              ])),
+              IconButton(tooltip: 'Fermer', onPressed: _busy ? null : () => Navigator.pop(context), icon: const Icon(AppIcons.close)),
+            ]),
+            const SizedBox(height: 20),
+            SegmentedButton<bool>(
+              segments: const [
+                ButtonSegment(value: true, label: Text('Inscription')),
+                ButtonSegment(value: false, label: Text('Connexion')),
+              ],
+              selected: {_signup}, showSelectedIcon: false,
+              onSelectionChanged: _busy ? null : (values) => _switch(values.first),
+            ),
+            const SizedBox(height: 22),
+            Text(_signup ? 'Créez votre espace' : 'Retrouvez votre espace', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900)),
+            const SizedBox(height: 6),
+            Text(_signup ? 'Un compte pour retrouver vos achats et vos accès sur le site et dans l’application.' : 'Connectez-vous avec votre compte Fasobiblio.', style: const TextStyle(fontSize: 12, height: 1.5, color: AppColors.muted)),
+            const SizedBox(height: 20),
+            TextFormField(
+              controller: _pseudo, enabled: !_busy, autocorrect: false,
+              autofillHints: const [AutofillHints.username],
+              textInputAction: TextInputAction.next,
+              decoration: const InputDecoration(labelText: 'Nom d’utilisateur', hintText: 'Votre pseudo', prefixIcon: Icon(AppIcons.user), errorMaxLines: 3),
+              validator: (value) {
+                final text = (value ?? '').trim();
+                if (text.isEmpty) return 'Saisissez votre pseudo.';
+                if (_signup && !RegExp(r'^[A-Za-z0-9_.-]{3,24}$').hasMatch(text)) return '3 à 24 caractères : lettres, chiffres, point, tiret ou underscore.';
+                return null;
+              },
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _password, enabled: !_busy, obscureText: !_visible,
+              autocorrect: false, enableSuggestions: false,
+              autofillHints: [_signup ? AutofillHints.newPassword : AutofillHints.password],
+              textInputAction: _signup ? TextInputAction.next : TextInputAction.done,
+              onFieldSubmitted: (_) { if (!_signup) _submit(); },
+              decoration: InputDecoration(
+                labelText: 'Mot de passe', hintText: _signup ? '8 caractères minimum' : 'Votre mot de passe',
+                prefixIcon: const Icon(AppIcons.lock), errorMaxLines: 2,
+                suffixIcon: IconButton(
+                  tooltip: _visible ? 'Masquer le mot de passe' : 'Afficher le mot de passe',
+                  onPressed: _busy ? null : () => setState(() => _visible = !_visible),
+                  icon: Icon(_visible ? Icons.visibility_off_outlined : Icons.visibility_outlined),
+                ),
+              ),
+              validator: (value) {
+                if (value == null || value.isEmpty) return 'Saisissez votre mot de passe.';
+                if (_signup && value.length < 8) return 'Utilisez au moins 8 caractères.';
+                return null;
+              },
+            ),
+            if (!_signup) Align(alignment: Alignment.centerRight, child: TextButton(onPressed: _busy ? null : () => showRecoverySheet(context, widget.state), child: const Text('Mot de passe oublié ?'))),
+            if (_signup) ...[
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _phone, enabled: !_busy,
+                keyboardType: TextInputType.phone, textInputAction: TextInputAction.done,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(15)],
+                onFieldSubmitted: (_) => _submit(),
+                decoration: InputDecoration(labelText: 'Numéro de récupération', hintText: 'Votre numéro', errorMaxLines: 2,
+                  prefixIcon: TextButton(onPressed: _busy ? null : () => showCountryPicker(context: context, showPhoneCode: true, onSelect: (country) => setState(() => _country = country)), child: Text('${_country.flagEmoji} +${_country.phoneCode} ▾'))),
+                validator: (value) => RegExp(r'^\d{6,14}$').hasMatch(value ?? '') ? null : 'Saisissez votre numéro national, sans indicatif.',
+              ),
+              const SizedBox(height: 7),
+              const Text('Ce numéro sert à la récupération de votre compte.', style: TextStyle(fontSize:12, color: AppColors.muted)),
+            ],
+            if (_error != null) Padding(
+              padding: const EdgeInsets.only(top: 14),
+              child: Semantics(liveRegion: true, child: Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error, fontSize: 12))),
+            ),
+            const SizedBox(height: 22),
+            FilledButton(
+              onPressed: _busy ? null : _submit,
+              child: _busy
+                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                : Text(_signup ? 'Créer mon compte' : 'Se connecter'),
+            ),
+            TextButton(
+              onPressed: _busy ? null : () => _switch(!_signup),
+              child: Text(_signup ? 'Déjà inscrit ? Se connecter' : 'Nouveau ici ? Créer un compte'),
+            ),
+            TextButton(onPressed: _busy ? null : () => Navigator.pop(context), child: const Text('Continuer comme invité')),
+          ]),
+        )),
+      ),
+    )),
+  );
 }

@@ -15,6 +15,7 @@ class DocumentCover extends StatelessWidget {
     if (imageUrl.trim().isEmpty) return placeholder;
     return CachedNetworkImage(
       imageUrl: imageUrl,
+      memCacheWidth: 500,
       width: width,
       height: height,
       fit: fit,
