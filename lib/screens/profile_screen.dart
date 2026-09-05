@@ -91,7 +91,7 @@ class ProfileScreen extends StatelessWidget {
             }
           },
         ),
-        const Text('Faso Biblio version 1.1.1.0', textAlign: TextAlign.center, style: TextStyle(fontSize:12, color: AppColors.muted)),
+        const Text('Fasobiblio 1.1.0', textAlign: TextAlign.center, style: TextStyle(fontSize:12, color: AppColors.muted)),
       ],
     );
   }
