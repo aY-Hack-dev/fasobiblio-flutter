@@ -206,7 +206,30 @@ Future<bool> makeDonation(BuildContext context, AppState state) async {
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('Faire un don', style: Theme.of(context).textTheme.titleLarge), const SizedBox(height: 3), const Text('Chaque contribution aide à maintenir Fasobiblio accessible.', style: TextStyle(fontSize:12, color: AppColors.muted))])),
               ]),
               const SizedBox(height: 18),
-              Wrap(spacing: 8, runSpacing: 8, children: [500, 1000, 2500].map((amount) => ChoiceChip(label: Text('$amount F'), selected: selected == amount, onSelected: busy ? null : (_) => setState(() { selected = amount; custom.clear(); error = null; }))).toList()),
+              LayoutBuilder(builder: (context, constraints) {
+                const amounts = [500, 1000, 2500, 5000];
+                final textScaler = MediaQuery.textScalerOf(context);
+                final minWidth = textScaler.scale(13) * 5 + 24;
+                final columns = constraints.maxWidth >= minWidth * 4 + 24
+                    ? 4 : constraints.maxWidth >= minWidth * 2 + 8 ? 2 : 1;
+                final width = (constraints.maxWidth - 8 * (columns - 1)) / columns;
+                return Wrap(spacing: 8, runSpacing: 8, children: amounts.map((amount) {
+                  final active = selected == amount;
+                  return SizedBox(
+                    width: width,
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 12),
+                        backgroundColor: active ? Theme.of(context).colorScheme.primaryContainer : null,
+                        foregroundColor: active ? Theme.of(context).colorScheme.onPrimaryContainer : Theme.of(context).colorScheme.onSurface,
+                        side: BorderSide(color: active ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.outlineVariant),
+                      ),
+                      onPressed: busy ? null : () => setState(() { selected = amount; custom.clear(); error = null; }),
+                      child: Semantics(selected: active, child: Text('$amount F', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700))),
+                    ),
+                  );
+                }).toList());
+              }),
               const SizedBox(height: 14),
               TextField(controller: custom, enabled: !busy, keyboardType: TextInputType.number, onChanged: (v) { if (v.isNotEmpty) setState(() { selected = null; error = null; }); }, decoration: const InputDecoration(labelText: 'Ou montant libre (FCFA)', hintText: 'Ex : 750')),
               const SizedBox(height: 12),
