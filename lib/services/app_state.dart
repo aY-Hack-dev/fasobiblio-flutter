@@ -29,7 +29,7 @@ class AppState extends ChangeNotifier {
   Future<void> _refreshAccount({bool notify=true}) async{if(session==null||session!.anonymous){subscription=null;purchased={};if(notify)notifyListeners();return;}try{final values=await Future.wait([api.mySubscription(),api.myDocuments()]);subscription=values[0] as Map<String,dynamic>?;purchased=(values[1] as List<dynamic>).whereType<Map>().map((e)=>'${e['docId']??''}').where((id)=>id.isNotEmpty).toSet();await store.saveAccountAccess(subscription,purchased);}catch(_){}finally{if(notify)notifyListeners();}}
   Future<void> refreshAccount()=>_refreshAccount();
   Future<void> login(String pseudo,String password) async{session=await api.login(pseudo,password);await _refreshAccount();}
-  Future<void> signup(String pseudo,String password,String phone) async{session=await api.signup(pseudo,password,phone);await _refreshAccount();}
+  Future<void> signup(String pseudo,String password,String phone,{String phoneCountry='BF'}) async{session=await api.signup(pseudo,password,phone,phoneCountry:phoneCountry);await _refreshAccount();}
   Future<void> logout() async{session=await api.logout();subscription=null;purchased={};await store.clearAccountAccess();notifyListeners();}
   @override void dispose(){_connectivitySubscription?.cancel();super.dispose();}
 }
