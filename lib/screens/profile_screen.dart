@@ -71,7 +71,7 @@ class ProfileScreen extends StatelessWidget {
           _RowItem(icon: AppIcons.scale, title: 'Mentions légales et contact', onTap: () => information(context, InformationKind.legal)),
         ]),
         const SizedBox(height: 18),
-        const Text('Fasobiblio Mobile • version 3.4.0', textAlign: TextAlign.center, style: TextStyle(fontSize: 9.5, color: AppColors.muted)),
+        const Text('Fasobiblio Mobile • version 1.1.0', textAlign: TextAlign.center, style: TextStyle(fontSize: 9.5, color: AppColors.muted)),
       ],
     );
   }
