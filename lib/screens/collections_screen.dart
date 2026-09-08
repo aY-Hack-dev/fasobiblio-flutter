@@ -26,13 +26,14 @@ class _CollectionsScreenState extends State<CollectionsScreen> {
   Future<void> load() async {
     try {
       final raw = await widget.state.store.loadJson(storageKey);
-      if (raw is Map)
+      if (raw is Map) {
         collections = raw.map(
           (k, v) => MapEntry(
             '$k',
             v is List ? v.map((e) => '$e').toList() : <String>[],
           ),
         );
+      }
     } catch (e) {
       if (mounted) showToast(context, 'Impossible de charger les collections.');
     }
@@ -67,8 +68,9 @@ class _CollectionsScreenState extends State<CollectionsScreen> {
           ),
           FilledButton(
             onPressed: () {
-              if (controller.text.trim().isNotEmpty)
+              if (controller.text.trim().isNotEmpty) {
                 Navigator.pop(context, controller.text.trim());
+              }
             },
             child: const Text('Créer'),
           ),
@@ -99,8 +101,9 @@ class _CollectionsScreenState extends State<CollectionsScreen> {
           ),
           FilledButton(
             onPressed: () {
-              if (controller.text.trim().isNotEmpty)
+              if (controller.text.trim().isNotEmpty) {
                 Navigator.pop(context, controller.text.trim());
+              }
             },
             child: const Text('Enregistrer'),
           ),

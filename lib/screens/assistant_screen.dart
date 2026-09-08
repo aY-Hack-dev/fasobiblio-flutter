@@ -50,10 +50,11 @@ class _AssistantScreenState extends State<AssistantScreen> {
   Future<void> _restore() async {
     try {
       var saved = await widget.state.store.loadAssistantMemory(memoryKey);
-      if (saved.isEmpty && widget.documentTitle == null)
+      if (saved.isEmpty && widget.documentTitle == null) {
         saved = await widget.state.store.loadAssistantMemory(
           widget.state.assistantAccountKey,
         );
+      }
       if (!mounted) return;
       setState(() {
         messages.addAll(
@@ -115,11 +116,12 @@ class _AssistantScreenState extends State<AssistantScreen> {
       setState(() => messages.add(_ChatMessage(answer, fromUser: false)));
       await _persist();
     } catch (error) {
-      if (mounted)
+      if (mounted) {
         showToast(
           context,
           friendlyFailure(error, action: 'obtenir une réponse de l’assistant'),
         );
+      }
     } finally {
       if (mounted) setState(() => busy = false);
       _scrollDown();
@@ -148,8 +150,9 @@ class _AssistantScreenState extends State<AssistantScreen> {
                 .toList(),
           ),
         );
-        if (book == null)
+        if (book == null) {
           throw Exception('Choisissez un document pour continuer.');
+        }
       }
     }
     if (book == null && widget.documentId != null) {
@@ -163,8 +166,9 @@ class _AssistantScreenState extends State<AssistantScreen> {
       caseSensitive: false,
     ).firstMatch(question);
     if (book == null) {
-      if (match != null)
+      if (match != null) {
         throw Exception('Précisez le titre du document à consulter.');
+      }
       return selectedContext ?? widget.documentContext;
     }
     final changed = selectedBook?.id != book.id;
@@ -185,14 +189,16 @@ class _AssistantScreenState extends State<AssistantScreen> {
     );
     final pdf = await PdfDocument.openFile(path);
     try {
-      if (page < 1 || page > pdf.pages.length)
+      if (page < 1 || page > pdf.pages.length) {
         throw Exception('Ce document contient ${pdf.pages.length} pages.');
+      }
       final extracted =
           (await pdf.pages[page - 1].loadText())?.fullText.trim() ?? '';
-      if (extracted.isEmpty)
+      if (extracted.isEmpty) {
         throw Exception(
           'Cette page est scannée : son texte doit être reconnu avant de pouvoir l’expliquer.',
         );
+      }
       selectedContext =
           'Source : ${book.title}, ${book.author}. Page $page du fichier PDF (la pagination imprimée peut différer). Explique uniquement le texte suivant et indique la source.\n${extracted.length > 27000 ? extracted.substring(0, 27000) : extracted}';
       return selectedContext;
@@ -202,12 +208,13 @@ class _AssistantScreenState extends State<AssistantScreen> {
   }
 
   void _scrollDown() => WidgetsBinding.instance.addPostFrameCallback((_) {
-    if (scrollController.hasClients)
+    if (scrollController.hasClients) {
       scrollController.animateTo(
         scrollController.position.maxScrollExtent,
         duration: const Duration(milliseconds: 260),
         curve: Curves.easeOut,
       );
+    }
   });
   @override
   Widget build(BuildContext context) {

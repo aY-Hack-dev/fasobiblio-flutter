@@ -118,8 +118,9 @@ List<({Book book, double score})> searchCatalog(
     final authorWords = _words(book.author);
     if (matched > 0 &&
         authorWords.isNotEmpty &&
-        authorWords.every(words.contains))
+        authorWords.every(words.contains)) {
       score += .25;
+    }
     if (score >= .45 && matched > 0) hits.add((book: book, score: score));
   }
   hits.sort((a, b) => b.score.compareTo(a.score));

@@ -120,7 +120,7 @@ Future<bool> purchaseDocument(BuildContext context, AppState state, Book book) a
     }
     if (context.mounted) Navigator.of(context, rootNavigator: true).pop();
     await state.refreshAccount();
-    if (context.mounted) showToast(context, unlocked ? 'Paiement confirmé : document débloqué.' : 'Paiement reçu. L’activation apparaîtra dès sa confirmation.', success: unlocked);
+    if (context.mounted) showToast(context, unlocked ? 'Paiement confirmé : document débloqué.' : 'Paiement non confirmé pour le moment. Votre accès apparaîtra après confirmation.', success: unlocked);
     return unlocked;
   } catch (error) {
     if (context.mounted) showToast(context, friendlyFailure(error, action: 'finaliser cet achat'));
@@ -151,7 +151,7 @@ Future<bool> purchaseSubscription(BuildContext context, AppState state, Map<Stri
     }
     if (context.mounted) Navigator.of(context, rootNavigator: true).pop();
     await state.refreshAccount();
-    if (context.mounted) showToast(context, subscription != null ? 'Votre abonnement Premium est actif.' : 'Paiement reçu. Activation Premium en cours.', success: subscription != null);
+    if (context.mounted) showToast(context, subscription != null ? 'Votre abonnement Premium est actif.' : 'Paiement non confirmé pour le moment. Actualisez votre profil dans quelques instants.', success: subscription != null);
     return subscription != null;
   } catch (error) {
     if (context.mounted) showToast(context, friendlyFailure(error, action: 'finaliser cet abonnement'));
@@ -248,6 +248,6 @@ Future<bool> makeDonation(BuildContext context, AppState state) async {
   final url = '${payment['url'] ?? ''}';
   if (url.isEmpty) { showToast(context, 'Lien de paiement indisponible.'); return false; }
   final returned = await Navigator.of(context).push<bool>(MaterialPageRoute(builder: (_) => PaymentWebViewScreen(url: url))) == true;
-  if (returned && context.mounted) showToast(context, 'Merci pour votre soutien à Fasobiblio ❤️', success: true);
+  if (returned && context.mounted) showToast(context, 'Votre demande de don a été transmise. La confirmation du paiement reste nécessaire.');
   return returned;
 }
