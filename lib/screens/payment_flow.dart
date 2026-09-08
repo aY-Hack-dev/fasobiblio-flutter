@@ -102,6 +102,14 @@ Future<T?> _startPayment<T>(BuildContext context, Future<T> Function() action, {
   finally { if (context.mounted) Navigator.of(context, rootNavigator: true).pop(); }
 }
 
+Future<String> _paymentStatus(AppState state, String token) async {
+  if (token.isEmpty) return 'unknown';
+  try {
+    final result = await state.api.authenticated('/api/payment-status/${Uri.encodeComponent(token)}');
+    return result is Map ? '${result['status'] ?? 'unknown'}' : 'unknown';
+  } catch (_) { return 'unknown'; }
+}
+
 Future<bool> purchaseDocument(BuildContext context, AppState state, Book book) async {
   if (!requireInternet(context, state)) return false;
   if (!await _ensureAccount(context, state) || !context.mounted) return false;
@@ -116,11 +124,11 @@ Future<bool> purchaseDocument(BuildContext context, AppState state, Book book) a
     showDialog<void>(context: context, barrierDismissible: false, builder: (_) => const AlertDialog(icon: CircularProgressIndicator(), title: Text('Vérification du paiement'), content: Text('Activation de votre document en cours…')));
     for (var attempt = 0; attempt < 8 && !unlocked; attempt++) {
       if (attempt > 0) await Future<void>.delayed(const Duration(seconds: 2));
-      try { unlocked = await state.api.checkAccess(book.id); } catch (_) {}
+      try { unlocked = await state.api.checkAccess(book.id).timeout(const Duration(seconds: 5)); } catch (_) {}
     }
     if (context.mounted) Navigator.of(context, rootNavigator: true).pop();
     await state.refreshAccount();
-    if (context.mounted) showToast(context, unlocked ? 'Paiement confirmé : document débloqué.' : 'Paiement reçu. L’activation apparaîtra dès sa confirmation.', success: unlocked);
+    if (context.mounted) showToast(context, unlocked ? 'Paiement confirmé : document débloqué.' : 'Paiement non confirmé pour le moment. Votre accès apparaîtra après confirmation.', success: unlocked);
     return unlocked;
   } catch (error) {
     if (context.mounted) showToast(context, friendlyFailure(error, action: 'finaliser cet achat'));
@@ -147,11 +155,11 @@ Future<bool> purchaseSubscription(BuildContext context, AppState state, Map<Stri
     showDialog<void>(context: context, barrierDismissible: false, builder: (_) => const AlertDialog(icon: CircularProgressIndicator(), title: Text('Activation Premium'), content: Text('Confirmation de votre abonnement en cours…')));
     for (var attempt = 0; attempt < 8 && subscription == null; attempt++) {
       if (attempt > 0) await Future<void>.delayed(const Duration(seconds: 2));
-      try { subscription = await state.api.mySubscription(); } catch (_) {}
+      try { subscription = await state.api.mySubscription().timeout(const Duration(seconds: 5)); } catch (_) {}
     }
     if (context.mounted) Navigator.of(context, rootNavigator: true).pop();
     await state.refreshAccount();
-    if (context.mounted) showToast(context, subscription != null ? 'Votre abonnement Premium est actif.' : 'Paiement reçu. Activation Premium en cours.', success: subscription != null);
+    if (context.mounted) showToast(context, subscription != null ? 'Votre abonnement Premium est actif.' : 'Paiement non confirmé pour le moment. Actualisez votre profil dans quelques instants.', success: subscription != null);
     return subscription != null;
   } catch (error) {
     if (context.mounted) showToast(context, friendlyFailure(error, action: 'finaliser cet abonnement'));
@@ -183,7 +191,7 @@ Future<bool> makeDonation(BuildContext context, AppState state) async {
         setState(() { busy = true; error = null; });
         try {
           final result = await state.api.startDonationPayment(amount: amount, phone: digits, pseudo: state.session!.pseudo);
-          if (sheetContext.mounted) Navigator.pop(sheetContext, {'url': result['url'] ?? '', 'amount': amount});
+          if (sheetContext.mounted) Navigator.pop(sheetContext, {'url': result['url'] ?? '', 'token': result['token'] ?? '', 'amount': amount});
         } catch (e) {
           if (sheetContext.mounted) setState(() { busy = false; error = friendlyFailure(e, action: 'démarrer le don'); });
         }
@@ -206,7 +214,30 @@ Future<bool> makeDonation(BuildContext context, AppState state) async {
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('Faire un don', style: Theme.of(context).textTheme.titleLarge), const SizedBox(height: 3), const Text('Chaque contribution aide à maintenir Fasobiblio accessible.', style: TextStyle(fontSize:12, color: AppColors.muted))])),
               ]),
               const SizedBox(height: 18),
-              Wrap(spacing: 8, runSpacing: 8, children: [500, 1000, 2500].map((amount) => ChoiceChip(label: Text('$amount F'), selected: selected == amount, onSelected: busy ? null : (_) => setState(() { selected = amount; custom.clear(); error = null; }))).toList()),
+              LayoutBuilder(builder: (context, constraints) {
+                const amounts = [500, 1000, 2500, 5000];
+                final textScaler = MediaQuery.textScalerOf(context);
+                final minWidth = textScaler.scale(13) * 5 + 24;
+                final columns = constraints.maxWidth >= minWidth * 4 + 24
+                    ? 4 : constraints.maxWidth >= minWidth * 2 + 8 ? 2 : 1;
+                final width = (constraints.maxWidth - 8 * (columns - 1)) / columns;
+                return Wrap(spacing: 8, runSpacing: 8, children: amounts.map((amount) {
+                  final active = selected == amount;
+                  return SizedBox(
+                    width: width,
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 12),
+                        backgroundColor: active ? Theme.of(context).colorScheme.primaryContainer : null,
+                        foregroundColor: active ? Theme.of(context).colorScheme.onPrimaryContainer : Theme.of(context).colorScheme.onSurface,
+                        side: BorderSide(color: active ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.outlineVariant),
+                      ),
+                      onPressed: busy ? null : () => setState(() { selected = amount; custom.clear(); error = null; }),
+                      child: Semantics(selected: active, child: Text('$amount F', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700))),
+                    ),
+                  );
+                }).toList());
+              }),
               const SizedBox(height: 14),
               TextField(controller: custom, enabled: !busy, keyboardType: TextInputType.number, onChanged: (v) { if (v.isNotEmpty) setState(() { selected = null; error = null; }); }, decoration: const InputDecoration(labelText: 'Ou montant libre (FCFA)', hintText: 'Ex : 750')),
               const SizedBox(height: 12),
@@ -225,6 +256,8 @@ Future<bool> makeDonation(BuildContext context, AppState state) async {
   final url = '${payment['url'] ?? ''}';
   if (url.isEmpty) { showToast(context, 'Lien de paiement indisponible.'); return false; }
   final returned = await Navigator.of(context).push<bool>(MaterialPageRoute(builder: (_) => PaymentWebViewScreen(url: url))) == true;
-  if (returned && context.mounted) showToast(context, 'Merci pour votre soutien à Fasobiblio ❤️', success: true);
-  return returned;
+  if (!returned) return false;
+  final status = await _paymentStatus(state, '${payment['token'] ?? ''}');
+  if (context.mounted) showToast(context, status == 'paid' ? 'Don confirmé. Merci pour votre soutien à Fasobiblio ❤️' : status == 'failed' ? 'Le paiement du don n’a pas abouti.' : 'Votre don n’est pas encore confirmé.', success: status == 'paid');
+  return status == 'paid';
 }

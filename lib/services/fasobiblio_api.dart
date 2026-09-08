@@ -130,8 +130,17 @@ class FasobiblioApi {
 
   Future<List<AppNotification>> notifications() async {
     final data = await _request(Uri.parse('$database/notifications.json'), timeout: const Duration(seconds: 12));
-    if (data is! Map) return [];
-    final values = data.entries.where((entry) => entry.value is Map).map((entry) => AppNotification.fromJson('${entry.key}', Map<String, dynamic>.from(entry.value))).toList();
+    final values = <AppNotification>[];
+    if (data is Map) {
+      values.addAll(data.entries.where((entry) => entry.value is Map).map((entry) => AppNotification.fromJson('${entry.key}', Map<String, dynamic>.from(entry.value))));
+    }
+    try {
+      final personal = await authenticated('/api/mobile/notifications');
+      final items = personal['notifications'];
+      if (items is Map) {
+        values.addAll(items.entries.where((entry) => entry.value is Map).map((entry) => AppNotification.fromJson('${entry.key}', {...Map<String, dynamic>.from(entry.value), 'uid': _session?.uid ?? ''})));
+      }
+    } catch (_) { /* General announcements remain available on older servers. */ }
     values.sort((a, b) => b.createdAt.compareTo(a.createdAt));
     return values;
   }

@@ -1,34 +1,528 @@
+import 'package:speech_to_text/speech_to_text.dart';
+import 'package:flutter_tts/flutter_tts.dart';
+import 'package:pdfrx/pdfrx.dart';
+
+import '../models/book.dart';
+import '../services/catalog_search.dart';
+import '../services/document_service.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+
 import '../core/app_feedback.dart';
 import '../core/theme.dart';
 import '../services/app_state.dart';
 
-class AssistantScreen extends StatefulWidget{const AssistantScreen({super.key,required this.state,this.documentContext,this.documentTitle,this.documentId});final AppState state;final String? documentContext,documentTitle,documentId;@override State<AssistantScreen> createState()=>_AssistantScreenState();}
-class _ChatMessage{const _ChatMessage(this.text,{required this.fromUser});final String text;final bool fromUser;Map<String,dynamic> toJson()=>{'text':text,'fromUser':fromUser};}
-class _AssistantScreenState extends State<AssistantScreen>{
- final controller=TextEditingController();final scrollController=ScrollController();final messages=<_ChatMessage>[];bool busy=false,restoring=true;
- String get memoryKey => '${widget.state.assistantAccountKey}.${widget.documentId ?? widget.documentTitle ?? 'general'}';
- @override void initState(){super.initState();_restore();}
- Future<void> _restore()async{try{var saved=await widget.state.store.loadAssistantMemory(memoryKey);if(saved.isEmpty && widget.documentTitle==null)saved=await widget.state.store.loadAssistantMemory(widget.state.assistantAccountKey);if(!mounted)return;setState((){messages.addAll(saved.map((e)=>_ChatMessage('${e['text']??''}',fromUser:e['fromUser']==true)).where((e)=>e.text.isNotEmpty));restoring=false;});_scrollDown();}catch(_){if(mounted)setState(()=>restoring=false);}}
- Future<void> _persist()=>widget.state.store.saveAssistantMemory(memoryKey,messages.map((e)=>e.toJson()).toList());
- @override void dispose(){controller.dispose();scrollController.dispose();super.dispose();}
- Future<void> ask()async{final question=controller.text.trim();if(question.isEmpty||busy)return;if(!requireInternet(context,widget.state))return;controller.clear();setState((){messages.add(_ChatMessage(question,fromUser:true));busy=true;if(messages.length>80)messages.removeRange(0,messages.length-80);});_scrollDown();try{await _persist();final answer=await widget.state.api.assistant(question, documentContext: widget.documentContext, history: messages.take(messages.length-1).map((m)=>{'role':m.fromUser?'user':'assistant','content':m.text}).toList());if(!mounted)return;setState(()=>messages.add(_ChatMessage(answer,fromUser:false)));await _persist();}catch(error){if(mounted)showToast(context,friendlyFailure(error,action:'obtenir une réponse de l’assistant'));}finally{if(mounted)setState(()=>busy=false);_scrollDown();}}
- void _scrollDown()=>WidgetsBinding.instance.addPostFrameCallback((_){if(scrollController.hasClients)scrollController.animateTo(scrollController.position.maxScrollExtent,duration:const Duration(milliseconds:260),curve:Curves.easeOut);});
- @override Widget build(BuildContext context){final surface=Theme.of(context).colorScheme.surface;return Scaffold(appBar:AppBar(titleSpacing:0,title:const Row(children:[CircleAvatar(backgroundColor:AppColors.blue,foregroundColor:Colors.white,child:Icon(AppIcons.bot,size:21)),SizedBox(width:10),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text('Assistant Fasobiblio',style:TextStyle(fontSize:16,fontWeight:FontWeight.w900)),SizedBox(height:2),Row(children:[CircleAvatar(radius:4,backgroundColor:Color(0xFF22C55E)),SizedBox(width:5),Text('Assistant bibliothèque',style:TextStyle(fontSize:12,fontWeight:FontWeight.w500,color:AppColors.muted))])]))])),body:Column(children:[if(widget.documentTitle!=null)Padding(padding:const EdgeInsets.all(12),child:Text('Questions sur les pages ouvertes : ${widget.documentTitle}',style:const TextStyle(fontSize:12))),Expanded(child:restoring?const Center(child:CircularProgressIndicator()):messages.isEmpty?const _Welcome():ListView.builder(controller:scrollController,padding:const EdgeInsets.fromLTRB(16,18,16,18),itemCount:messages.length+(busy?1:0),itemBuilder:(context,index)=>index==messages.length?const _TypingBubble():_MessageBubble(message:messages[index]))),Container(color:surface,padding:EdgeInsets.fromLTRB(12,10,12,MediaQuery.paddingOf(context).bottom+10),child:Row(crossAxisAlignment:CrossAxisAlignment.end,children:[Expanded(child:TextField(controller:controller,minLines:1,maxLines:4,textInputAction:TextInputAction.newline,decoration:const InputDecoration(hintText:'Posez votre question…',contentPadding:EdgeInsets.symmetric(horizontal:16,vertical:12)))),const SizedBox(width:9),IconButton.filled(onPressed:busy?null:ask,icon:const Icon(AppIcons.send),tooltip:'Envoyer',style:IconButton.styleFrom(minimumSize:const Size(50,50)))]))]));}
+class AssistantScreen extends StatefulWidget {
+  const AssistantScreen({
+    super.key,
+    required this.state,
+    this.documentContext,
+    this.documentTitle,
+    this.documentId,
+  });
+  final AppState state;
+  final String? documentContext, documentTitle, documentId;
+  @override
+  State<AssistantScreen> createState() => _AssistantScreenState();
 }
-class _Welcome extends StatelessWidget{const _Welcome();@override Widget build(BuildContext context)=>ListView(padding:const EdgeInsets.fromLTRB(28,48,28,20),children:[Center(child:Container(width:68,height:68,decoration:BoxDecoration(gradient:const LinearGradient(colors:[AppColors.ink,AppColors.blue]),borderRadius:BorderRadius.circular(20)),child:const Icon(AppIcons.bot,color:Colors.white,size:31))),const SizedBox(height:20),Text('Votre assistant de lecture',textAlign:TextAlign.center,style:Theme.of(context).textTheme.headlineMedium),const SizedBox(height:12),const Text('Je vous aide à trouver des documents dans le catalogue Fasobiblio, à choisir vos prochaines lectures et à comprendre le fonctionnement de la bibliothèque et de Premium. Décrivez simplement ce que vous cherchez.',textAlign:TextAlign.center,style:TextStyle(color:AppColors.muted,height:1.55,fontSize:13))]);}
-class _MessageBubble extends StatelessWidget{const _MessageBubble({required this.message});final _ChatMessage message;
- @override Widget build(BuildContext context) => Align(
-   alignment: message.fromUser ? Alignment.centerRight : Alignment.centerLeft,
-   child: Container(width: double.infinity,
-     margin: EdgeInsets.only(bottom: 13, left: message.fromUser ? 32 : 0, right: message.fromUser ? 0 : 8),
-     padding: const EdgeInsets.all(14),
-     decoration: BoxDecoration(color: message.fromUser ? AppColors.blue : Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(16)),
-     child: message.fromUser ? Text(message.text, style: const TextStyle(color: Colors.white, fontSize: 14, height: 1.5)) : AssistantMessageBody(text: message.text),
-   ),
- );
+
+class _ChatMessage {
+  const _ChatMessage(this.text, {required this.fromUser});
+  final String text;
+  final bool fromUser;
+  Map<String, dynamic> toJson() => {'text': text, 'fromUser': fromUser};
 }
+
+class _AssistantScreenState extends State<AssistantScreen> {
+  final controller = TextEditingController();
+  final scrollController = ScrollController();
+  final messages = <_ChatMessage>[];
+  bool busy = false, restoring = true;
+  Book? selectedBook;
+  String? selectedContext;
+  final speech = SpeechToText();
+  final voice = FlutterTts();
+  bool voiceMode = false, listening = false, speaking = false;
+  Future<void> listen() async {
+    await voice.stop();
+    if (speech.isListening) {
+      await speech.stop();
+      if (mounted) setState(() => listening = false);
+      return;
+    }
+    try {
+      final available = await speech.initialize(
+        onStatus: (status) {
+          if (mounted && status != 'listening') {
+            setState(() => listening = false);
+          }
+        },
+        onError: (_) {
+          if (mounted) {
+            setState(() => listening = false);
+            showToast(
+              context,
+              'La reconnaissance vocale s’est arrêtée. Vous pouvez réessayer ou écrire votre question.',
+            );
+          }
+        },
+      );
+      if (!mounted) return;
+      if (!available) {
+        throw const UserMessage(
+          'La reconnaissance vocale n’est pas disponible. Vérifiez l’autorisation du microphone.',
+        );
+      }
+      final locales = await speech.locales();
+      if (!mounted) return;
+      final french = locales.where(
+        (locale) => locale.localeId.startsWith('fr'),
+      );
+      setState(() {
+        voiceMode = true;
+        listening = true;
+        speaking = false;
+      });
+      var submitted = false;
+      await speech.listen(
+        listenOptions: SpeechListenOptions(
+          localeId: french.isEmpty ? null : french.first.localeId,
+          listenFor: const Duration(seconds: 50),
+          pauseFor: const Duration(seconds: 3),
+          partialResults: true,
+          listenMode: ListenMode.dictation,
+          cancelOnError: true,
+        ),
+        onResult: (result) {
+          if (!mounted || submitted) return;
+          controller.text = result.recognizedWords;
+          if (result.finalResult && result.recognizedWords.trim().isNotEmpty) {
+            submitted = true;
+            setState(() => listening = false);
+            ask();
+          }
+        },
+      );
+    } catch (error) {
+      if (mounted) {
+        setState(() => listening = false);
+        showToast(
+          context,
+          friendlyFailure(error, action: 'écouter votre question'),
+        );
+      }
+    }
+  }
+
+  Future<void> speak(String answer) async {
+    try {
+      await voice.setLanguage('fr-FR');
+      await voice.setSpeechRate(.5);
+      voice.setCompletionHandler(() {
+        if (mounted) setState(() => speaking = false);
+      });
+      voice.setCancelHandler(() {
+        if (mounted) setState(() => speaking = false);
+      });
+      if (!mounted || !voiceMode) return;
+      setState(() => speaking = true);
+      final plain = answer
+          .replaceAll(
+            RegExp(r'```[\s\S]*?```'),
+            'Exemple de code affiché à l’écran.',
+          )
+          .replaceAll(RegExp(r'[#*_`|]'), ' ');
+      await voice.speak(plain);
+    } catch (_) {
+      if (mounted) setState(() => speaking = false);
+    }
+  }
+
+  String get memoryKey =>
+      '${widget.state.assistantAccountKey}.${widget.documentId ?? widget.documentTitle ?? 'general'}';
+  @override
+  void initState() {
+    super.initState();
+    _restore();
+  }
+
+  Future<void> _restore() async {
+    try {
+      var saved = await widget.state.store.loadAssistantMemory(memoryKey);
+      if (saved.isEmpty && widget.documentTitle == null) {
+        saved = await widget.state.store.loadAssistantMemory(
+          widget.state.assistantAccountKey,
+        );
+      }
+      if (!mounted) return;
+      setState(() {
+        messages.addAll(
+          saved
+              .map(
+                (e) => _ChatMessage(
+                  '${e['text'] ?? ''}',
+                  fromUser: e['fromUser'] == true,
+                ),
+              )
+              .where((e) => e.text.isNotEmpty),
+        );
+        restoring = false;
+      });
+      _scrollDown();
+    } catch (_) {
+      if (mounted) setState(() => restoring = false);
+    }
+  }
+
+  Future<void> _persist() => widget.state.store.saveAssistantMemory(
+    memoryKey,
+    messages.map((e) => e.toJson()).toList(),
+  );
+  @override
+  void dispose() {
+    speech.cancel();
+    voice.stop().catchError((Object _) => null);
+    controller.dispose();
+    scrollController.dispose();
+    super.dispose();
+  }
+
+  Future<void> ask() async {
+    final question = controller.text.trim();
+    if (question.isEmpty || busy) return;
+    if (!requireInternet(context, widget.state)) return;
+    controller.clear();
+    setState(() {
+      messages.add(_ChatMessage(question, fromUser: true));
+      busy = true;
+      if (messages.length > 80) messages.removeRange(0, messages.length - 80);
+    });
+    _scrollDown();
+    try {
+      await _persist();
+      final answer = await widget.state.api.assistant(
+        question,
+        documentContext: await _contextFor(question),
+        history: messages
+            .take(messages.length - 1)
+            .map(
+              (m) => {
+                'role': m.fromUser ? 'user' : 'assistant',
+                'content': m.text,
+              },
+            )
+            .toList(),
+      );
+      if (!mounted) return;
+      setState(() => messages.add(_ChatMessage(answer, fromUser: false)));
+      if (voiceMode) speak(answer);
+      await _persist();
+    } catch (error) {
+      if (mounted) {
+        showToast(
+          context,
+          friendlyFailure(error, action: 'obtenir une réponse de l’assistant'),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => busy = false);
+      _scrollDown();
+    }
+  }
+
+  Future<String?> _contextFor(String question) async {
+    final hits = searchCatalog(widget.state.books, question);
+    Book? book = selectedBook;
+    if (hits.isNotEmpty) {
+      if (hits.length == 1 || hits.first.score - hits[1].score > .2) {
+        book = hits.first.book;
+      } else {
+        if (!mounted) return null;
+        book = await showDialog<Book>(
+          context: context,
+          builder: (context) => SimpleDialog(
+            title: const Text('Quel document voulez-vous consulter ?'),
+            children: hits
+                .map(
+                  (hit) => SimpleDialogOption(
+                    onPressed: () => Navigator.pop(context, hit.book),
+                    child: Text('${hit.book.title} — ${hit.book.author}'),
+                  ),
+                )
+                .toList(),
+          ),
+        );
+        if (book == null) {
+          throw UserMessage('Choisissez un document pour continuer.');
+        }
+      }
+    }
+    if (book == null && widget.documentId != null) {
+      final matching = widget.state.books.where(
+        (b) => b.id == widget.documentId,
+      );
+      if (matching.isNotEmpty) book = matching.first;
+    }
+    final match = RegExp(
+      r'pages?\s*(?:n[°o]\s*)?(\d+)',
+      caseSensitive: false,
+    ).firstMatch(question);
+    if (book == null) {
+      if (match != null) {
+        throw UserMessage('Précisez le titre du document à consulter.');
+      }
+      return selectedContext ?? widget.documentContext;
+    }
+    final changed = selectedBook?.id != book.id;
+    selectedBook = book;
+    if (changed) selectedContext = null;
+    if (match == null) {
+      return selectedContext ??
+          (book.id == widget.documentId ? widget.documentContext : null) ??
+          'Document trouvé dans le catalogue : ${book.title}, de ${book.author}. Description : ${book.description}. Le contenu du livre n’est pas encore extrait. Pour expliquer un passage, demande le numéro de page. Ne prétends pas avoir lu le livre.';
+    }
+    final page = int.parse(match.group(1)!);
+    final documents = DocumentService();
+    // Check current server access even when a downloaded copy exists.
+    final file = await widget.state.api.documentFile(book.id, 'read');
+    final path = await documents.ensureLocal(
+      file['url']!,
+      '${book.id}-${book.title}',
+    );
+    final pdf = await PdfDocument.openFile(path);
+    try {
+      if (page < 1 || page > pdf.pages.length) {
+        throw UserMessage('Ce document contient ${pdf.pages.length} pages.');
+      }
+      final extracted =
+          (await pdf.pages[page - 1].loadText())?.fullText.trim() ?? '';
+      if (extracted.isEmpty) {
+        throw UserMessage(
+          'Cette page est scannée : son texte doit être reconnu avant de pouvoir l’expliquer.',
+        );
+      }
+      selectedContext =
+          'Source : ${book.title}, ${book.author}. Page $page du fichier PDF (la pagination imprimée peut différer). Explique uniquement le texte suivant et indique la source.\n${extracted.length > 27000 ? extracted.substring(0, 27000) : extracted}';
+      return selectedContext;
+    } finally {
+      await pdf.dispose();
+    }
+  }
+
+  void _scrollDown() => WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (scrollController.hasClients) {
+      scrollController.animateTo(
+        scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 260),
+        curve: Curves.easeOut,
+      );
+    }
+  });
+  @override
+  Widget build(BuildContext context) {
+    final surface = Theme.of(context).colorScheme.surface;
+    return Scaffold(
+      appBar: AppBar(
+        actions: [
+          IconButton(
+            tooltip: voiceMode
+                ? 'Désactiver les réponses vocales'
+                : 'Activer les réponses vocales',
+            onPressed: () {
+              setState(() => voiceMode = !voiceMode);
+              if (!voiceMode) voice.stop();
+            },
+            icon: Icon(voiceMode ? Icons.volume_up : Icons.volume_off),
+          ),
+        ],
+        titleSpacing: 0,
+        title: const Row(
+          children: [
+            CircleAvatar(
+              backgroundColor: AppColors.blue,
+              foregroundColor: Colors.white,
+              child: Icon(AppIcons.bot, size: 21),
+            ),
+            SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Assistant Fasobiblio',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
+                  ),
+                  SizedBox(height: 2),
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 4,
+                        backgroundColor: Color(0xFF22C55E),
+                      ),
+                      SizedBox(width: 5),
+                      Text(
+                        'Assistant bibliothèque',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.muted,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+      body: Column(
+        children: [
+          if (widget.documentTitle != null)
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Text(
+                'Questions sur les pages ouvertes : ${widget.documentTitle}',
+                style: const TextStyle(fontSize: 12),
+              ),
+            ),
+          Expanded(
+            child: restoring
+                ? const Center(child: CircularProgressIndicator())
+                : messages.isEmpty
+                ? const _Welcome()
+                : ListView.builder(
+                    controller: scrollController,
+                    padding: const EdgeInsets.fromLTRB(16, 18, 16, 18),
+                    itemCount: messages.length + (busy ? 1 : 0),
+                    itemBuilder: (context, index) => index == messages.length
+                        ? const _TypingBubble()
+                        : _MessageBubble(message: messages[index]),
+                  ),
+          ),
+          Container(
+            color: surface,
+            padding: EdgeInsets.fromLTRB(
+              12,
+              10,
+              12,
+              MediaQuery.paddingOf(context).bottom + 10,
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: controller,
+                    minLines: 1,
+                    maxLines: 4,
+                    textInputAction: TextInputAction.newline,
+                    decoration: InputDecoration(
+                      hintText: listening
+                          ? 'Je vous écoute…'
+                          : 'Posez votre question…',
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 9),
+                IconButton(
+                  onPressed: busy ? null : listen,
+                  tooltip: speaking
+                      ? 'Interrompre et parler'
+                      : listening
+                      ? 'Terminer la dictée'
+                      : 'Poser une question à voix haute',
+                  icon: Icon(listening ? Icons.mic : Icons.mic_none),
+                ),
+                IconButton.filled(
+                  onPressed: busy ? null : ask,
+                  icon: const Icon(AppIcons.send),
+                  tooltip: 'Envoyer',
+                  style: IconButton.styleFrom(minimumSize: const Size(50, 50)),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Welcome extends StatelessWidget {
+  const _Welcome();
+  @override
+  Widget build(BuildContext context) => ListView(
+    padding: const EdgeInsets.fromLTRB(28, 48, 28, 20),
+    children: [
+      Center(
+        child: Container(
+          width: 68,
+          height: 68,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [AppColors.ink, AppColors.blue],
+            ),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: const Icon(AppIcons.bot, color: Colors.white, size: 31),
+        ),
+      ),
+      const SizedBox(height: 20),
+      Text(
+        'Votre assistant de lecture',
+        textAlign: TextAlign.center,
+        style: Theme.of(context).textTheme.headlineMedium,
+      ),
+      const SizedBox(height: 12),
+      const Text(
+        'Je vous aide à trouver des documents dans le catalogue Fasobiblio, à choisir vos prochaines lectures et à comprendre le fonctionnement de la bibliothèque et de Premium. Décrivez simplement ce que vous cherchez.',
+        textAlign: TextAlign.center,
+        style: TextStyle(color: AppColors.muted, height: 1.55, fontSize: 13),
+      ),
+    ],
+  );
+}
+
+class _MessageBubble extends StatelessWidget {
+  const _MessageBubble({required this.message});
+  final _ChatMessage message;
+  @override
+  Widget build(BuildContext context) => Align(
+    alignment: message.fromUser ? Alignment.centerRight : Alignment.centerLeft,
+    child: Container(
+      width: double.infinity,
+      margin: EdgeInsets.only(
+        bottom: 13,
+        left: message.fromUser ? 32 : 0,
+        right: message.fromUser ? 0 : 8,
+      ),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: message.fromUser
+            ? AppColors.blue
+            : Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: message.fromUser
+          ? Text(
+              message.text,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                height: 1.5,
+              ),
+            )
+          : AssistantMessageBody(text: message.text),
+    ),
+  );
+}
+
 class AssistantMessageBody extends StatelessWidget {
   const AssistantMessageBody({super.key, required this.text});
   final String text;
@@ -39,24 +533,70 @@ class AssistantMessageBody extends StatelessWidget {
     var table = false;
     for (final line in text.split('\n')) {
       final next = line.trim().startsWith('|') && line.trim().endsWith('|');
-      if (next != table && lines.isNotEmpty) { blocks.add((text: lines.join('\n'), table: table)); lines = []; }
-      table = next; lines.add(line);
+      if (next != table && lines.isNotEmpty) {
+        blocks.add((text: lines.join('\n'), table: table));
+        lines = [];
+      }
+      table = next;
+      lines.add(line);
     }
     if (lines.isNotEmpty) blocks.add((text: lines.join('\n'), table: table));
-    Widget markdown(String data) => MarkdownBody(data: data, selectable: true,
+    Widget markdown(String data) => MarkdownBody(
+      data: data,
+      selectable: true,
       styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
         p: const TextStyle(fontFamily: 'Urbanist', fontSize: 14, height: 1.5),
-        h1: const TextStyle(fontFamily: 'Urbanist', fontSize: 18, fontWeight: FontWeight.w700),
-        h2: const TextStyle(fontFamily: 'Urbanist', fontSize: 17, fontWeight: FontWeight.w700),
-        h3: const TextStyle(fontFamily: 'Urbanist', fontSize: 16, fontWeight: FontWeight.w700),
+        h1: const TextStyle(
+          fontFamily: 'Urbanist',
+          fontSize: 18,
+          fontWeight: FontWeight.w700,
+        ),
+        h2: const TextStyle(
+          fontFamily: 'Urbanist',
+          fontSize: 17,
+          fontWeight: FontWeight.w700,
+        ),
+        h3: const TextStyle(
+          fontFamily: 'Urbanist',
+          fontSize: 16,
+          fontWeight: FontWeight.w700,
+        ),
         tableColumnWidth: const FixedColumnWidth(160),
-      ));
-    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: blocks.map((block) {
-      if (!block.table) return markdown(block.text);
-      final columns = block.text.split('\n').first.split('|').length - 2;
-      return SingleChildScrollView(scrollDirection: Axis.horizontal,
-        child: SizedBox(width: (columns * 160.0).clamp(320.0, 1600.0).toDouble(), child: markdown(block.text)));
-    }).toList());
+      ),
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: blocks.map((block) {
+        if (!block.table) return markdown(block.text);
+        final columns = block.text.split('\n').first.split('|').length - 2;
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: SizedBox(
+            width: (columns * 160.0).clamp(320.0, 1600.0).toDouble(),
+            child: markdown(block.text),
+          ),
+        );
+      }).toList(),
+    );
   }
 }
-class _TypingBubble extends StatelessWidget{const _TypingBubble();@override Widget build(BuildContext context)=>Align(alignment:Alignment.centerLeft,child:Container(margin:const EdgeInsets.only(bottom:13),padding:const EdgeInsets.symmetric(horizontal:18,vertical:14),decoration:BoxDecoration(color:Theme.of(context).colorScheme.surface,borderRadius:BorderRadius.circular(18)),child:const SizedBox(width:38,child:LinearProgressIndicator(minHeight:3))));}
+
+class _TypingBubble extends StatelessWidget {
+  const _TypingBubble();
+  @override
+  Widget build(BuildContext context) => Align(
+    alignment: Alignment.centerLeft,
+    child: Container(
+      margin: const EdgeInsets.only(bottom: 13),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: const SizedBox(
+        width: 38,
+        child: LinearProgressIndicator(minHeight: 3),
+      ),
+    ),
+  );
+}

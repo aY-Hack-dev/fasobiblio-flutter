@@ -10,3 +10,8 @@ android/local.properties
 android/key.properties
 *.jks
 *.keystore
+
+# Android signing material stays outside source control.
+android/key.properties
+*.jks
+*.keystore

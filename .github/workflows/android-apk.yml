@@ -3,9 +3,9 @@ name: Build Android APK
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [main, fix/payment-review]
   pull_request:
-    branches: [main]
+    branches: [main, fix/payment-review]
 
 jobs:
   android:
@@ -21,6 +21,15 @@ jobs:
           flutter-version: '3.47.2'
           channel: stable
           cache: true
+      - name: Préparer Firebase et la signature Android
+        if: github.event_name != 'pull_request'
+        env:
+          FIREBASE_GOOGLE_SERVICES_JSON: ${{ secrets.FIREBASE_GOOGLE_SERVICES_JSON }}
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: python3 scripts/prepare_android_config.py
       - name: Installer les dépendances
         run: flutter pub get
       - name: Vérifier le code
@@ -29,6 +38,17 @@ jobs:
         run: flutter test
       - name: Compiler l’APK universel
         run: flutter build apk --release --tree-shake-icons
+      - name: Mesurer l’APK universel
+        run: |
+          python3 - <<'PYTHON'
+          import os, zipfile
+          path = 'build/app/outputs/flutter-apk/app-release.apk'
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as report:
+              report.write(f'APK universel : {os.path.getsize(path)/1024/1024:.2f} Mio\n\n')
+              with zipfile.ZipFile(path) as archive:
+                  for entry in sorted(archive.infolist(), key=lambda e: e.compress_size, reverse=True)[:15]:
+                      report.write(f'- {entry.filename}: {entry.compress_size/1024/1024:.2f} Mio compressés\n')
+          PYTHON
       - name: Publier les APK optimisés
         uses: actions/upload-artifact@v4
         with:
