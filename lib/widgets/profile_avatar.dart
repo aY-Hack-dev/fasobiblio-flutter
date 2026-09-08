@@ -49,21 +49,29 @@ class _ProfileAvatarState extends State<ProfileAvatar> {
     final choice = await showModalBottomSheet<String>(
       context: context,
       useSafeArea: true,
-      builder: (context) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(
-            leading: const Icon(Icons.photo_library_outlined),
-            title: const Text('Choisir une photo'),
-            onTap: () => Navigator.pop(context, 'choose'),
+      useRootNavigator: true,
+      isScrollControlled: true,
+      builder: (context) => SafeArea(
+        top: false,
+        minimum: const EdgeInsets.only(bottom: 16),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_library_outlined),
+                title: const Text('Choisir une photo'),
+                onTap: () => Navigator.pop(context, 'choose'),
+              ),
+              if (bytes != null)
+                ListTile(
+                  leading: const Icon(Icons.delete_outline),
+                  title: const Text('Revenir à l’avatar de lecteur'),
+                  onTap: () => Navigator.pop(context, 'remove'),
+                ),
+            ],
           ),
-          if (bytes != null)
-            ListTile(
-              leading: const Icon(Icons.delete_outline),
-              title: const Text('Revenir à l’avatar de lecteur'),
-              onTap: () => Navigator.pop(context, 'remove'),
-            ),
-        ],
+        ),
       ),
     );
     if (choice == null || !mounted) return;
