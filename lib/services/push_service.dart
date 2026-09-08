@@ -37,6 +37,8 @@ class PushService extends ChangeNotifier {
   AppState? state;
   GlobalKey<NavigatorState>? navigator;
   String? token, bindingUid;
+  bool registered = false;
+  String? registrationError;
   Map<String, dynamic>? pendingOpen;
   Future<void>? setup;
   Future<void> initialize(AppState value, GlobalKey<NavigatorState> key) =>
@@ -219,20 +221,57 @@ class PushService extends ChangeNotifier {
     await sync();
   }
 
-  Future<void> sync() async {
-    if (token == null || state == null) return;
+  Future<void> retryRegistration() async {
+    if (!available || !enabled) return;
     try {
-      await state!.api.authenticated(
-        '/api/mobile/push-token',
-        method: 'POST',
-        body: {'token': token, 'enabled': enabled, 'categories': preferences},
-      );
+      token = await FirebaseMessaging.instance.getToken();
+      await sync();
     } catch (_) {
-      /* Retry on the next foreground launch or preference change. */
+      registered = false;
+      registrationError = 'Impossible de préparer les notifications. Réessayez avec une connexion Internet.';
+      notifyListeners();
     }
   }
 
+  Future<void> sync() async {
+    final account = state;
+    final uid = account?.session?.uid;
+    final deviceToken = token;
+    if (deviceToken == null || account == null || uid == null) {
+      registered = false;
+      registrationError = uid == null
+          ? 'Connectez-vous pour recevoir les notifications.'
+          : 'Le téléphone n’est pas encore enregistré. Réessayez.';
+      notifyListeners();
+      return;
+    }
+    try {
+      final response = await account.api.authenticated(
+        '/api/mobile/push-token',
+        method: 'POST',
+        body: {
+          'token': deviceToken,
+          'enabled': enabled,
+          'categories': preferences,
+        },
+      );
+      if (state?.session?.uid != uid || token != deviceToken) return;
+      if (response['success'] != true) {
+        throw StateError('Registration was not confirmed');
+      }
+      registered = enabled;
+      registrationError = null;
+    } catch (_) {
+      if (state?.session?.uid != uid || token != deviceToken) return;
+      registered = false;
+      registrationError = 'Le serveur n’a pas confirmé l’enregistrement. Les notifications push ne sont pas encore prêtes.';
+    }
+    notifyListeners();
+  }
+
   Future<void> detachAccount() async {
+    registered = false;
+    registrationError = null;
     if (token == null || state == null) return;
     try {
       await state!.api.authenticated(

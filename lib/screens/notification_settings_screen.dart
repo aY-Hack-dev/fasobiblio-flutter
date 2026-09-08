@@ -49,6 +49,33 @@ class _NotificationSettingsScreenState
                 ? null
                 : (value) => change(() => service.setEnabled(value)),
           ),
+          if (service.enabled && service.available)
+            ListTile(
+              leading: Icon(
+                service.registered
+                    ? Icons.check_circle_outline
+                    : Icons.info_outline,
+              ),
+              title: Text(
+                service.registered
+                    ? 'Téléphone enregistré'
+                    : 'Enregistrement à confirmer',
+              ),
+              subtitle: Text(
+                service.registrationError ??
+                    (service.registered
+                        ? 'Le serveur a confirmé votre inscription aux notifications.'
+                        : 'Vérifiez la connexion au service de notifications.'),
+              ),
+              trailing: service.registered
+                  ? null
+                  : TextButton(
+                      onPressed: busy
+                          ? null
+                          : () => change(service.retryRegistration),
+                      child: const Text('Réessayer'),
+                    ),
+            ),
           for (final item in PushService.categories.entries)
             SwitchListTile(
               title: Text(item.value),
