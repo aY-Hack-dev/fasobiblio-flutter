@@ -23,18 +23,20 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     setState(() => _marking = true);
     try {
       await state.markAllNotificationsRead();
-      if (mounted)
+      if (mounted) {
         showToast(
           context,
           'Toutes les notifications sont marquées comme lues.',
           success: true,
         );
+      }
     } catch (error) {
-      if (mounted)
+      if (mounted) {
         showToast(
           context,
           friendlyFailure(error, action: 'synchroniser les notifications'),
         );
+      }
     } finally {
       if (mounted) setState(() => _marking = false);
     }
@@ -47,11 +49,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       try {
         await state.markNotificationRead(item.id);
       } catch (error) {
-        if (mounted)
+        if (mounted) {
           showToast(
             context,
             friendlyFailure(error, action: 'synchroniser la lecture'),
           );
+        }
       }
     }
   }
@@ -62,27 +65,33 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     if (!date.isBefore(today)) return 'Aujourd’hui';
-    if (!date.isBefore(DateTime(now.year, now.month, now.day - 1)))
+    if (!date.isBefore(DateTime(now.year, now.month, now.day - 1))) {
       return 'Hier';
-    if (!date.isBefore(DateTime(now.year, now.month, now.day - 6)))
+    }
+    if (!date.isBefore(DateTime(now.year, now.month, now.day - 6))) {
       return 'Ces 7 derniers jours';
+    }
     return 'Plus anciennes';
   }
 
   IconData _icon(AppNotification item) {
     final value = item.icon.toLowerCase();
-    if (value.contains('book') || value.contains('file'))
+    if (value.contains('book') || value.contains('file')) {
       return AppIcons.fileText;
-    if (value.contains('crown') || value.contains('star'))
+    }
+    if (value.contains('crown') || value.contains('star')) {
       return Icons.workspace_premium_outlined;
+    }
     if (value.contains('wrench') ||
         value.contains('tools') ||
-        value.contains('gear'))
+        value.contains('gear')) {
       return Icons.build_outlined;
+    }
     if (value.contains('gift') ||
         value.contains('tag') ||
-        value.contains('bullhorn'))
+        value.contains('bullhorn')) {
       return Icons.campaign_outlined;
+    }
     return AppIcons.bell;
   }
 

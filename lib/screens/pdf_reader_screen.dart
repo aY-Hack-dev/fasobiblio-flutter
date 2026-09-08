@@ -211,7 +211,7 @@ class _PdfReaderScreenState extends State<PdfReaderScreen> {
               controller: viewer,
               initialPageNumber: snapshot.data!,
               params: PdfViewerParams(
-                backgroundColor: background,
+                backgroundColor: dark ? const Color(0xFFEEE7D8) : background,
                 onViewerReady: (document, controller) {
                   if (mounted) setState(() => total = document.pages.length);
                 },
@@ -228,7 +228,7 @@ class _PdfReaderScreenState extends State<PdfReaderScreen> {
               ),
             ),
     );
-    if (dark)
+    if (dark) {
       pdf = ColorFiltered(
         colorFilter: const ColorFilter.matrix([
           -1,
@@ -254,7 +254,8 @@ class _PdfReaderScreenState extends State<PdfReaderScreen> {
         ]),
         child: pdf,
       );
-    if (sepia)
+    }
+    if (sepia) {
       pdf = ColorFiltered(
         colorFilter: const ColorFilter.mode(
           Color(0xFFF6E8CC),
@@ -262,6 +263,7 @@ class _PdfReaderScreenState extends State<PdfReaderScreen> {
         ),
         child: pdf,
       );
+    }
     return Scaffold(
       backgroundColor: background,
       appBar: fullscreen
@@ -348,12 +350,13 @@ class _PdfReaderScreenState extends State<PdfReaderScreen> {
                           ? saved.remove('$currentPage')
                           : saved.add('$currentPage');
                       await store.save(key, saved);
-                      if (mounted)
+                      if (context.mounted) {
                         showToast(
                           context,
                           'Marque-page mis à jour.',
                           success: true,
                         );
+                      }
                       return;
                     }
                     setState(() => theme = value);
@@ -490,7 +493,7 @@ class _PageSearchState extends State<_PageSearch> {
         final index = text.toLowerCase().indexOf(widget.query.toLowerCase());
         setState(() {
           scanned++;
-          if (index >= 0)
+          if (index >= 0) {
             hits.add((
               page.pageNumber,
               text
@@ -500,6 +503,7 @@ class _PageSearchState extends State<_PageSearch> {
                   )
                   .replaceAll('\n', ' '),
             ));
+          }
         });
       }
     } finally {

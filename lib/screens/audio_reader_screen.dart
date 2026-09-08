@@ -58,10 +58,11 @@ class _AudioReaderScreenState extends State<AudioReaderScreen> {
       await loadPage();
       if (mounted) setState(() => ready = true);
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         setState(
           () => error = friendlyFailure(e, action: 'ouvrir la lecture audio'),
         );
+      }
     }
   }
 
@@ -119,13 +120,14 @@ class _AudioReaderScreenState extends State<AudioReaderScreen> {
         await save();
       }
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         setState(
           () => error = friendlyFailure(
             e,
             action: 'lire ce document à voix haute',
           ),
         );
+      }
     } finally {
       if (mounted && run == generation) setState(() => playing = false);
     }
