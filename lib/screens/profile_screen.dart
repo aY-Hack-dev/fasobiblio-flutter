@@ -1,7 +1,9 @@
+import 'notification_settings_screen.dart';
 import 'server_summary_screen.dart';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+
+import '../widgets/profile_avatar.dart';
 
 import '../core/app_feedback.dart';
 import '../core/theme.dart';
@@ -67,6 +69,16 @@ class ProfileScreen extends StatelessWidget {
         _ProfileHeader(state: state, connected: connected, name: name),
         const SizedBox(height: 14),
         _AppearanceCard(state: state),
+        _RowItem(
+          icon: Icons.notifications_active_outlined,
+          title: 'Préférences de notification',
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const NotificationSettingsScreen(),
+            ),
+          ),
+        ),
         const SizedBox(height: 14),
         const Padding(
           padding: EdgeInsets.fromLTRB(12, 16, 12, 8),
@@ -268,104 +280,29 @@ class _ProfileHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Column(
     children: [
-      Container(
-        clipBehavior: Clip.antiAlias,
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF071A38), Color(0xFF124ED8), Color(0xFF3385FF)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x2010379D),
-              blurRadius: 18,
-              offset: Offset(0, 8),
-            ),
-          ],
-        ),
-        child: Column(
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 20),
+        child: Row(
           children: [
-            SizedBox(
-              height: 96,
-              child: Stack(
-                children: [
-                  const Positioned.fill(
-                    child: CustomPaint(painter: _ProfilePatternPainter()),
-                  ),
-                  Positioned(
-                    left: 16,
-                    top: 16,
-                    child: Container(
-                      width: 64,
-                      height: 64,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: const Color(0xEEFFFFFF),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: Colors.white, width: 2),
-                      ),
-                      child: SvgPicture.asset(
-                        'assets/illustrations/reader-avatar.svg',
-                        semanticsLabel: 'Avatar de lecteur',
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    right: 14,
-                    top: 14,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0x24FFFFFF),
-                        borderRadius: BorderRadius.circular(99),
-                      ),
-                      child: Text(
-                        !connected
-                            ? 'Mode invité'
-                            : state.subscription != null
-                            ? 'Premium'
-                            : 'Compte gratuit',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+            ProfileAvatar(
+              key: ValueKey(state.session?.uid ?? 'guest'),
+              state: state,
             ),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              color: const Color(0xDD071A38),
+            const SizedBox(width: 18),
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Text(name, style: Theme.of(context).textTheme.titleLarge),
+                  const SizedBox(height: 4),
                   Text(
-                    name,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 19,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    connected
-                        ? '@${state.session!.pseudo}'
-                        : 'Votre espace de lecture personnel',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFFBBD1F6),
+                    !connected
+                        ? 'Votre espace de lecture personnel'
+                        : state.subscription != null
+                        ? 'Premium'
+                        : 'Compte gratuit',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ],
@@ -439,35 +376,6 @@ class _HeaderStat extends StatelessWidget {
       ],
     ),
   );
-}
-
-class _ProfilePatternPainter extends CustomPainter {
-  const _ProfilePatternPainter();
-  @override
-  void paint(Canvas canvas, Size size) {
-    for (var i = 0; i < 3; i++) {
-      final offset = i * 16.0;
-      final path = Path()
-        ..moveTo(size.width * .35, size.height)
-        ..cubicTo(
-          size.width * .65,
-          -offset,
-          size.width * .8,
-          size.height + offset,
-          size.width,
-          16 + offset,
-        )
-        ..lineTo(size.width, size.height)
-        ..close();
-      canvas.drawPath(
-        path,
-        Paint()..color = Colors.white.withValues(alpha: .07 + i * .025),
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 class _AppearanceCard extends StatelessWidget {

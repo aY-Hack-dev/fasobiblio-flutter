@@ -1,3 +1,5 @@
+import 'server_summary_screen.dart';
+
 import 'package:flutter/material.dart';
 
 import '../core/app_feedback.dart';
@@ -322,6 +324,24 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                                     )
                                                   : const SizedBox.shrink(),
                                             ),
+                                            if (_expandedId == item.id &&
+                                                item.summaryId.isNotEmpty &&
+                                                item.uid == state.session?.uid)
+                                              TextButton(
+                                                onPressed: () => Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (_) =>
+                                                        ServerSummaryScreen(
+                                                          state: state,
+                                                          jobId: item.summaryId,
+                                                        ),
+                                                  ),
+                                                ),
+                                                child: const Text(
+                                                  'Lire le résumé',
+                                                ),
+                                              ),
                                             const SizedBox(height: 7),
                                             Text(
                                               _date(item.createdAt),

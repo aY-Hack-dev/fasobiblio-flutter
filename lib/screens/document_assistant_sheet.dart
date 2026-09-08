@@ -18,7 +18,7 @@ class _DocumentAssistantSheetState extends State<DocumentAssistantSheet>{
   String get key=>'${widget.state.assistantAccountKey}.${widget.id}';
   DocumentSummary get job=>DocumentSummary.forDocument(key,points);
   @override void initState(){super.initState();job.restore();}
-  Future<void> explain({bool question=false})async{
+  Future<void> explain({bool question=false,String task='explain'})async{
     setState((){busy=true;error=null;});PdfDocument? document;
     try{
       document=await PdfDocument.openFile(widget.path);
@@ -28,7 +28,7 @@ class _DocumentAssistantSheetState extends State<DocumentAssistantSheet>{
       final excerpt='Page $page :\n${text.length>27000?text.substring(0,27000):text}';
       if(!mounted)return;
       if(question){await Navigator.push(context,MaterialPageRoute(builder:(_)=>AssistantScreen(state:widget.state,documentTitle:widget.title,documentId:widget.id,documentContext:excerpt)));}
-      else {final answer=await widget.state.api.assistant('Explique cette page simplement.',documentContext:excerpt,task:'explain');if(mounted)setState(()=>explanation=answer);}
+      else {final answer=await widget.state.api.assistant(task=='quiz'?'Crée 3 questions de compréhension sur cette page, puis leurs réponses expliquées. Cite la page dans les réponses.':task=='sheet'?'Crée une fiche de révision de cette page : idées essentielles, notions à retenir et questions pour réviser. Cite la page.':'Explique cette page simplement.',documentContext:excerpt,task:task=='explain'?'explain':'question');if(mounted)setState(()=>explanation=answer);}
     }catch(e){if(mounted)setState(()=>error=friendlyFailure(e, action: 'préparer ce contenu'));}finally{await document?.dispose();if(mounted)setState(()=>busy=false);}
   }
   @override Widget build(BuildContext context)=>SafeArea(child:Padding(padding:const EdgeInsets.all(20),child:AnimatedBuilder(animation:job,builder:(context,_)=>ListView(children:[
@@ -46,6 +46,8 @@ class _DocumentAssistantSheetState extends State<DocumentAssistantSheet>{
     const Divider(height:28),
     OutlinedButton.icon(onPressed:busy?null:()=>explain(),icon:const Icon(Icons.description_outlined),label:Text('Expliquer la page ${widget.page}')),
     OutlinedButton.icon(onPressed:busy?null:()=>explain(question:true),icon:const Icon(Icons.chat_bubble_outline),label:const Text('Poser une question')),
+    OutlinedButton.icon(onPressed:busy?null:()=>explain(task:'quiz'),icon:const Icon(Icons.quiz_outlined),label:const Text('Quiz sur cette page')),
+    OutlinedButton.icon(onPressed:busy?null:()=>explain(task:'sheet'),icon:const Icon(Icons.school_outlined),label:const Text('Fiche de révision')),
     if(busy)const LinearProgressIndicator(),if(error!=null)Text(error!),if(explanation!=null)AssistantMessageBody(text:explanation!),
   ]))));
 }

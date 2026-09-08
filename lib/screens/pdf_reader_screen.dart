@@ -115,6 +115,42 @@ class _PdfReaderScreenState extends State<PdfReaderScreen> {
     if (page != null && viewer.isReady) await viewer.goToPage(pageNumber: page);
   }
 
+  Future<void> showBookmarks() async {
+    final saved = await store.load('reader.bookmarks.$account.$id');
+    final pages =
+        saved
+            .map(int.tryParse)
+            .whereType<int>()
+            .where((page) => page >= 1 && page <= total)
+            .toList()
+          ..sort();
+    if (!mounted) return;
+    final target = await showDialog<int>(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: const Text('Mes marque-pages'),
+        children: pages.isEmpty
+            ? [
+                const Padding(
+                  padding: EdgeInsets.all(24),
+                  child: Text(
+                    'Ajoutez un marque-page pour retrouver un passage.',
+                  ),
+                ),
+              ]
+            : pages
+                  .map(
+                    (page) => SimpleDialogOption(
+                      onPressed: () => Navigator.pop(context, page),
+                      child: Text('Page $page'),
+                    ),
+                  )
+                  .toList(),
+      ),
+    );
+    if (target != null && mounted) await viewer.goToPage(pageNumber: target);
+  }
+
   Future<void> note() async {
     final controller = TextEditingController();
     final text = await showDialog<String>(
@@ -339,6 +375,10 @@ class _PdfReaderScreenState extends State<PdfReaderScreen> {
                       await search();
                       return;
                     }
+                    if (value == 'bookmarks') {
+                      await showBookmarks();
+                      return;
+                    }
                     if (value == 'note') {
                       await note();
                       return;
@@ -378,6 +418,10 @@ class _PdfReaderScreenState extends State<PdfReaderScreen> {
                     await store.saveJson('reader.theme', value);
                   },
                   itemBuilder: (_) => const [
+                    PopupMenuItem(
+                      value: 'bookmarks',
+                      child: Text('Mes marque-pages'),
+                    ),
                     PopupMenuItem(value: 'day', child: Text('Mode jour')),
                     PopupMenuItem(value: 'night', child: Text('Mode nuit')),
                     PopupMenuItem(value: 'sepia', child: Text('Mode sépia')),

@@ -54,7 +54,7 @@ class _ServerSummaryScreenState extends State<ServerSummaryScreen> {
         final value = await widget.state.api.authenticated(
           '/api/summary-jobs',
           method: 'POST',
-          body: {'docId': widget.docId, 'points': widget.points},
+          body: {'docId': widget.docId ?? job?['docId'], 'points': job?['points'] ?? widget.points},
         );
         job = Map<String, dynamic>.from(value);
         id = '${job!['id']}';

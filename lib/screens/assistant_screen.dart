@@ -1,3 +1,5 @@
+import 'package:speech_to_text/speech_to_text.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import 'package:pdfrx/pdfrx.dart';
 
 import '../models/book.dart';
@@ -39,6 +41,104 @@ class _AssistantScreenState extends State<AssistantScreen> {
   bool busy = false, restoring = true;
   Book? selectedBook;
   String? selectedContext;
+  final speech = SpeechToText();
+  final voice = FlutterTts();
+  bool voiceMode = false, listening = false, speaking = false;
+  Future<void> listen() async {
+    await voice.stop();
+    if (speech.isListening) {
+      await speech.stop();
+      if (mounted) setState(() => listening = false);
+      return;
+    }
+    try {
+      final available = await speech.initialize(
+        onStatus: (status) {
+          if (mounted && status != 'listening') {
+            setState(() => listening = false);
+          }
+        },
+        onError: (_) {
+          if (mounted) {
+            setState(() => listening = false);
+            showToast(
+              context,
+              'La reconnaissance vocale s’est arrêtée. Vous pouvez réessayer ou écrire votre question.',
+            );
+          }
+        },
+      );
+      if (!mounted) return;
+      if (!available) {
+        throw const UserMessage(
+          'La reconnaissance vocale n’est pas disponible. Vérifiez l’autorisation du microphone.',
+        );
+      }
+      final locales = await speech.locales();
+      if (!mounted) return;
+      final french = locales.where(
+        (locale) => locale.localeId.startsWith('fr'),
+      );
+      setState(() {
+        voiceMode = true;
+        listening = true;
+        speaking = false;
+      });
+      var submitted = false;
+      await speech.listen(
+        localeId: french.isEmpty ? null : french.first.localeId,
+        listenFor: const Duration(seconds: 50),
+        pauseFor: const Duration(seconds: 3),
+        listenOptions: SpeechListenOptions(
+          partialResults: true,
+          listenMode: ListenMode.dictation,
+          cancelOnError: true,
+        ),
+        onResult: (result) {
+          if (!mounted || submitted) return;
+          controller.text = result.recognizedWords;
+          if (result.finalResult && result.recognizedWords.trim().isNotEmpty) {
+            submitted = true;
+            setState(() => listening = false);
+            ask();
+          }
+        },
+      );
+    } catch (error) {
+      if (mounted) {
+        setState(() => listening = false);
+        showToast(
+          context,
+          friendlyFailure(error, action: 'écouter votre question'),
+        );
+      }
+    }
+  }
+
+  Future<void> speak(String answer) async {
+    try {
+      await voice.setLanguage('fr-FR');
+      await voice.setSpeechRate(.5);
+      voice.setCompletionHandler(() {
+        if (mounted) setState(() => speaking = false);
+      });
+      voice.setCancelHandler(() {
+        if (mounted) setState(() => speaking = false);
+      });
+      if (!mounted || !voiceMode) return;
+      setState(() => speaking = true);
+      final plain = answer
+          .replaceAll(
+            RegExp(r'```[\s\S]*?```'),
+            'Exemple de code affiché à l’écran.',
+          )
+          .replaceAll(RegExp(r'[#*_`|]'), ' ');
+      await voice.speak(plain);
+    } catch (_) {
+      if (mounted) setState(() => speaking = false);
+    }
+  }
+
   String get memoryKey =>
       '${widget.state.assistantAccountKey}.${widget.documentId ?? widget.documentTitle ?? 'general'}';
   @override
@@ -81,6 +181,8 @@ class _AssistantScreenState extends State<AssistantScreen> {
   );
   @override
   void dispose() {
+    speech.cancel();
+    voice.stop().catchError((Object _) => null);
     controller.dispose();
     scrollController.dispose();
     super.dispose();
@@ -114,6 +216,7 @@ class _AssistantScreenState extends State<AssistantScreen> {
       );
       if (!mounted) return;
       setState(() => messages.add(_ChatMessage(answer, fromUser: false)));
+      if (voiceMode) speak(answer);
       await _persist();
     } catch (error) {
       if (mounted) {
@@ -221,6 +324,18 @@ class _AssistantScreenState extends State<AssistantScreen> {
     final surface = Theme.of(context).colorScheme.surface;
     return Scaffold(
       appBar: AppBar(
+        actions: [
+          IconButton(
+            tooltip: voiceMode
+                ? 'Désactiver les réponses vocales'
+                : 'Activer les réponses vocales',
+            onPressed: () {
+              setState(() => voiceMode = !voiceMode);
+              if (!voiceMode) voice.stop();
+            },
+            icon: Icon(voiceMode ? Icons.volume_up : Icons.volume_off),
+          ),
+        ],
         titleSpacing: 0,
         title: const Row(
           children: [
@@ -303,8 +418,10 @@ class _AssistantScreenState extends State<AssistantScreen> {
                     minLines: 1,
                     maxLines: 4,
                     textInputAction: TextInputAction.newline,
-                    decoration: const InputDecoration(
-                      hintText: 'Posez votre question…',
+                    decoration: InputDecoration(
+                      hintText: listening
+                          ? 'Je vous écoute…'
+                          : 'Posez votre question…',
                       contentPadding: EdgeInsets.symmetric(
                         horizontal: 16,
                         vertical: 12,
@@ -313,6 +430,15 @@ class _AssistantScreenState extends State<AssistantScreen> {
                   ),
                 ),
                 const SizedBox(width: 9),
+                IconButton(
+                  onPressed: busy ? null : listen,
+                  tooltip: speaking
+                      ? 'Interrompre et parler'
+                      : listening
+                      ? 'Terminer la dictée'
+                      : 'Poser une question à voix haute',
+                  icon: Icon(listening ? Icons.mic : Icons.mic_none),
+                ),
                 IconButton.filled(
                   onPressed: busy ? null : ask,
                   icon: const Icon(AppIcons.send),

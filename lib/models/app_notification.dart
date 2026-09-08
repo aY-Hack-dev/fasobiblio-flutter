@@ -1,5 +1,6 @@
 class AppNotification {
-  const AppNotification({required this.id, required this.title, required this.message, required this.createdAt, required this.icon, required this.color});
+  const AppNotification({required this.id, required this.title, required this.message, required this.createdAt, required this.icon, required this.color, this.uid = '', this.summaryId = ''});
+  final String uid, summaryId;
   final String id;
   final String title;
   final String message;
@@ -9,6 +10,8 @@ class AppNotification {
 
   factory AppNotification.fromJson(String id, Map<String, dynamic> json) => AppNotification(
     id: id,
+    uid: '${json['uid'] ?? ''}',
+    summaryId: '${json['summaryId'] ?? ''}',
     title: _localized(json['title']),
     message: _localized(json['message']),
     createdAt: (json['createdAt'] as num?)?.toInt() ?? 0,
@@ -16,7 +19,7 @@ class AppNotification {
     color: '${json['color'] ?? ''}',
   );
 
-  Map<String, dynamic> toJson() => {'id': id, 'title': title, 'message': message, 'createdAt': createdAt, 'icon': icon, 'color': color};
+  Map<String, dynamic> toJson() => {'id': id, 'uid': uid, 'summaryId': summaryId, 'title': title, 'message': message, 'createdAt': createdAt, 'icon': icon, 'color': color};
 
   static String _localized(dynamic value) {
     if (value is Map) return '${value['fr'] ?? (value.values.isNotEmpty ? value.values.first : '')}';
