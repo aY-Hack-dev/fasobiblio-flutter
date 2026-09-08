@@ -1,3 +1,4 @@
+import '../core/app_feedback.dart';
 import 'package:flutter/material.dart';
 import 'package:pdfrx/pdfrx.dart';
 import '../services/app_state.dart';
@@ -27,7 +28,7 @@ class _DocumentAssistantSheetState extends State<DocumentAssistantSheet>{
       if(!mounted)return;
       if(question){await Navigator.push(context,MaterialPageRoute(builder:(_)=>AssistantScreen(state:widget.state,documentTitle:widget.title,documentId:widget.id,documentContext:excerpt)));}
       else {final answer=await widget.state.api.assistant('Explique cette page simplement.',documentContext:excerpt,task:'explain');if(mounted)setState(()=>explanation=answer);}
-    }catch(e){if(mounted)setState(()=>error='$e');}finally{await document?.dispose();if(mounted)setState(()=>busy=false);}
+    }catch(e){if(mounted)setState(()=>error=friendlyFailure(e, action: 'préparer ce contenu'));}finally{await document?.dispose();if(mounted)setState(()=>busy=false);}
   }
   @override Widget build(BuildContext context)=>SafeArea(child:Padding(padding:const EdgeInsets.all(20),child:AnimatedBuilder(animation:job,builder:(context,_)=>ListView(children:[
     Row(children:[Expanded(child:Text('Assistant du document',style:Theme.of(context).textTheme.titleLarge)),IconButton(onPressed:()=>Navigator.pop(context),icon:const Icon(Icons.close))]),

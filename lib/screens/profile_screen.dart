@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../core/app_feedback.dart';
 import '../core/theme.dart';
 import '../services/app_state.dart';
@@ -52,6 +53,7 @@ class ProfileScreen extends StatelessWidget {
         const SizedBox(height: 14),
         _AppearanceCard(state: state),
         const SizedBox(height: 14),
+        const Padding(padding: EdgeInsets.fromLTRB(12, 16, 12, 8), child: Text('Ma lecture', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
         _Group(children: [
           _RowItem(icon: AppIcons.library, title: 'Ma bibliothèque', onTap: onLibrary),
           _RowItem(icon: Icons.folder_outlined, title: 'Mes collections', onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CollectionsScreen(state: state)))),
@@ -59,6 +61,7 @@ class ProfileScreen extends StatelessWidget {
           _RowItem(icon: AppIcons.bell, title: 'Notifications', badge: state.unreadNotifications, onTap: onNotifications),
         ]),
         const SizedBox(height: 14),
+        const Padding(padding: EdgeInsets.fromLTRB(12, 16, 12, 8), child: Text('Aide et assistance', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
         _Group(children: [
           _RowItem(icon: AppIcons.sparkles, title: 'Assistant d’étude', onTap: onAssistant),
           _RowItem(icon: AppIcons.lightbulb, title: 'Suggérer un document', onTap: () => _suggest(context)),
@@ -66,6 +69,7 @@ class ProfileScreen extends StatelessWidget {
           _RowItem(icon: AppIcons.heart, title: 'Faire un don', onTap: () => makeDonation(context, state)),
         ]),
         const SizedBox(height: 14),
+        const Padding(padding: EdgeInsets.fromLTRB(12, 16, 12, 8), child: Text('Informations', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
         _Group(children: [
           _RowItem(icon: AppIcons.info, title: 'À propos de Fasobiblio', onTap: () => information(context, InformationKind.about)),
           _RowItem(icon: AppIcons.fileText, title: 'Conditions d’utilisation', onTap: () => information(context, InformationKind.terms)),
@@ -118,7 +122,7 @@ class _ProfileHeader extends StatelessWidget {
           Positioned(left: 16, top: 16, child: Container(
             width: 64, height: 64, alignment: Alignment.center,
             decoration: BoxDecoration(color: const Color(0xEEFFFFFF), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.white, width: 2)),
-            child: Text(name.isNotEmpty ? name[0].toUpperCase() : 'F', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: AppColors.blueDeep)),
+            child: SvgPicture.asset('assets/illustrations/reader-avatar.svg', semanticsLabel: 'Avatar de lecteur'),
           )),
           Positioned(right: 14, top: 14, child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -225,11 +229,8 @@ class _Group extends StatelessWidget {
   const _Group({required this.children});
   final List<Widget> children;
   @override
-  Widget build(BuildContext context) => Container(
-    clipBehavior: Clip.antiAlias,
-    decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(18), border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: .4))),
-    child: Column(children: List.generate(children.length * 2 - 1, (i) => i.isEven ? children[i ~/ 2] : Divider(height: 1, indent: 48, color: Theme.of(context).dividerColor.withValues(alpha: .38)))),
-  );
+  Widget build(BuildContext context) => Column(children: List.generate(children.length * 2 - 1,
+    (i) => i.isEven ? children[i ~/ 2] : Divider(height: 1, indent: 48, color: Theme.of(context).dividerColor.withValues(alpha: .3))));
 }
 
 class _RowItem extends StatelessWidget {

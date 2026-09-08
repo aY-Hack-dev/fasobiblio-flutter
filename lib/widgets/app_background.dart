@@ -1,99 +1,89 @@
 import 'package:flutter/material.dart';
+
 import '../core/theme.dart';
 
 class AppBackground extends StatelessWidget {
   const AppBackground({super.key, required this.child});
   final Widget child;
-
   @override
-  Widget build(BuildContext context) {
-    final dark = Theme.of(context).brightness == Brightness.dark;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: dark
-              ? const [Color(0xFF09101F), Color(0xFF0E172A), Color(0xFF09101F)]
-              : const [Color(0xFFF5F8FF), Color(0xFFFFFFFF), Color(0xFFEEF4FF)],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
+  Widget build(BuildContext context) => ColoredBox(
+    color: Theme.of(context).brightness == Brightness.dark
+        ? const Color(0xFF0B1220)
+        : const Color(0xFFF9FBFF),
+    child: CustomPaint(
+      painter: _LibraryPatternPainter(
+        dark: Theme.of(context).brightness == Brightness.dark,
       ),
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          Positioned(
-            top: -130,
-            right: -100,
-            child: Container(
-              width: 300,
-              height: 300,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.blue.withValues(alpha: dark ? .10 : .08),
-              ),
-            ),
-          ),
-          Positioned(
-            top: 280,
-            left: -140,
-            child: Container(
-              width: 280,
-              height: 280,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.blueDeep.withValues(alpha: dark ? .08 : .05),
-              ),
-            ),
-          ),
-          CustomPaint(
-            painter: _LibraryPatternPainter(dark: dark),
-            child: child,
-          ),
-        ],
-      ),
-    );
-  }
+      child: child,
+    ),
+  );
 }
 
 class _LibraryPatternPainter extends CustomPainter {
   const _LibraryPatternPainter({required this.dark});
   final bool dark;
-
   @override
   void paint(Canvas canvas, Size size) {
-    final dotPaint = Paint()
-      ..color = (dark ? Colors.white : AppColors.blue).withValues(alpha: dark ? .026 : .032)
-      ..style = PaintingStyle.fill;
-    final linePaint = Paint()
-      ..color = (dark ? Colors.white : AppColors.blue).withValues(alpha: dark ? .026 : .03)
+    final paint = Paint()
+      ..color = (dark ? const Color(0xFFA9B9D2) : AppColors.blue).withValues(
+        alpha: dark ? .065 : .045,
+      )
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.1
-      ..strokeCap = StrokeCap.round;
-
-    const step = 96.0;
-    for (double y = 42; y < size.height; y += step) {
-      for (double x = 28; x < size.width; x += step) {
-        final shiftedX = x + (((y / step).floor().isOdd) ? step / 2 : 0);
-        if (shiftedX < size.width) canvas.drawCircle(Offset(shiftedX, y), 1.5, dotPaint);
-      }
-    }
-
-    for (double y = 150; y < size.height; y += 250) {
-      for (double x = 68; x < size.width; x += 270) {
-        final path = Path()
-          ..moveTo(x - 17, y - 7)
-          ..quadraticBezierTo(x - 8, y - 10, x, y - 2)
-          ..quadraticBezierTo(x + 8, y - 10, x + 17, y - 7)
-          ..lineTo(x + 17, y + 8)
-          ..quadraticBezierTo(x + 8, y + 5, x, y + 12)
-          ..quadraticBezierTo(x - 8, y + 5, x - 17, y + 8)
-          ..close();
-        canvas.drawPath(path, linePaint);
-        canvas.drawLine(Offset(x, y - 2), Offset(x, y + 12), linePaint);
+      ..strokeWidth = 1.2
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    for (var row = 0; row * 165 < size.height; row++) {
+      for (var col = 0; col * 150 < size.width; col++) {
+        canvas.save();
+        canvas.translate(col * 150.0 + (row.isOdd ? 80 : 24), row * 165.0 + 40);
+        canvas.rotate(row.isOdd ? -.18 : .12);
+        switch ((row + col) % 3) {
+          case 0:
+            canvas.drawPath(
+              Path()
+                ..moveTo(0, 5)
+                ..quadraticBezierTo(10, -1, 20, 5)
+                ..quadraticBezierTo(30, -1, 40, 5)
+                ..lineTo(40, 32)
+                ..quadraticBezierTo(30, 26, 20, 32)
+                ..quadraticBezierTo(10, 26, 0, 32)
+                ..close(),
+              paint,
+            );
+            canvas.drawLine(const Offset(20, 5), const Offset(20, 32), paint);
+          case 1:
+            canvas.drawPath(
+              Path()
+                ..moveTo(5, 0)
+                ..lineTo(31, 0)
+                ..lineTo(31, 38)
+                ..lineTo(18, 29)
+                ..lineTo(5, 38)
+                ..close(),
+              paint,
+            );
+          default:
+            canvas.drawRRect(
+              RRect.fromRectAndRadius(
+                const Rect.fromLTWH(0, 0, 30, 40),
+                const Radius.circular(3),
+              ),
+              paint,
+            );
+            for (var y = 10; y <= 28; y += 9) {
+              canvas.drawLine(
+                Offset(7, y.toDouble()),
+                Offset(23, y.toDouble()),
+                paint,
+              );
+            }
+        }
+        canvas.restore();
       }
     }
   }
 
   @override
-  bool shouldRepaint(covariant _LibraryPatternPainter oldDelegate) => oldDelegate.dark != dark;
+  bool shouldRepaint(covariant _LibraryPatternPainter oldDelegate) =>
+      dark != oldDelegate.dark;
 }

@@ -23,8 +23,14 @@ android {
         versionName = flutter.versionName
     }
 
+    packaging {
+        jniLibs { useLegacyPackaging = true }
+    }
+
     buildTypes {
         release {
+            isMinifyEnabled = true
+            isShrinkResources = true
             signingConfig = signingConfigs.getByName("debug")
         }
     }
