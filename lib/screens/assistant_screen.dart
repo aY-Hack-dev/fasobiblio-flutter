@@ -86,10 +86,10 @@ class _AssistantScreenState extends State<AssistantScreen> {
       });
       var submitted = false;
       await speech.listen(
-        localeId: french.isEmpty ? null : french.first.localeId,
-        listenFor: const Duration(seconds: 50),
-        pauseFor: const Duration(seconds: 3),
         listenOptions: SpeechListenOptions(
+          localeId: french.isEmpty ? null : french.first.localeId,
+          listenFor: const Duration(seconds: 50),
+          pauseFor: const Duration(seconds: 3),
           partialResults: true,
           listenMode: ListenMode.dictation,
           cancelOnError: true,

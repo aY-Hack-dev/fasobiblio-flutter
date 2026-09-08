@@ -50,6 +50,16 @@ class AppState extends ChangeNotifier {
     ]);
     _extrasLoading = false;
   }
+  Future<void> refreshNotifications() async {
+    final uid = session?.uid;
+    try {
+      final items = await api.notifications();
+      if (_disposed || session?.uid != uid) return;
+      notifications = items.where((item) => item.uid.isEmpty || item.uid == uid).toList();
+      notifyListeners();
+      await store.saveJson(LocalStore.notificationsKey, notifications.map((item) => item.toJson()).toList());
+    } catch (_) {}
+  }
   Future<void> toggleFavorite(String id) async{favorites.contains(id)?favorites.remove(id):favorites.add(id);notifyListeners();await store.save(LocalStore.favoritesKey,favorites);}
   Future<void> toggleLater(String id) async{later.contains(id)?later.remove(id):later.add(id);notifyListeners();await store.save(LocalStore.laterKey,later);}
   Future<void> markDocumentOpened(String id) async{if(id.isEmpty)return;lastOpenedBookId=id;notifyListeners();await store.saveJson(LocalStore.lastOpenedDocumentKey,{'id':id,'openedAt':DateTime.now().toIso8601String()});}

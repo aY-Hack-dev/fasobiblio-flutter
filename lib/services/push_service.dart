@@ -37,6 +37,7 @@ class PushService extends ChangeNotifier {
   AppState? state;
   GlobalKey<NavigatorState>? navigator;
   String? token, bindingUid;
+  Map<String, dynamic>? pendingOpen;
   Future<void>? setup;
   Future<void> initialize(AppState value, GlobalKey<NavigatorState> key) =>
       setup ??= _initialize(value, key);
@@ -79,6 +80,7 @@ class PushService extends ChangeNotifier {
                   message.data['uid'] != state?.session?.uid)) {
             return;
           }
+          state?.refreshNotifications();
           final category = message.data['category'] ?? 'admin';
           if (preferences[category] == false) return;
           local.show(
@@ -125,6 +127,14 @@ class PushService extends ChangeNotifier {
   }
 
   Future<void> _considerPrompt() async {
+    if (pendingOpen != null &&
+        state?.loading == false &&
+        (pendingOpen!['uid'] == null ||
+            pendingOpen!['uid'] == state?.session?.uid)) {
+      final data = pendingOpen!;
+      pendingOpen = null;
+      WidgetsBinding.instance.addPostFrameCallback((_) => open(data));
+    }
     final uid = state?.session?.uid;
     if (available && enabled && uid != null && uid != bindingUid) {
       bindingUid = uid;
@@ -270,7 +280,10 @@ class PushService extends ChangeNotifier {
     final current = state, nav = navigator?.currentState;
     if (current == null || nav == null) return;
     final uid = data['uid'];
-    if (uid != null && uid != current.session?.uid) return;
+    if (current.loading || (uid != null && uid != current.session?.uid)) {
+      pendingOpen = data;
+      return;
+    }
     if (data['summaryId'] is String) {
       nav.push(
         MaterialPageRoute(

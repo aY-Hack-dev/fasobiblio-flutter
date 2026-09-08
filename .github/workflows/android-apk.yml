@@ -21,6 +21,15 @@ jobs:
           flutter-version: '3.47.2'
           channel: stable
           cache: true
+      - name: Préparer Firebase et la signature Android
+        if: github.event_name != 'pull_request'
+        env:
+          FIREBASE_GOOGLE_SERVICES_JSON: ${{ secrets.FIREBASE_GOOGLE_SERVICES_JSON }}
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: python3 scripts/prepare_android_config.py
       - name: Installer les dépendances
         run: flutter pub get
       - name: Vérifier le code

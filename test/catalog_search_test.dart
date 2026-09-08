@@ -20,6 +20,12 @@ void main() {
       'sea',
     );
   });
+  test('finds a distinctive fragment of a title', () {
+    expect(
+      searchCatalog([absence, sea], 'Explique la mer').first.book.id,
+      'sea',
+    );
+  });
   test('tolerates a spelling error', () {
     expect(
       searchCatalog([absence, sea], 'Explique Absance').first.book.id,

@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
@@ -5,6 +7,10 @@ plugins {
 }
 
 if (file("google-services.json").exists()) { apply(plugin = "com.google.gms.google-services") }
+
+val signingProperties = Properties()
+val signingFile = rootProject.file("key.properties")
+if (signingFile.exists()) { signingFile.inputStream().use { signingProperties.load(it) } }
 
 android {
     namespace = "com.fasobiblio.app"
@@ -30,11 +36,22 @@ android {
         jniLibs { useLegacyPackaging = true }
     }
 
+    signingConfigs {
+        if (signingFile.exists()) {
+            create("release") {
+                storeFile = rootProject.file(signingProperties.getProperty("storeFile"))
+                storePassword = signingProperties.getProperty("storePassword")
+                keyAlias = signingProperties.getProperty("keyAlias")
+                keyPassword = signingProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName(if (signingFile.exists()) "release" else "debug")
         }
     }
 }
