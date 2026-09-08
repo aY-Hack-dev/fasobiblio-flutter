@@ -11,9 +11,10 @@ class AudioReaderScreen extends StatefulWidget {
     required this.path,
     required this.title,
     required this.id,
+    required this.account,
     this.page = 1,
   });
-  final String path, title, id;
+  final String path, title, id, account;
   final int page;
   @override
   State<AudioReaderScreen> createState() => _AudioReaderScreenState();
@@ -28,7 +29,7 @@ class _AudioReaderScreenState extends State<AudioReaderScreen> {
   double rate = .5;
   String text = '', error = '';
   int generation = 0;
-  String get key => 'reader.audio.${widget.id}';
+  String get key => 'reader.audio.${widget.account}.${widget.id}';
   @override
   void initState() {
     super.initState();
@@ -48,7 +49,13 @@ class _AudioReaderScreenState extends State<AudioReaderScreen> {
       ) {
         spoken = start;
       });
-      document = await PdfDocument.openFile(widget.path);
+      if (!mounted) return;
+      final opened = await PdfDocument.openFile(widget.path);
+      if (!mounted) {
+        await opened.dispose();
+        return;
+      }
+      document = opened;
       final saved = await store.loadJson(key);
       page = saved is Map
           ? (saved['page'] as int? ?? widget.page)
@@ -80,8 +87,9 @@ class _AudioReaderScreenState extends State<AudioReaderScreen> {
       store.saveJson(key, {'page': page, 'offset': offset});
   Future<void> stop() async {
     generation++;
+    final position = spoken;
     await tts.stop();
-    offset = (offset + spoken).clamp(0, text.length);
+    offset = (offset + position).clamp(0, text.length);
     spoken = 0;
     await save();
     if (mounted) setState(() => playing = false);
@@ -101,7 +109,7 @@ class _AudioReaderScreenState extends State<AudioReaderScreen> {
       while (mounted && run == generation && page <= document!.pages.length) {
         if (text.isEmpty) {
           setState(
-            () => error = 'Cette page est scannée ou sans texte. Passez à la suivante ou utilisez l’extraction serveur.',
+            () => error = 'Cette page est scannée ou sans texte. Passez à la page suivante. La lecture audio nécessite du texte reconnu.',
           );
           break;
         }

@@ -1,3 +1,5 @@
+import 'server_summary_screen.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -75,6 +77,16 @@ class ProfileScreen extends StatelessWidget {
         ),
         _Group(
           children: [
+            _RowItem(
+              icon: Icons.summarize_outlined,
+              title: 'Mes résumés',
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => SummaryLibraryScreen(state: state),
+                ),
+              ),
+            ),
             _RowItem(
               icon: Icons.history,
               title: 'Mes lectures',

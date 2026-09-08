@@ -151,7 +151,7 @@ class _AssistantScreenState extends State<AssistantScreen> {
           ),
         );
         if (book == null) {
-          throw Exception('Choisissez un document pour continuer.');
+          throw UserMessage('Choisissez un document pour continuer.');
         }
       }
     }
@@ -167,7 +167,7 @@ class _AssistantScreenState extends State<AssistantScreen> {
     ).firstMatch(question);
     if (book == null) {
       if (match != null) {
-        throw Exception('Précisez le titre du document à consulter.');
+        throw UserMessage('Précisez le titre du document à consulter.');
       }
       return selectedContext ?? widget.documentContext;
     }
@@ -190,12 +190,12 @@ class _AssistantScreenState extends State<AssistantScreen> {
     final pdf = await PdfDocument.openFile(path);
     try {
       if (page < 1 || page > pdf.pages.length) {
-        throw Exception('Ce document contient ${pdf.pages.length} pages.');
+        throw UserMessage('Ce document contient ${pdf.pages.length} pages.');
       }
       final extracted =
           (await pdf.pages[page - 1].loadText())?.fullText.trim() ?? '';
       if (extracted.isEmpty) {
-        throw Exception(
+        throw UserMessage(
           'Cette page est scannée : son texte doit être reconnu avant de pouvoir l’expliquer.',
         );
       }

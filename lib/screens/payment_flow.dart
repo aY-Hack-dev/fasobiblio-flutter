@@ -102,6 +102,14 @@ Future<T?> _startPayment<T>(BuildContext context, Future<T> Function() action, {
   finally { if (context.mounted) Navigator.of(context, rootNavigator: true).pop(); }
 }
 
+Future<String> _paymentStatus(AppState state, String token) async {
+  if (token.isEmpty) return 'unknown';
+  try {
+    final result = await state.api.authenticated('/api/payment-status/${Uri.encodeComponent(token)}');
+    return result is Map ? '${result['status'] ?? 'unknown'}' : 'unknown';
+  } catch (_) { return 'unknown'; }
+}
+
 Future<bool> purchaseDocument(BuildContext context, AppState state, Book book) async {
   if (!requireInternet(context, state)) return false;
   if (!await _ensureAccount(context, state) || !context.mounted) return false;
@@ -116,7 +124,7 @@ Future<bool> purchaseDocument(BuildContext context, AppState state, Book book) a
     showDialog<void>(context: context, barrierDismissible: false, builder: (_) => const AlertDialog(icon: CircularProgressIndicator(), title: Text('Vérification du paiement'), content: Text('Activation de votre document en cours…')));
     for (var attempt = 0; attempt < 8 && !unlocked; attempt++) {
       if (attempt > 0) await Future<void>.delayed(const Duration(seconds: 2));
-      try { unlocked = await state.api.checkAccess(book.id); } catch (_) {}
+      try { unlocked = await state.api.checkAccess(book.id).timeout(const Duration(seconds: 5)); } catch (_) {}
     }
     if (context.mounted) Navigator.of(context, rootNavigator: true).pop();
     await state.refreshAccount();
@@ -147,7 +155,7 @@ Future<bool> purchaseSubscription(BuildContext context, AppState state, Map<Stri
     showDialog<void>(context: context, barrierDismissible: false, builder: (_) => const AlertDialog(icon: CircularProgressIndicator(), title: Text('Activation Premium'), content: Text('Confirmation de votre abonnement en cours…')));
     for (var attempt = 0; attempt < 8 && subscription == null; attempt++) {
       if (attempt > 0) await Future<void>.delayed(const Duration(seconds: 2));
-      try { subscription = await state.api.mySubscription(); } catch (_) {}
+      try { subscription = await state.api.mySubscription().timeout(const Duration(seconds: 5)); } catch (_) {}
     }
     if (context.mounted) Navigator.of(context, rootNavigator: true).pop();
     await state.refreshAccount();
@@ -183,7 +191,7 @@ Future<bool> makeDonation(BuildContext context, AppState state) async {
         setState(() { busy = true; error = null; });
         try {
           final result = await state.api.startDonationPayment(amount: amount, phone: digits, pseudo: state.session!.pseudo);
-          if (sheetContext.mounted) Navigator.pop(sheetContext, {'url': result['url'] ?? '', 'amount': amount});
+          if (sheetContext.mounted) Navigator.pop(sheetContext, {'url': result['url'] ?? '', 'token': result['token'] ?? '', 'amount': amount});
         } catch (e) {
           if (sheetContext.mounted) setState(() { busy = false; error = friendlyFailure(e, action: 'démarrer le don'); });
         }
@@ -248,6 +256,8 @@ Future<bool> makeDonation(BuildContext context, AppState state) async {
   final url = '${payment['url'] ?? ''}';
   if (url.isEmpty) { showToast(context, 'Lien de paiement indisponible.'); return false; }
   final returned = await Navigator.of(context).push<bool>(MaterialPageRoute(builder: (_) => PaymentWebViewScreen(url: url))) == true;
-  if (returned && context.mounted) showToast(context, 'Votre demande de don a été transmise. La confirmation du paiement reste nécessaire.');
-  return returned;
+  if (!returned) return false;
+  final status = await _paymentStatus(state, '${payment['token'] ?? ''}');
+  if (context.mounted) showToast(context, status == 'paid' ? 'Don confirmé. Merci pour votre soutien à Fasobiblio ❤️' : status == 'failed' ? 'Le paiement du don n’a pas abouti.' : 'Votre don n’est pas encore confirmé.', success: status == 'paid');
+  return status == 'paid';
 }

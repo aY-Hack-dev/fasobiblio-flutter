@@ -36,7 +36,14 @@ class _PdfReaderScreenState extends State<PdfReaderScreen> {
   Timer? _saveTimer;
   String get id => widget.documentId ?? widget.path.split('/').last;
   String get pageKey => 'reader.page.$id';
-  String get account => AppScope.of(context).assistantAccountKey;
+  String account = 'guest';
+  Future<void> _progressSave = Future.value();
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    account = AppScope.of(context).assistantAccountKey;
+  }
+
   Future<int> _load() async {
     final page =
         await store.loadJson(pageKey) ??
@@ -46,28 +53,35 @@ class _PdfReaderScreenState extends State<PdfReaderScreen> {
     return currentPage;
   }
 
-  Future<void> saveProgress() async {
-    try {
-      await store.saveJson(pageKey, currentPage);
-      final old = await store.loadJson('reading.history.$account');
-      final history = old is Map
-          ? Map<String, dynamic>.from(old)
-          : <String, dynamic>{};
-      history[id] = {
-        'id': id,
-        'title': widget.title,
-        'path': widget.path,
-        'page': currentPage,
-        'total': total,
-        'updatedAt': DateTime.now().millisecondsSinceEpoch,
-      };
-      await store.saveJson('reading.history.$account', history);
-    } catch (_) {}
+  Future<void> saveProgress() {
+    final historyKey = 'reading.history.$account';
+    final page = currentPage;
+    final entry = {
+      'id': id,
+      'title': widget.title,
+      'path': widget.path,
+      'page': page,
+      'total': total,
+      'updatedAt': DateTime.now().millisecondsSinceEpoch,
+    };
+    _progressSave = _progressSave
+        .then((_) async {
+          await store.saveJson(pageKey, page);
+          final old = await store.loadJson(historyKey);
+          final history = old is Map
+              ? Map<String, dynamic>.from(old)
+              : <String, dynamic>{};
+          history[id] = entry;
+          await store.saveJson(historyKey, history);
+        })
+        .catchError((Object _) {});
+    return _progressSave;
   }
 
   @override
   void dispose() {
     _saveTimer?.cancel();
+    if (total > 0) saveProgress();
     super.dispose();
   }
 
@@ -337,6 +351,7 @@ class _PdfReaderScreenState extends State<PdfReaderScreen> {
                             path: widget.path,
                             title: widget.title,
                             id: id,
+                            account: account,
                             page: currentPage,
                           ),
                         ),
