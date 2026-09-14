@@ -101,6 +101,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
+      showDragHandle: true,
       builder: (_) => const _ReviewSheet(),
     );
     if (result == null || !mounted) return;
@@ -283,20 +284,60 @@ class _ReviewSheetState extends State<_ReviewSheet> {
   @override
   void dispose() { controller.dispose(); super.dispose(); }
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: EdgeInsets.fromLTRB(20, 14, 20, MediaQuery.viewInsetsOf(context).bottom + 20),
-    child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-      const Center(child: SizedBox(width: 42, child: Divider(thickness: 4))),
-      const SizedBox(height: 12),
-      Text('Votre avis', style: Theme.of(context).textTheme.titleLarge),
-      const SizedBox(height: 7),
-      const Text('Il sera publié après validation par Fasobiblio.', style: TextStyle(color: AppColors.muted)),
-      const SizedBox(height: 15),
-      Row(mainAxisAlignment: MainAxisAlignment.center, children: List.generate(5, (index) => IconButton(onPressed: () => setState(() => stars = index + 1), icon: Icon(index < stars ? AppIcons.star : AppIcons.star, color: const Color(0xFFF4B740), size: 32)))),
-      const SizedBox(height: 8),
-      TextField(controller: controller, minLines: 3, maxLines: 5, maxLength: 500, decoration: const InputDecoration(labelText: 'Votre commentaire', hintText: 'Ce que vous avez pensé du document…')),
-      const SizedBox(height: 12),
-      SizedBox(width: double.infinity, child: FilledButton.icon(onPressed: () => Navigator.pop(context, _ReviewDraft(stars, controller.text.trim())), icon: const Icon(AppIcons.send), label: const Text('Envoyer mon avis'))),
-    ]),
+  Widget build(BuildContext context) => AnimatedPadding(
+    duration: const Duration(milliseconds: 180),
+    curve: Curves.easeOut,
+    padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+    child: SafeArea(
+      top: false,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Votre avis', style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 7),
+            const Text('Il sera publié après validation par Fasobiblio.', style: TextStyle(color: AppColors.muted)),
+            const SizedBox(height: 15),
+            SizedBox(
+              width: double.infinity,
+              child: Wrap(
+              alignment: WrapAlignment.center,
+              children: List.generate(5, (index) => Semantics(
+                selected: index < stars,
+                child: IconButton(
+                  tooltip: '${index + 1} sur 5',
+                  onPressed: () => setState(() => stars = index + 1),
+                  icon: Icon(
+                    index < stars ? Icons.star_rounded : Icons.star_outline_rounded,
+                    color: const Color(0xFFF4B740),
+                    size: 32,
+                  ),
+                ),
+              )),
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: controller,
+              minLines: 3,
+              maxLines: 5,
+              maxLength: 500,
+              decoration: const InputDecoration(labelText: 'Votre commentaire', hintText: 'Ce que vous avez pensé du document…'),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: () => Navigator.pop(context, _ReviewDraft(stars, controller.text.trim())),
+                icon: const Icon(AppIcons.send),
+                label: const Text('Envoyer mon avis'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
   );
 }
