@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../core/theme.dart';
 import '../services/app_state.dart';
 
@@ -33,19 +34,32 @@ class _InformationScreenState extends State<InformationScreen> {
     InformationKind.downloads => null,
   };
 
-  String get cacheKey => 'fasobiblio.flutter.${firebasePath?.replaceAll('/', '.') ?? 'downloads'}';
+  String get cacheKey =>
+      'fasobiblio.flutter.${firebasePath?.replaceAll('/', '.') ?? 'downloads'}';
 
   @override
-  void initState() { super.initState(); _load(); }
+  void initState() {
+    super.initState();
+    _load();
+  }
 
   Future<void> _load({bool retry = false}) async {
     if (mounted) setState(() => loading = sections.isEmpty);
     if (widget.kind == InformationKind.downloads) {
       setState(() {
         sections = const [
-          ('Lecture intégrée', 'Quand vous ouvrez un PDF, il est conservé dans l’espace privé de l’application et reste lisible hors connexion.'),
-          ('Dossier public', 'Le bouton Télécharger crée une copie dans Download/Fasobiblio. Vous pouvez ensuite la retrouver avec l’application Fichiers de votre téléphone.'),
-          ('Mises à jour', 'Une copie déjà enregistrée peut rester sur le téléphone même si une nouvelle version du document est publiée en ligne.'),
+          (
+            'Lecture intégrée',
+            'Quand vous ouvrez un PDF, il est conservé dans l’espace privé de l’application et reste lisible hors connexion.',
+          ),
+          (
+            'Dossier public',
+            'Le bouton Télécharger crée une copie dans Download/Fasobiblio. Vous pouvez ensuite la retrouver avec l’application Fichiers de votre téléphone.',
+          ),
+          (
+            'Mises à jour',
+            'Une copie déjà enregistrée peut rester sur le téléphone même si une nouvelle version du document est publiée en ligne.',
+          ),
         ];
         loading = false;
       });
@@ -53,7 +67,12 @@ class _InformationScreenState extends State<InformationScreen> {
     }
     final cached = await widget.state.store.loadJson(cacheKey);
     final cachedSections = _parseSections(cached);
-    if (mounted && cachedSections.isNotEmpty) setState(() { sections = cachedSections; loading = false; });
+    if (mounted && cachedSections.isNotEmpty) {
+      setState(() {
+        sections = cachedSections;
+        loading = false;
+      });
+    }
     if ((!widget.state.offline || retry) && firebasePath != null) {
       try {
         final remote = await widget.state.api.setting(firebasePath!);
@@ -70,8 +89,16 @@ class _InformationScreenState extends State<InformationScreen> {
   List<(String, String)> _parseSections(dynamic value) {
     if (value is! Map) return const [];
     final raw = value['sections'];
-    final items = raw is List ? raw : raw is Map ? raw.values.toList() : const [];
-    return items.whereType<Map>().map((item) => (_localized(item['title']), _localized(item['content']))).where((item) => item.$1.isNotEmpty || item.$2.isNotEmpty).toList();
+    final items = raw is List
+        ? raw
+        : raw is Map
+        ? raw.values.toList()
+        : const [];
+    return items
+        .whereType<Map>()
+        .map((item) => (_localized(item['title']), _localized(item['content'])))
+        .where((item) => item.$1.isNotEmpty || item.$2.isNotEmpty)
+        .toList();
   }
 
   String _localized(dynamic value) {
@@ -80,37 +107,68 @@ class _InformationScreenState extends State<InformationScreen> {
       final french = value['fr'];
       if (french is String && french.trim().isNotEmpty) return french.trim();
       for (final candidate in value.values) {
-        if (candidate is String && candidate.trim().isNotEmpty) return candidate.trim();
+        if (candidate is String && candidate.trim().isNotEmpty) {
+          return candidate.trim();
+        }
       }
     }
     return '';
   }
+
+  List<(String, String)> get displayedSections => [
+    if (widget.kind == InformationKind.about) ...const [
+      ('Notre histoire', 'Fasobiblio a été lancé le 12 juin 2026.'),
+      ('Le créateur', 'Fasobiblio a été créé par YAMÉOGO S W Abimaël.'),
+    ],
+    ...sections,
+  ];
 
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: Text(title)),
     body: loading
         ? const Center(child: CircularProgressIndicator())
-        : sections.isEmpty
-            ? _UnavailableContent(onRetry: () => _load(retry: true))
-            : ListView(
-                padding: const EdgeInsets.fromLTRB(18, 18, 18, 38),
-                children: sections.map((section) => Container(
-                  margin: const EdgeInsets.only(bottom: 13),
-                  padding: const EdgeInsets.all(19),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surface,
-                    border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: .5)),
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: const [BoxShadow(color: Color(0x0B0B3B78), blurRadius: 16, offset: Offset(0, 7))],
-                  ),
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    if (section.$1.isNotEmpty) Text(section.$1, style: AppTypography.display(size: 18, weight: FontWeight.w900, color: Theme.of(context).colorScheme.onSurface)),
-                    if (section.$1.isNotEmpty && section.$2.isNotEmpty) const SizedBox(height: 9),
-                    if (section.$2.isNotEmpty) Text(section.$2, style: const TextStyle(height: 1.62, color: AppColors.muted)),
-                  ]),
-                )).toList(),
+        : displayedSections.isEmpty
+        ? _UnavailableContent(onRetry: () => _load(retry: true))
+        : SafeArea(
+            top: false,
+            child: ListView.separated(
+              padding: const EdgeInsets.fromLTRB(22, 24, 22, 32),
+              itemCount: displayedSections.length,
+              separatorBuilder: (context, index) => Divider(
+                height: 36,
+                thickness: .5,
+                color: Theme.of(context).dividerColor,
               ),
+              itemBuilder: (context, index) {
+                final section = displayedSections[index];
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (section.$1.isNotEmpty)
+                      Text(
+                        section.$1,
+                        style: AppTypography.display(
+                          size: 18,
+                          weight: FontWeight.w900,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                    if (section.$1.isNotEmpty && section.$2.isNotEmpty)
+                      const SizedBox(height: 10),
+                    if (section.$2.isNotEmpty)
+                      Text(
+                        section.$2,
+                        style: TextStyle(
+                          height: 1.62,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
+          ),
   );
 }
 
@@ -121,15 +179,35 @@ class _UnavailableContent extends StatelessWidget {
   Widget build(BuildContext context) => Center(
     child: Padding(
       padding: const EdgeInsets.all(34),
-      child: Column(mainAxisSize: MainAxisSize.min, children: [
-        const CircleAvatar(radius: 30, backgroundColor: AppColors.sky, foregroundColor: AppColors.blue, child: Icon(AppIcons.cloudSync)),
-        const SizedBox(height: 15),
-        Text('Chargement impossible', textAlign: TextAlign.center, style: AppTypography.display(size: 19, weight: FontWeight.w900, color: Theme.of(context).colorScheme.onSurface)),
-        const SizedBox(height: 8),
-        const Text('Les informations sont indisponibles. Vérifiez votre connexion puis réessayez.', textAlign: TextAlign.center, style: TextStyle(height: 1.5, color: AppColors.muted)),
-        const SizedBox(height: 16),
-        FilledButton(onPressed: onRetry, child: const Text('Réessayer')),
-      ]),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const CircleAvatar(
+            radius: 30,
+            backgroundColor: AppColors.sky,
+            foregroundColor: AppColors.blue,
+            child: Icon(AppIcons.cloudSync),
+          ),
+          const SizedBox(height: 15),
+          Text(
+            'Chargement impossible',
+            textAlign: TextAlign.center,
+            style: AppTypography.display(
+              size: 19,
+              weight: FontWeight.w900,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Les informations sont indisponibles. Vérifiez votre connexion puis réessayez.',
+            textAlign: TextAlign.center,
+            style: TextStyle(height: 1.5, color: AppColors.muted),
+          ),
+          const SizedBox(height: 16),
+          FilledButton(onPressed: onRetry, child: const Text('Réessayer')),
+        ],
+      ),
     ),
   );
 }

@@ -1,3 +1,5 @@
+import 'server_summary_screen.dart';
+import '../core/app_feedback.dart';
 import 'package:flutter/material.dart';
 import 'package:pdfrx/pdfrx.dart';
 import '../services/app_state.dart';
@@ -16,7 +18,7 @@ class _DocumentAssistantSheetState extends State<DocumentAssistantSheet>{
   String get key=>'${widget.state.assistantAccountKey}.${widget.id}';
   DocumentSummary get job=>DocumentSummary.forDocument(key,points);
   @override void initState(){super.initState();job.restore();}
-  Future<void> explain({bool question=false})async{
+  Future<void> explain({bool question=false,String task='explain'})async{
     setState((){busy=true;error=null;});PdfDocument? document;
     try{
       document=await PdfDocument.openFile(widget.path);
@@ -26,21 +28,26 @@ class _DocumentAssistantSheetState extends State<DocumentAssistantSheet>{
       final excerpt='Page $page :\n${text.length>27000?text.substring(0,27000):text}';
       if(!mounted)return;
       if(question){await Navigator.push(context,MaterialPageRoute(builder:(_)=>AssistantScreen(state:widget.state,documentTitle:widget.title,documentId:widget.id,documentContext:excerpt)));}
-      else {final answer=await widget.state.api.assistant('Explique cette page simplement.',documentContext:excerpt,task:'explain');if(mounted)setState(()=>explanation=answer);}
-    }catch(e){if(mounted)setState(()=>error='$e');}finally{await document?.dispose();if(mounted)setState(()=>busy=false);}
+      else {final answer=await widget.state.api.assistant(task=='quiz'?'Crée 3 questions de compréhension sur cette page, puis leurs réponses expliquées. Cite la page dans les réponses.':task=='sheet'?'Crée une fiche de révision de cette page : idées essentielles, notions à retenir et questions pour réviser. Cite la page.':'Explique cette page simplement.',documentContext:excerpt,task:task=='explain'?'explain':'question');if(mounted)setState(()=>explanation=answer);}
+    }catch(e){if(mounted)setState(()=>error=friendlyFailure(e, action: 'préparer ce contenu'));}finally{await document?.dispose();if(mounted)setState(()=>busy=false);}
   }
   @override Widget build(BuildContext context)=>SafeArea(child:Padding(padding:const EdgeInsets.all(20),child:AnimatedBuilder(animation:job,builder:(context,_)=>ListView(children:[
     Row(children:[Expanded(child:Text('Assistant du document',style:Theme.of(context).textTheme.titleLarge)),IconButton(onPressed:()=>Navigator.pop(context),icon:const Icon(Icons.close))]),
     Text(widget.title,style:Theme.of(context).textTheme.titleMedium),const SizedBox(height:18),
     SegmentedButton<int>(segments:const[ButtonSegment(value:5,label:Text('5 points')),ButtonSegment(value:10,label:Text('10 points'))],selected:{points},onSelectionChanged:(v){setState(()=>points=v.first);job.restore();}),
     const SizedBox(height:12),
-    FilledButton.icon(onPressed:job.running?null:()=>job.run(widget.path,widget.state.api,points),icon:const Icon(Icons.auto_awesome),label:Text(job.result!=null?'Résumé enregistré':job.page>0?'Reprendre le résumé':'Résumer tout le document')),
+    FilledButton.icon(onPressed:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>ServerSummaryScreen(state:widget.state,docId:widget.id,title:widget.title,points:points))),icon:const Icon(Icons.cloud_outlined),label:const Text('Résumer en arrière-plan')),
+    const SizedBox(height:8),
+    OutlinedButton.icon(onPressed:job.running?null:()=>job.run(widget.path,widget.state.api,points),icon:const Icon(Icons.auto_awesome),label:Text(job.result!=null?'Résumé enregistré':job.page>0?'Reprendre le résumé':'Résumer sur cet appareil')),
+    const Text('Le traitement sur cet appareil nécessite de garder l’application ouverte.',style:TextStyle(fontSize:12)),
     if(job.running)...[const SizedBox(height:10),LinearProgressIndicator(value:job.total==0?null:job.page/job.total),Text('${job.page}/${job.total} pages parcourues'),TextButton(onPressed:job.pause,child:const Text('Mettre en pause'))],
     if(job.error!=null)Text(job.error!,style:TextStyle(color:Theme.of(context).colorScheme.error)),
     if(job.result!=null)AssistantMessageBody(text:job.result!),
     const Divider(height:28),
     OutlinedButton.icon(onPressed:busy?null:()=>explain(),icon:const Icon(Icons.description_outlined),label:Text('Expliquer la page ${widget.page}')),
     OutlinedButton.icon(onPressed:busy?null:()=>explain(question:true),icon:const Icon(Icons.chat_bubble_outline),label:const Text('Poser une question')),
+    OutlinedButton.icon(onPressed:busy?null:()=>explain(task:'quiz'),icon:const Icon(Icons.quiz_outlined),label:const Text('Quiz sur cette page')),
+    OutlinedButton.icon(onPressed:busy?null:()=>explain(task:'sheet'),icon:const Icon(Icons.school_outlined),label:const Text('Fiche de révision')),
     if(busy)const LinearProgressIndicator(),if(error!=null)Text(error!),if(explanation!=null)AssistantMessageBody(text:explanation!),
   ]))));
 }

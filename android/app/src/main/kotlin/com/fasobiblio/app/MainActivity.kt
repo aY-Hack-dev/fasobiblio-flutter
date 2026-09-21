@@ -1,6 +1,8 @@
 package com.fasobiblio.app
 
 import android.Manifest
+import android.content.Intent
+import android.net.Uri
 import android.content.ContentValues
 import android.content.pm.PackageManager
 import android.media.MediaScannerConnection
@@ -21,6 +23,28 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "com.fasobiblio.app/external").setMethodCallHandler { call, result ->
+            if (call.method != "open") {
+                result.notImplemented()
+                return@setMethodCallHandler
+            }
+            val uri = Uri.parse(call.argument<String>("url") ?: "")
+            val action = when (uri.scheme) {
+                "https" -> Intent.ACTION_VIEW
+                "tel" -> Intent.ACTION_DIAL
+                else -> null
+            }
+            if (action == null) {
+                result.error("INVALID_URL", "Lien non pris en charge.", null)
+                return@setMethodCallHandler
+            }
+            try {
+                startActivity(Intent(action, uri))
+                result.success(true)
+            } catch (error: Exception) {
+                result.error("OPEN_FAILED", "Aucune application ne peut ouvrir ce lien.", null)
+            }
+        }
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, channelName).setMethodCallHandler { call, result ->
             if (call.method != "saveToDownloads") {
                 result.notImplemented()

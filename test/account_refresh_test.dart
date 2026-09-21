@@ -95,7 +95,9 @@ void main() {
     await tester.tap(find.text('Nouveau document'));
     await tester.pumpAndSettle();
     expect(state.unreadNotifications, 0);
-    Navigator.of(tester.element(find.byType(SelectableText))).pop();
+    expect(find.byType(SelectableText), findsOneWidget);
+    expect(find.byType(BottomSheet), findsNothing);
+    await tester.tap(find.text('Nouveau document'));
     await tester.pumpAndSettle();
     expect(find.text('Vous êtes à jour !'), findsOneWidget);
     expect(tester.takeException(), isNull);

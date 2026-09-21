@@ -1,3 +1,4 @@
+import '../core/app_feedback.dart';
 import 'package:flutter/foundation.dart';
 import 'package:pdfrx/pdfrx.dart';
 import 'fasobiblio_api.dart';
@@ -63,6 +64,6 @@ class DocumentSummary extends ChangeNotifier {
       result=await request(api,'Couverture : $total pages parcourues. Pages sans texte extractible : ${missing.isEmpty?'aucune':missing.join(', ')}.\n${reduced.join('\n\n')}',task:'summary',points:points);
       if(missing.isNotEmpty)result='**Résumé partiel : ${missing.length} page(s) sans texte extractible.**\n\n$result';
       await save();
-    } catch(e){error='$e';} finally{await document?.dispose();running=false;notifyListeners();}
+    } catch(e){error=friendlyFailure(e, action: 'préparer ce contenu');} finally{await document?.dispose();running=false;notifyListeners();}
   }
 }

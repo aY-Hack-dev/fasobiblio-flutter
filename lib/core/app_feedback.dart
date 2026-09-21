@@ -7,7 +7,15 @@ import '../services/app_state.dart';
 
 const offlineMessage = 'L’application n’a pas pu se connecter au serveur. Vérifiez votre connexion Internet puis réessayez.';
 
+class UserMessage implements Exception {
+  const UserMessage(this.message);
+  final String message;
+  @override
+  String toString() => message;
+}
+
 String friendlyFailure(Object error, {String action = 'effectuer cette opération'}) {
+  if (error is UserMessage) return error.message;
   if (error is SocketException || error is TimeoutException) return offlineMessage;
   if (error is PlatformException) return 'Nous n’avons pas pu $action sur cet appareil. Fermez cette page puis réessayez.';
   final raw = error.toString().replaceFirst('Exception: ', '').toLowerCase();

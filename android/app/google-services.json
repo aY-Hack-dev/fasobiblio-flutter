@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "992942156489",
+    "firebase_url": "https://alifam-hub-1b32a-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "alifam-hub-1b32a",
+    "storage_bucket": "alifam-hub-1b32a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:992942156489:android:a62fcc4f69b83cfa933b18",
+        "android_client_info": {
+          "package_name": "com.fasobiblio.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBI2gEvuomqex6BdnC6kNY95UN6bDIgyaQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

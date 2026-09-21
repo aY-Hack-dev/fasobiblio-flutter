@@ -1,0 +1,50 @@
+name: Build iOS
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, fix/payment-review]
+    paths:
+      - '.github/workflows/ios.yml'
+      - 'scripts/prepare_ios.py'
+      - 'lib/**'
+      - 'assets/**'
+      - 'pubspec.*'
+permissions:
+  contents: read
+jobs:
+  ios:
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.2'
+          channel: stable
+          cache: true
+      - name: Générer le projet iPhone et iPad
+        run: |
+          flutter config --no-enable-swift-package-manager
+          flutter create --no-pub --platforms=ios --org com.fasobiblio --project-name fasobiblio /tmp/fasobiblio_ios
+          cp -R /tmp/fasobiblio_ios/ios .
+          python3 scripts/prepare_ios.py
+      - name: Installer les dépendances
+        run: flutter pub get
+      - name: Compiler pour iPhone et iPad (non signé)
+        run: flutter build ios --release --no-codesign
+      - name: Préparer les fichiers iOS
+        run: |
+          mkdir -p dist/Payload
+          cp -R build/ios/iphoneos/Runner.app dist/Payload/
+          cd dist
+          zip -qry Fasobiblio-iOS-non-signe.ipa Payload
+          echo "Compilation iPhone/iPad non signée. Une signature Apple et un profil de provisionnement sont nécessaires avant installation. Firebase iOS doit être configuré pour les notifications." > LIRE-MOI.txt
+          rm -r Payload
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Fasobiblio-iOS-non-signe
+          path: dist/
+          if-no-files-found: error
