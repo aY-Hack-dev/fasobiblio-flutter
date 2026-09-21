@@ -67,11 +67,12 @@ class _InformationScreenState extends State<InformationScreen> {
     }
     final cached = await widget.state.store.loadJson(cacheKey);
     final cachedSections = _parseSections(cached);
-    if (mounted && cachedSections.isNotEmpty)
+    if (mounted && cachedSections.isNotEmpty) {
       setState(() {
         sections = cachedSections;
         loading = false;
       });
+    }
     if ((!widget.state.offline || retry) && firebasePath != null) {
       try {
         final remote = await widget.state.api.setting(firebasePath!);
@@ -106,8 +107,9 @@ class _InformationScreenState extends State<InformationScreen> {
       final french = value['fr'];
       if (french is String && french.trim().isNotEmpty) return french.trim();
       for (final candidate in value.values) {
-        if (candidate is String && candidate.trim().isNotEmpty)
+        if (candidate is String && candidate.trim().isNotEmpty) {
           return candidate.trim();
+        }
       }
     }
     return '';

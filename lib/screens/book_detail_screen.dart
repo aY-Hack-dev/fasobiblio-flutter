@@ -83,8 +83,9 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
         path = cached;
       } else {
         final file = await widget.state.api.documentFile(widget.book.id, mode);
-        if ((file['url'] ?? '').isEmpty)
+        if ((file['url'] ?? '').isEmpty) {
           throw Exception('Le fichier est momentanément indisponible.');
+        }
         name = file['name'] ?? widget.book.title;
         if (mode == 'read') {
           final uri = documents.validate(file['url']!);
@@ -130,15 +131,16 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
         );
       } else {
         final destination = await documents.exportToDownloads(path, name);
-        if (mounted)
+        if (mounted) {
           showToast(
             context,
             'Document enregistré dans $destination.',
             success: true,
           );
+        }
       }
     } catch (error) {
-      if (mounted)
+      if (mounted) {
         showToast(
           context,
           friendlyFailure(
@@ -148,12 +150,14 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                 : 'télécharger ce document',
           ),
         );
+      }
     } finally {
-      if (mounted)
+      if (mounted) {
         setState(() {
           busy = false;
           progress = null;
         });
+      }
     }
   }
 
@@ -179,18 +183,20 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
         result.stars,
         result.comment,
       );
-      if (mounted)
+      if (mounted) {
         showToast(
           context,
           'Merci ! Votre avis sera visible après validation.',
           success: true,
         );
+      }
     } catch (error) {
-      if (mounted)
+      if (mounted) {
         showToast(
           context,
           friendlyFailure(error, action: 'publier votre avis'),
         );
+      }
     }
   }
 

@@ -80,11 +80,12 @@ class _PdfReaderScreenState extends State<PdfReaderScreen> {
         if (mounted) setState(() => bookmarkMessage = null);
       });
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         showToast(
           context,
           'Impossible d’enregistrer le marque-page. Réessayez.',
         );
+      }
     } finally {
       if (mounted) setState(() => savingBookmark = false);
     }
@@ -338,8 +339,9 @@ class _PdfReaderScreenState extends State<PdfReaderScreen> {
     Widget pdf = FutureBuilder<int>(
       future: savedPage,
       builder: (context, snapshot) {
-        if (!snapshot.hasData)
+        if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
+        }
         if (remote) {
           return PdfViewer.uri(
             DocumentService().validate(widget.path),
@@ -469,7 +471,7 @@ class _PdfReaderScreenState extends State<PdfReaderScreen> {
                               ),
                             );
                           } catch (error) {
-                            if (context.mounted)
+                            if (context.mounted) {
                               showToast(
                                 context,
                                 friendlyFailure(
@@ -477,6 +479,7 @@ class _PdfReaderScreenState extends State<PdfReaderScreen> {
                                   action: 'préparer le document',
                                 ),
                               );
+                            }
                           }
                         },
                 ),
@@ -500,7 +503,7 @@ class _PdfReaderScreenState extends State<PdfReaderScreen> {
                       try {
                         path = await localPath();
                       } catch (error) {
-                        if (context.mounted)
+                        if (context.mounted) {
                           showToast(
                             context,
                             friendlyFailure(
@@ -508,6 +511,7 @@ class _PdfReaderScreenState extends State<PdfReaderScreen> {
                               action: 'préparer la lecture audio',
                             ),
                           );
+                        }
                         return;
                       }
                       if (!context.mounted) return;

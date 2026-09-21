@@ -37,8 +37,9 @@ class ResumableDownload {
           total = saved['total'] as int?;
           if (await partial.length() < offset ||
               offset < 0 ||
-              (total != null && offset > total))
+              (total != null && offset > total)) {
             offset = 0;
+          }
         }
       }
     } catch (_) {
@@ -60,8 +61,9 @@ class ResumableDownload {
           final request = http.Request('GET', uri)
             ..headers['Range'] = 'bytes=$start-$end';
           request.headers['Accept-Encoding'] = 'identity';
-          if (start > 0 && validator != null)
+          if (start > 0 && validator != null) {
             request.headers['If-Range'] = validator;
+          }
           final response = await client
               .send(request)
               .timeout(const Duration(seconds: 25));
@@ -126,8 +128,9 @@ class ResumableDownload {
             const Duration(seconds: 25),
           )) {
             received += bytes.length;
-            if (expected != null && received > expected)
+            if (expected != null && received > expected) {
               throw const HttpException('Taille du document invalide.');
+            }
             await output.writeFrom(bytes);
             if (total != null &&
                 total > 0 &&
@@ -136,8 +139,9 @@ class ResumableDownload {
               lastUpdate = DateTime.now();
             }
           }
-          if (received == 0 || (expected != null && received != expected))
+          if (received == 0 || (expected != null && received != expected)) {
             throw const SocketException('Bloc incomplet');
+          }
           offset += received;
           if (response.statusCode == 200) total = offset;
           await output.flush();

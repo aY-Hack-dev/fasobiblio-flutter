@@ -44,8 +44,9 @@ class DocumentService {
     final uri = Uri.tryParse(raw);
     if (uri == null ||
         uri.scheme != 'https' ||
-        !allowedHosts.contains(uri.host.toLowerCase()))
+        !allowedHosts.contains(uri.host.toLowerCase())) {
       throw Exception('Adresse du document non autorisée.');
+    }
     return uri;
   }
 
@@ -108,16 +109,18 @@ class DocumentService {
   }
 
   Future<String> exportToDownloads(String localPath, String name) async {
-    if (!Platform.isAndroid)
+    if (!Platform.isAndroid) {
       throw Exception(
         'L’export dans Téléchargements est disponible sur Android.',
       );
+    }
     final result = await _downloads.invokeMethod<String>('saveToDownloads', {
       'path': localPath,
       'name': safeName(name),
     });
-    if (result == null || result.isEmpty)
+    if (result == null || result.isEmpty) {
       throw Exception('Impossible d’enregistrer le document.');
+    }
     return result;
   }
 }

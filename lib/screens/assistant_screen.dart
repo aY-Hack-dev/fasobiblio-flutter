@@ -64,13 +64,14 @@ class _AssistantScreenState extends State<AssistantScreen>
     recordingLimit?.cancel();
     await amplitude?.cancel();
     amplitude = null;
-    if (mounted)
+    if (mounted) {
       setState(() {
         conversation = false;
         listening = false;
         speaking = false;
         transcribing = false;
       });
+    }
     await recorder.cancel();
     await voice.stop();
   }
@@ -122,8 +123,9 @@ class _AssistantScreenState extends State<AssistantScreen>
       final root = await getTemporaryDirectory();
       if (!mounted || generation != voiceGeneration) return;
       final previous = recordingPath;
-      if (previous != null && await File(previous).exists())
+      if (previous != null && await File(previous).exists()) {
         await File(previous).delete();
+      }
       recordingPath =
           '${root.path}/fasobiblio-voice-${DateTime.now().microsecondsSinceEpoch}.m4a';
       dictatedPrefix = conversation ? '' : controller.text.trim();
@@ -153,8 +155,9 @@ class _AssistantScreenState extends State<AssistantScreen>
         amplitude = recorder
             .onAmplitudeChanged(const Duration(milliseconds: 200))
             .listen((value) {
-              if (!mounted || !listening || generation != voiceGeneration)
+              if (!mounted || !listening || generation != voiceGeneration) {
                 return;
+              }
               if (value.current > -38) lastSpeech = DateTime.now();
               if (lastSpeech != null &&
                   DateTime.now().difference(lastSpeech!).inMilliseconds >
@@ -164,7 +167,7 @@ class _AssistantScreenState extends State<AssistantScreen>
             });
       }
     } catch (error) {
-      if (mounted && generation == voiceGeneration)
+      if (mounted && generation == voiceGeneration) {
         setState(() {
           listening = false;
           conversation = false;
@@ -173,6 +176,7 @@ class _AssistantScreenState extends State<AssistantScreen>
             action: 'enregistrer votre message',
           );
         });
+      }
     } finally {
       if (mounted) setState(() => startingVoice = false);
     }
@@ -190,12 +194,14 @@ class _AssistantScreenState extends State<AssistantScreen>
     amplitude = null;
     try {
       final path = await recorder.stop();
-      if (path == null)
+      if (path == null) {
         throw const UserMessage('Aucun enregistrement disponible. Réessayez.');
+      }
+      if (!mounted || generation != voiceGeneration) return;
       recordingPath = path;
       await transcribe(generation);
     } catch (error) {
-      if (mounted && generation == voiceGeneration)
+      if (mounted && generation == voiceGeneration) {
         setState(() {
           conversation = false;
           voiceError = friendlyFailure(
@@ -203,9 +209,11 @@ class _AssistantScreenState extends State<AssistantScreen>
             action: 'transcrire votre message',
           );
         });
+      }
     } finally {
-      if (mounted && generation == voiceGeneration)
+      if (mounted && generation == voiceGeneration) {
         setState(() => transcribing = false);
+      }
     }
   }
 
@@ -214,10 +222,11 @@ class _AssistantScreenState extends State<AssistantScreen>
     if (path == null) return;
     final file = File(path);
     final bytes = await file.readAsBytes();
-    if (bytes.length > 512 * 1024)
+    if (bytes.length > 512 * 1024) {
       throw const UserMessage(
         'Cet enregistrement est trop long. Enregistrez un message plus court.',
       );
+    }
     final text = await widget.state.api.transcribeAudio(bytes);
     if (!mounted || generation != voiceGeneration) return;
     controller.text = [
@@ -246,16 +255,18 @@ class _AssistantScreenState extends State<AssistantScreen>
     try {
       await transcribe(generation);
     } catch (error) {
-      if (mounted && generation == voiceGeneration)
+      if (mounted && generation == voiceGeneration) {
         setState(
           () => voiceError = friendlyFailure(
             error,
             action: 'transcrire votre message',
           ),
         );
+      }
     } finally {
-      if (mounted && generation == voiceGeneration)
+      if (mounted && generation == voiceGeneration) {
         setState(() => transcribing = false);
+      }
     }
   }
 
@@ -267,8 +278,9 @@ class _AssistantScreenState extends State<AssistantScreen>
       await voice.awaitSpeakCompletion(true);
       if (!mounted ||
           generation != voiceGeneration ||
-          (!voiceMode && !conversation))
+          (!voiceMode && !conversation)) {
         return;
+      }
       setState(() => speaking = true);
       final plain = answer
           .replaceAll(
@@ -277,12 +289,13 @@ class _AssistantScreenState extends State<AssistantScreen>
           )
           .replaceAll(RegExp(r'[#*_`|]'), ' ');
       final result = await voice.speak(plain);
-      if (result == 0)
+      if (result == 0) {
         throw const UserMessage(
           'La lecture vocale est indisponible. Activez une voix française dans les paramètres du téléphone.',
         );
+      }
     } catch (error) {
-      if (mounted && generation == voiceGeneration)
+      if (mounted && generation == voiceGeneration) {
         setState(() {
           conversation = false;
           voiceError = friendlyFailure(
@@ -290,9 +303,11 @@ class _AssistantScreenState extends State<AssistantScreen>
             action: 'lire la réponse à voix haute',
           );
         });
+      }
     } finally {
-      if (mounted && generation == voiceGeneration)
+      if (mounted && generation == voiceGeneration) {
         setState(() => speaking = false);
+      }
     }
   }
 
@@ -344,12 +359,19 @@ class _AssistantScreenState extends State<AssistantScreen>
     listenAgain?.cancel();
     recordingLimit?.cancel();
     amplitude?.cancel();
-    recorder.cancel().then((_) => recorder.dispose());
+    recorder
+        .cancel()
+        .catchError((Object _) {})
+        .whenComplete(() => recorder.dispose());
     final path = recordingPath;
     if (path != null) {
       unawaited(
         File(path).exists().then((exists) async {
-          if (exists) await File(path).delete();
+          if (exists) {
+            try {
+              await File(path).delete();
+            } catch (_) {}
+          }
         }),
       );
     }
@@ -361,15 +383,19 @@ class _AssistantScreenState extends State<AssistantScreen>
 
   Future<void> ask() async {
     final question = controller.text.trim();
-    if (question.isEmpty || busy || listening || transcribing || startingVoice)
+    if (question.isEmpty ||
+        busy ||
+        listening ||
+        transcribing ||
+        startingVoice) {
       return;
+    }
     if (!requireInternet(context, widget.state)) {
       await stopConversation();
       return;
     }
     voiceGeneration++;
     setState(() => busy = true);
-    await recorder.cancel();
     if (!mounted) return;
     setState(() => listening = false);
     controller.clear();

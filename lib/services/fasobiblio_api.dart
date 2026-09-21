@@ -49,11 +49,13 @@ class FasobiblioApi {
   }
 
   String _friendlyError(String value) {
-    if (value.contains('INVALID_LOGIN_CREDENTIALS'))
+    if (value.contains('INVALID_LOGIN_CREDENTIALS')) {
       return 'Pseudo ou mot de passe incorrect.';
+    }
     if (value.contains('EMAIL_EXISTS')) return 'Ce pseudo est déjà utilisé.';
-    if (value.contains('WEAK_PASSWORD'))
+    if (value.contains('WEAK_PASSWORD')) {
       return 'Le mot de passe est trop faible.';
+    }
     return value.replaceFirst('Exception: ', '');
   }
 
@@ -185,8 +187,9 @@ class FasobiblioApi {
         '$api/api/check-username?pseudo=${Uri.encodeQueryComponent(pseudo)}',
       ),
     );
-    if (check['available'] != true)
+    if (check['available'] != true) {
       throw Exception('Ce pseudo est déjà utilisé.');
+    }
     final data = await _request(
       Uri.parse(
         'https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=$firebaseKey',
@@ -230,8 +233,9 @@ class FasobiblioApi {
       }),
     );
     final code = data['resetCode'];
-    if (code is! String || code.isEmpty)
+    if (code is! String || code.isEmpty) {
       throw Exception('Récupération indisponible.');
+    }
     return code;
   }
 
@@ -262,8 +266,9 @@ class FasobiblioApi {
     Map<String, dynamic>? body,
   }) async {
     final auth = await ensureSession();
-    if (auth.idToken.isEmpty)
+    if (auth.idToken.isEmpty) {
       throw Exception('Connexion Internet requise pour cette action.');
+    }
     return _request(
       Uri.parse('$api$path'),
       method: method,
@@ -419,8 +424,9 @@ class FasobiblioApi {
     String comment,
   ) async {
     final auth = await ensureSession();
-    if (auth.anonymous || auth.idToken.isEmpty)
+    if (auth.anonymous || auth.idToken.isEmpty) {
       throw Exception('Connectez-vous avec votre compte pour publier un avis.');
+    }
     await _request(
       Uri.parse(
         '$database/document_reviews/${Uri.encodeComponent(documentId)}/${Uri.encodeComponent(auth.uid)}.json?auth=${Uri.encodeQueryComponent(auth.idToken)}',
