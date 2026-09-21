@@ -541,7 +541,10 @@ class _AssistantScreenState extends State<AssistantScreen>
                 : (busy || startingVoice || listening || transcribing)
                 ? null
                 : () async {
-                    setState(() => conversation = true);
+                    setState(() {
+                      conversation = true;
+                      voiceMode = true;
+                    });
                     await listen();
                   },
             icon: Icon(conversation ? Icons.stop_circle : Icons.headset_mic),
@@ -716,7 +719,7 @@ class _AssistantScreenState extends State<AssistantScreen>
                       : listening
                       ? 'Terminer la dictée'
                       : 'Dicter un message',
-                  icon: Icon(listening ? Icons.mic : Icons.mic_none),
+                  icon: Icon(listening ? Icons.stop_circle : Icons.mic_none),
                 ),
                 IconButton.filled(
                   onPressed: busy || listening || startingVoice || transcribing
