@@ -1,4 +1,10 @@
-import 'package:speech_to_text/speech_to_text.dart';
+import 'dart:async';
+
+import 'dart:io';
+
+import 'package:record/record.dart';
+import 'package:path_provider/path_provider.dart';
+
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:pdfrx/pdfrx.dart';
 
@@ -34,98 +40,235 @@ class _ChatMessage {
   Map<String, dynamic> toJson() => {'text': text, 'fromUser': fromUser};
 }
 
-class _AssistantScreenState extends State<AssistantScreen> {
+class _AssistantScreenState extends State<AssistantScreen>
+    with WidgetsBindingObserver {
   final controller = TextEditingController();
   final scrollController = ScrollController();
   final messages = <_ChatMessage>[];
   bool busy = false, restoring = true;
   Book? selectedBook;
   String? selectedContext;
-  final speech = SpeechToText();
+  final recorder = AudioRecorder();
   final voice = FlutterTts();
   bool voiceMode = false, listening = false, speaking = false;
-  Future<void> listen() async {
+  bool conversation = false, startingVoice = false, transcribing = false;
+  int voiceGeneration = 0;
+  Timer? listenAgain, recordingLimit;
+  StreamSubscription<Amplitude>? amplitude;
+  String? voiceError, recordingPath;
+  String dictatedPrefix = '';
+
+  Future<void> stopConversation() async {
+    voiceGeneration++;
+    listenAgain?.cancel();
+    recordingLimit?.cancel();
+    await amplitude?.cancel();
+    amplitude = null;
+    if (mounted)
+      setState(() {
+        conversation = false;
+        listening = false;
+        speaking = false;
+        transcribing = false;
+      });
+    await recorder.cancel();
     await voice.stop();
-    if (speech.isListening) {
-      await speech.stop();
-      if (mounted) setState(() => listening = false);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
+      unawaited(stopConversation());
+    }
+  }
+
+  void restartListening() {
+    listenAgain?.cancel();
+    if (!mounted || !conversation) return;
+    listenAgain = Timer(const Duration(milliseconds: 600), () {
+      if (mounted &&
+          conversation &&
+          !busy &&
+          !speaking &&
+          !listening &&
+          !startingVoice &&
+          !transcribing) {
+        unawaited(listen());
+      }
+    });
+  }
+
+  Future<void> listen() async {
+    if (startingVoice || busy || transcribing) return;
+    if (listening) {
+      await finishRecording();
       return;
     }
+    if (!requireInternet(context, widget.state)) return;
+    final generation = ++voiceGeneration;
+    setState(() {
+      startingVoice = true;
+      voiceError = null;
+    });
     try {
-      final available = await speech.initialize(
-        onStatus: (status) {
-          if (mounted && status != 'listening') {
-            setState(() => listening = false);
-          }
-        },
-        onError: (_) {
-          if (mounted) {
-            setState(() => listening = false);
-            showToast(
-              context,
-              'La reconnaissance vocale s’est arrêtée. Vous pouvez réessayer ou écrire votre question.',
-            );
-          }
-        },
-      );
-      if (!mounted) return;
-      if (!available) {
+      await voice.stop();
+      if (!await recorder.hasPermission()) {
         throw const UserMessage(
-          'La reconnaissance vocale n’est pas disponible. Vérifiez l’autorisation du microphone.',
+          'Autorisez le microphone dans les paramètres de Fasobiblio pour enregistrer votre message.',
         );
       }
-      final locales = await speech.locales();
-      if (!mounted) return;
-      final french = locales.where(
-        (locale) => locale.localeId.startsWith('fr'),
+      if (!mounted || generation != voiceGeneration) return;
+      final root = await getTemporaryDirectory();
+      if (!mounted || generation != voiceGeneration) return;
+      final previous = recordingPath;
+      if (previous != null && await File(previous).exists())
+        await File(previous).delete();
+      recordingPath =
+          '${root.path}/fasobiblio-voice-${DateTime.now().microsecondsSinceEpoch}.m4a';
+      dictatedPrefix = conversation ? '' : controller.text.trim();
+      await recorder.start(
+        const RecordConfig(
+          encoder: AudioEncoder.aacLc,
+          bitRate: 32000,
+          sampleRate: 16000,
+          numChannels: 1,
+        ),
+        path: recordingPath!,
       );
+      if (!mounted || generation != voiceGeneration) {
+        await recorder.cancel();
+        return;
+      }
       setState(() {
-        voiceMode = true;
         listening = true;
         speaking = false;
       });
-      var submitted = false;
-      await speech.listen(
-        listenOptions: SpeechListenOptions(
-          localeId: french.isEmpty ? null : french.first.localeId,
-          listenFor: const Duration(seconds: 50),
-          pauseFor: const Duration(seconds: 3),
-          partialResults: true,
-          listenMode: ListenMode.dictation,
-          cancelOnError: true,
-        ),
-        onResult: (result) {
-          if (!mounted || submitted) return;
-          controller.text = result.recognizedWords;
-          if (result.finalResult && result.recognizedWords.trim().isNotEmpty) {
-            submitted = true;
-            setState(() => listening = false);
-            ask();
-          }
-        },
+      recordingLimit = Timer(
+        const Duration(seconds: 90),
+        () => unawaited(finishRecording()),
       );
-    } catch (error) {
-      if (mounted) {
-        setState(() => listening = false);
-        showToast(
-          context,
-          friendlyFailure(error, action: 'écouter votre question'),
-        );
+      if (conversation) {
+        DateTime? lastSpeech;
+        amplitude = recorder
+            .onAmplitudeChanged(const Duration(milliseconds: 200))
+            .listen((value) {
+              if (!mounted || !listening || generation != voiceGeneration)
+                return;
+              if (value.current > -38) lastSpeech = DateTime.now();
+              if (lastSpeech != null &&
+                  DateTime.now().difference(lastSpeech!).inMilliseconds >
+                      2400) {
+                unawaited(finishRecording());
+              }
+            });
       }
+    } catch (error) {
+      if (mounted && generation == voiceGeneration)
+        setState(() {
+          listening = false;
+          conversation = false;
+          voiceError = friendlyFailure(
+            error,
+            action: 'enregistrer votre message',
+          );
+        });
+    } finally {
+      if (mounted) setState(() => startingVoice = false);
+    }
+  }
+
+  Future<void> finishRecording() async {
+    if (!listening || transcribing) return;
+    final generation = voiceGeneration;
+    setState(() {
+      listening = false;
+      transcribing = true;
+    });
+    recordingLimit?.cancel();
+    await amplitude?.cancel();
+    amplitude = null;
+    try {
+      final path = await recorder.stop();
+      if (path == null)
+        throw const UserMessage('Aucun enregistrement disponible. Réessayez.');
+      recordingPath = path;
+      await transcribe(generation);
+    } catch (error) {
+      if (mounted && generation == voiceGeneration)
+        setState(() {
+          conversation = false;
+          voiceError = friendlyFailure(
+            error,
+            action: 'transcrire votre message',
+          );
+        });
+    } finally {
+      if (mounted && generation == voiceGeneration)
+        setState(() => transcribing = false);
+    }
+  }
+
+  Future<void> transcribe(int generation) async {
+    final path = recordingPath;
+    if (path == null) return;
+    final file = File(path);
+    final bytes = await file.readAsBytes();
+    if (bytes.length > 512 * 1024)
+      throw const UserMessage(
+        'Cet enregistrement est trop long. Enregistrez un message plus court.',
+      );
+    final text = await widget.state.api.transcribeAudio(bytes);
+    if (!mounted || generation != voiceGeneration) return;
+    controller.text = [
+      if (dictatedPrefix.isNotEmpty) dictatedPrefix,
+      text,
+    ].join(' ');
+    controller.selection = TextSelection.collapsed(
+      offset: controller.text.length,
+    );
+    await file.delete();
+    recordingPath = null;
+    setState(() {
+      transcribing = false;
+      voiceError = null;
+    });
+    if (conversation) await ask();
+  }
+
+  Future<void> retryTranscription() async {
+    if (transcribing || recordingPath == null) return;
+    setState(() {
+      transcribing = true;
+      voiceError = null;
+    });
+    final generation = voiceGeneration;
+    try {
+      await transcribe(generation);
+    } catch (error) {
+      if (mounted && generation == voiceGeneration)
+        setState(
+          () => voiceError = friendlyFailure(
+            error,
+            action: 'transcrire votre message',
+          ),
+        );
+    } finally {
+      if (mounted && generation == voiceGeneration)
+        setState(() => transcribing = false);
     }
   }
 
   Future<void> speak(String answer) async {
+    final generation = voiceGeneration;
     try {
       await voice.setLanguage('fr-FR');
       await voice.setSpeechRate(.5);
-      voice.setCompletionHandler(() {
-        if (mounted) setState(() => speaking = false);
-      });
-      voice.setCancelHandler(() {
-        if (mounted) setState(() => speaking = false);
-      });
-      if (!mounted || !voiceMode) return;
+      await voice.awaitSpeakCompletion(true);
+      if (!mounted ||
+          generation != voiceGeneration ||
+          (!voiceMode && !conversation))
+        return;
       setState(() => speaking = true);
       final plain = answer
           .replaceAll(
@@ -133,9 +276,23 @@ class _AssistantScreenState extends State<AssistantScreen> {
             'Exemple de code affiché à l’écran.',
           )
           .replaceAll(RegExp(r'[#*_`|]'), ' ');
-      await voice.speak(plain);
-    } catch (_) {
-      if (mounted) setState(() => speaking = false);
+      final result = await voice.speak(plain);
+      if (result == 0)
+        throw const UserMessage(
+          'La lecture vocale est indisponible. Activez une voix française dans les paramètres du téléphone.',
+        );
+    } catch (error) {
+      if (mounted && generation == voiceGeneration)
+        setState(() {
+          conversation = false;
+          voiceError = friendlyFailure(
+            error,
+            action: 'lire la réponse à voix haute',
+          );
+        });
+    } finally {
+      if (mounted && generation == voiceGeneration)
+        setState(() => speaking = false);
     }
   }
 
@@ -144,6 +301,7 @@ class _AssistantScreenState extends State<AssistantScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _restore();
   }
 
@@ -181,7 +339,20 @@ class _AssistantScreenState extends State<AssistantScreen> {
   );
   @override
   void dispose() {
-    speech.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    voiceGeneration++;
+    listenAgain?.cancel();
+    recordingLimit?.cancel();
+    amplitude?.cancel();
+    recorder.cancel().then((_) => recorder.dispose());
+    final path = recordingPath;
+    if (path != null) {
+      unawaited(
+        File(path).exists().then((exists) async {
+          if (exists) await File(path).delete();
+        }),
+      );
+    }
     voice.stop().catchError((Object _) => null);
     controller.dispose();
     scrollController.dispose();
@@ -190,8 +361,17 @@ class _AssistantScreenState extends State<AssistantScreen> {
 
   Future<void> ask() async {
     final question = controller.text.trim();
-    if (question.isEmpty || busy) return;
-    if (!requireInternet(context, widget.state)) return;
+    if (question.isEmpty || busy || listening || transcribing || startingVoice)
+      return;
+    if (!requireInternet(context, widget.state)) {
+      await stopConversation();
+      return;
+    }
+    voiceGeneration++;
+    setState(() => busy = true);
+    await recorder.cancel();
+    if (!mounted) return;
+    setState(() => listening = false);
     controller.clear();
     setState(() {
       messages.add(_ChatMessage(question, fromUser: true));
@@ -216,7 +396,7 @@ class _AssistantScreenState extends State<AssistantScreen> {
       );
       if (!mounted) return;
       setState(() => messages.add(_ChatMessage(answer, fromUser: false)));
-      if (voiceMode) speak(answer);
+      if (voiceMode || conversation) await speak(answer);
       await _persist();
     } catch (error) {
       if (mounted) {
@@ -227,6 +407,7 @@ class _AssistantScreenState extends State<AssistantScreen> {
       }
     } finally {
       if (mounted) setState(() => busy = false);
+      restartListening();
       _scrollDown();
     }
   }
@@ -326,12 +507,32 @@ class _AssistantScreenState extends State<AssistantScreen> {
       appBar: AppBar(
         actions: [
           IconButton(
+            tooltip: conversation
+                ? 'Arrêter la conversation vocale'
+                : 'Démarrer une conversation vocale',
+            onPressed: conversation
+                ? stopConversation
+                : (busy || startingVoice || listening || transcribing)
+                ? null
+                : () async {
+                    setState(() => conversation = true);
+                    await listen();
+                  },
+            icon: Icon(conversation ? Icons.stop_circle : Icons.headset_mic),
+          ),
+          IconButton(
             tooltip: voiceMode
                 ? 'Désactiver les réponses vocales'
                 : 'Activer les réponses vocales',
             onPressed: () {
               setState(() => voiceMode = !voiceMode);
-              if (!voiceMode) voice.stop();
+              if (!voiceMode) {
+                if (conversation) {
+                  unawaited(stopConversation());
+                } else {
+                  unawaited(voice.stop());
+                }
+              }
             },
             icon: Icon(voiceMode ? Icons.volume_up : Icons.volume_off),
           ),
@@ -401,6 +602,56 @@ class _AssistantScreenState extends State<AssistantScreen> {
                         : _MessageBubble(message: messages[index]),
                   ),
           ),
+          if (conversation ||
+              transcribing ||
+              listening ||
+              startingVoice ||
+              speaking ||
+              voiceError != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      voiceError ??
+                          (transcribing
+                              ? 'Transcription du message…'
+                              : startingVoice
+                              ? 'Préparation du microphone…'
+                              : listening
+                              ? (conversation
+                                    ? 'Je vous écoute…'
+                                    : 'Dictée en cours… Arrêtez pour relire avant l’envoi.')
+                              : speaking
+                              ? 'L’assistant vous répond…'
+                              : busy
+                              ? 'Préparation de la réponse…'
+                              : 'Conversation vocale active'),
+                      style: TextStyle(
+                        color: voiceError != null
+                            ? Theme.of(context).colorScheme.error
+                            : AppColors.muted,
+                      ),
+                    ),
+                  ),
+                  if (voiceError != null &&
+                      recordingPath != null &&
+                      !transcribing)
+                    TextButton(
+                      onPressed: retryTranscription,
+                      child: const Text('Réessayer'),
+                    ),
+                  if (conversation || listening)
+                    TextButton(
+                      onPressed: stopConversation,
+                      child: Text(
+                        listening && !conversation ? 'Annuler' : 'Arrêter',
+                      ),
+                    ),
+                ],
+              ),
+            ),
           Container(
             color: surface,
             padding: EdgeInsets.fromLTRB(
@@ -431,16 +682,20 @@ class _AssistantScreenState extends State<AssistantScreen> {
                 ),
                 const SizedBox(width: 9),
                 IconButton(
-                  onPressed: busy ? null : listen,
+                  onPressed: busy || startingVoice || transcribing
+                      ? null
+                      : listen,
                   tooltip: speaking
                       ? 'Interrompre et parler'
                       : listening
                       ? 'Terminer la dictée'
-                      : 'Poser une question à voix haute',
+                      : 'Dicter un message',
                   icon: Icon(listening ? Icons.mic : Icons.mic_none),
                 ),
                 IconButton.filled(
-                  onPressed: busy ? null : ask,
+                  onPressed: busy || listening || startingVoice || transcribing
+                      ? null
+                      : ask,
                   icon: const Icon(AppIcons.send),
                   tooltip: 'Envoyer',
                   style: IconButton.styleFrom(minimumSize: const Size(50, 50)),

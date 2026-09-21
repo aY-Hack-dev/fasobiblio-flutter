@@ -5,6 +5,8 @@ import 'package:pdfrx/pdfrx.dart';
 
 import '../core/app_feedback.dart';
 import '../services/local_store.dart';
+import '../services/document_service.dart';
+import '../services/document_metadata.dart';
 import '../widgets/app_scope.dart';
 import '../widgets/document_cover.dart';
 import 'document_assistant_sheet.dart';
@@ -33,6 +35,61 @@ class _PdfReaderScreenState extends State<PdfReaderScreen> {
   String theme = 'system';
   bool fullscreen = false;
   Set<String> bookmarks = {};
+  bool savingBookmark = false;
+  String? bookmarkMessage;
+  Timer? _bookmarkTimer;
+  String? _localPath;
+  bool _cacheStarted = false;
+  String? _bookmarkAccount;
+  bool get remote => Uri.tryParse(widget.path)?.scheme == 'https';
+
+  Future<String> localPath() async {
+    if (!remote) return widget.path;
+    if (_localPath != null) return _localPath!;
+    final path = await DocumentService().ensureLocal(
+      widget.path,
+      '$id-${widget.title}',
+    );
+    _localPath = path;
+    if (mounted) {
+      final books = AppScope.of(context).books.where((b) => b.id == id);
+      if (books.isNotEmpty) {
+        await DocumentMetadata.save(path, books.first);
+        unawaited(DocumentMetadata.cover(path, books.first.image));
+      }
+    }
+    return path;
+  }
+
+  Future<void> toggleBookmark() async {
+    if (savingBookmark || total == 0) return;
+    final page = '$currentPage';
+    setState(() => savingBookmark = true);
+    try {
+      final saved = await store.load('reader.bookmarks.$account.$id');
+      final added = !saved.remove(page);
+      if (added) saved.add(page);
+      await store.save('reader.bookmarks.$account.$id', saved);
+      if (!mounted) return;
+      setState(() {
+        bookmarks = saved;
+        bookmarkMessage = added ? 'Page $page marquée' : 'Marque-page retiré';
+      });
+      _bookmarkTimer?.cancel();
+      _bookmarkTimer = Timer(const Duration(seconds: 2), () {
+        if (mounted) setState(() => bookmarkMessage = null);
+      });
+    } catch (_) {
+      if (mounted)
+        showToast(
+          context,
+          'Impossible d’enregistrer le marque-page. Réessayez.',
+        );
+    } finally {
+      if (mounted) setState(() => savingBookmark = false);
+    }
+  }
+
   Timer? _saveTimer;
   String get id => widget.documentId ?? widget.path.split('/').last;
   String get pageKey => 'reader.page.$id';
@@ -41,7 +98,13 @@ class _PdfReaderScreenState extends State<PdfReaderScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    account = AppScope.of(context).assistantAccountKey;
+    final next = AppScope.of(context).assistantAccountKey;
+    account = next;
+    if (_bookmarkAccount == next) return;
+    _bookmarkAccount = next;
+    store.load('reader.bookmarks.$next.$id').then((saved) {
+      if (mounted && account == next) setState(() => bookmarks = saved);
+    });
   }
 
   Future<int> _load() async {
@@ -59,7 +122,7 @@ class _PdfReaderScreenState extends State<PdfReaderScreen> {
     final entry = {
       'id': id,
       'title': widget.title,
-      'path': widget.path,
+      'path': _localPath ?? (remote ? '' : widget.path),
       'page': page,
       'total': total,
       'updatedAt': DateTime.now().millisecondsSinceEpoch,
@@ -81,6 +144,7 @@ class _PdfReaderScreenState extends State<PdfReaderScreen> {
   @override
   void dispose() {
     _saveTimer?.cancel();
+    _bookmarkTimer?.cancel();
     if (total > 0) saveProgress();
     super.dispose();
   }
@@ -185,7 +249,7 @@ class _PdfReaderScreenState extends State<PdfReaderScreen> {
     notes.add({
       'id': id,
       'title': widget.title,
-      'path': widget.path,
+      'path': _localPath ?? (remote ? '' : widget.path),
       'page': currentPage,
       'text': text,
       'createdAt': DateTime.now().millisecondsSinceEpoch,
@@ -252,31 +316,46 @@ class _PdfReaderScreenState extends State<PdfReaderScreen> {
     final foreground = dark ? Colors.white : const Color(0xFF192339);
     final matches = state.books.where((b) => b.id == widget.documentId);
     final cover = matches.isEmpty ? '' : matches.first.image;
+    final params = PdfViewerParams(
+      backgroundColor: dark ? const Color(0xFFEEE7D8) : background,
+      onViewerReady: (document, controller) {
+        if (mounted) setState(() => total = document.pages.length);
+        if (remote && !_cacheStarted) {
+          _cacheStarted = true;
+          unawaited(
+            localPath().then((_) => saveProgress()).catchError((Object _) {}),
+          );
+        }
+      },
+      onPageChanged: (page) {
+        if (page != null && mounted) {
+          setState(() => currentPage = page);
+          _saveTimer?.cancel();
+          _saveTimer = Timer(const Duration(milliseconds: 350), saveProgress);
+        }
+      },
+    );
     Widget pdf = FutureBuilder<int>(
       future: savedPage,
-      builder: (context, snapshot) => !snapshot.hasData
-          ? const Center(child: CircularProgressIndicator())
-          : PdfViewer.file(
-              widget.path,
-              controller: viewer,
-              initialPageNumber: snapshot.data!,
-              params: PdfViewerParams(
-                backgroundColor: dark ? const Color(0xFFEEE7D8) : background,
-                onViewerReady: (document, controller) {
-                  if (mounted) setState(() => total = document.pages.length);
-                },
-                onPageChanged: (page) {
-                  if (page != null && mounted) {
-                    setState(() => currentPage = page);
-                    _saveTimer?.cancel();
-                    _saveTimer = Timer(
-                      const Duration(milliseconds: 350),
-                      saveProgress,
-                    );
-                  }
-                },
-              ),
-            ),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData)
+          return const Center(child: CircularProgressIndicator());
+        if (remote) {
+          return PdfViewer.uri(
+            DocumentService().validate(widget.path),
+            controller: viewer,
+            initialPageNumber: snapshot.data!,
+            preferRangeAccess: true,
+            params: params,
+          );
+        }
+        return PdfViewer.file(
+          widget.path,
+          controller: viewer,
+          initialPageNumber: snapshot.data!,
+          params: params,
+        );
+      },
     );
     if (dark) {
       pdf = ColorFiltered(
@@ -328,9 +407,12 @@ class _PdfReaderScreenState extends State<PdfReaderScreen> {
                     SizedBox(
                       width: 28,
                       height: 40,
-                      child: DocumentCover(
-                        imageUrl: cover,
-                        fit: BoxFit.contain,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(5),
+                        child: DocumentCover(
+                          imageUrl: cover,
+                          fit: BoxFit.cover,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -350,23 +432,53 @@ class _PdfReaderScreenState extends State<PdfReaderScreen> {
               ),
               actions: [
                 IconButton(
+                  tooltip: bookmarks.contains('$currentPage')
+                      ? 'Retirer le marque-page'
+                      : 'Marquer cette page',
+                  onPressed: total == 0 || savingBookmark
+                      ? null
+                      : toggleBookmark,
+                  icon: Icon(
+                    bookmarks.contains('$currentPage')
+                        ? Icons.bookmark
+                        : Icons.bookmark_border,
+                  ),
+                ),
+                IconButton(
                   tooltip: 'Assistant du document',
                   icon: const Icon(Icons.auto_awesome),
-                  onPressed: () => showModalBottomSheet<void>(
-                    context: context,
-                    isScrollControlled: true,
-                    useSafeArea: true,
-                    builder: (_) => SizedBox(
-                      height: MediaQuery.sizeOf(context).height * .88,
-                      child: DocumentAssistantSheet(
-                        path: widget.path,
-                        title: widget.title,
-                        id: id,
-                        page: currentPage,
-                        state: state,
-                      ),
-                    ),
-                  ),
+                  onPressed: total == 0
+                      ? null
+                      : () async {
+                          try {
+                            final path = await localPath();
+                            if (!context.mounted) return;
+                            await showModalBottomSheet<void>(
+                              context: context,
+                              isScrollControlled: true,
+                              useSafeArea: true,
+                              builder: (_) => SizedBox(
+                                height: MediaQuery.sizeOf(context).height * .88,
+                                child: DocumentAssistantSheet(
+                                  path: path,
+                                  title: widget.title,
+                                  id: id,
+                                  page: currentPage,
+                                  state: state,
+                                ),
+                              ),
+                            );
+                          } catch (error) {
+                            if (context.mounted)
+                              showToast(
+                                context,
+                                friendlyFailure(
+                                  error,
+                                  action: 'préparer le document',
+                                ),
+                              );
+                          }
+                        },
                 ),
                 PopupMenuButton<String>(
                   tooltip: 'Outils de lecture',
@@ -384,11 +496,26 @@ class _PdfReaderScreenState extends State<PdfReaderScreen> {
                       return;
                     }
                     if (value == 'audio') {
+                      String path;
+                      try {
+                        path = await localPath();
+                      } catch (error) {
+                        if (context.mounted)
+                          showToast(
+                            context,
+                            friendlyFailure(
+                              error,
+                              action: 'préparer la lecture audio',
+                            ),
+                          );
+                        return;
+                      }
+                      if (!context.mounted) return;
                       await Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (_) => AudioReaderScreen(
-                            path: widget.path,
+                            path: path,
                             title: widget.title,
                             id: id,
                             account: account,
@@ -399,19 +526,7 @@ class _PdfReaderScreenState extends State<PdfReaderScreen> {
                       return;
                     }
                     if (value == 'bookmark') {
-                      final key = 'reader.bookmarks.$account.$id';
-                      final saved = await store.load(key);
-                      saved.contains('$currentPage')
-                          ? saved.remove('$currentPage')
-                          : saved.add('$currentPage');
-                      await store.save(key, saved);
-                      if (context.mounted) {
-                        showToast(
-                          context,
-                          'Marque-page mis à jour.',
-                          success: true,
-                        );
-                      }
+                      await toggleBookmark();
                       return;
                     }
                     setState(() => theme = value);
@@ -453,7 +568,32 @@ class _PdfReaderScreenState extends State<PdfReaderScreen> {
         top: fullscreen,
         child: Stack(
           children: [
-            Positioned.fill(child: pdf),
+            Positioned.fill(child: RepaintBoundary(child: pdf)),
+            if (bookmarkMessage != null)
+              Positioned(
+                top: 12,
+                left: 24,
+                right: 24,
+                child: IgnorePointer(
+                  child: Align(
+                    alignment: Alignment.topCenter,
+                    child: Material(
+                      color: foreground,
+                      borderRadius: BorderRadius.circular(12),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
+                        ),
+                        child: Text(
+                          bookmarkMessage!,
+                          style: TextStyle(color: background),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             if (fullscreen)
               Positioned(
                 right: 12,
